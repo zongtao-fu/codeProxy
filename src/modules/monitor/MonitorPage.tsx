@@ -30,6 +30,7 @@ import { AnimatedNumber } from "@/modules/ui/AnimatedNumber";
 import { TextInput } from "@/modules/ui/Input";
 import { Reveal } from "@/modules/ui/Reveal";
 import { EChart } from "@/modules/ui/charts/EChart";
+import { ChartLegend } from "@/modules/ui/charts/ChartLegend";
 import { useTheme } from "@/modules/ui/ThemeProvider";
 
 type TimeRange = 1 | 7 | 14 | 30;
@@ -171,7 +172,7 @@ const Card = ({
   children: ReactNode;
 }) => {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
+    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h3>
@@ -191,6 +192,24 @@ export function MonitorPage() {
     state: { mode },
   } = useTheme();
   const isDark = mode === "dark";
+
+  const [dailyLegendSelected, setDailyLegendSelected] = useState<Record<string, boolean>>({
+    "输入 Token": true,
+    "输出 Token": true,
+    请求数: true,
+  });
+
+  const [hourlyModelSelected, setHourlyModelSelected] = useState<Record<string, boolean>>({
+    总请求: true,
+  });
+
+  const [hourlyTokenSelected, setHourlyTokenSelected] = useState<Record<string, boolean>>({
+    输入: true,
+    输出: true,
+    推理: true,
+    缓存: true,
+    "总 Token": true,
+  });
 
   const [rawUsage, setRawUsage] = useState<UsageData>(createEmptyUsage);
   const [timeRange, setTimeRange] = useState<TimeRange>(7);
@@ -229,6 +248,19 @@ export function MonitorPage() {
   const applyFilter = useCallback(() => {
     setApiFilter(apiFilterInput);
   }, [apiFilterInput]);
+
+  const toggleDailyLegend = useCallback((key: string) => {
+    if (key !== "输入 Token" && key !== "输出 Token" && key !== "请求数") return;
+    setDailyLegendSelected((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+  }, []);
+
+  const toggleHourlyModelLegend = useCallback((key: string) => {
+    setHourlyModelSelected((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+  }, []);
+
+  const toggleHourlyTokenLegend = useCallback((key: string) => {
+    setHourlyTokenSelected((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+  }, []);
 
   const hasData = metrics.requestCount > 0;
   const isLoading = isRefreshing || isPending;
@@ -382,15 +414,81 @@ export function MonitorPage() {
     return { modelKeys, modelPoints, tokenKeys: [...tokenKeys], tokenPoints };
   }, [hourWindow, records, topModelKeys]);
 
+  const hourlyModelPalette = useMemo(() => {
+    const palette = ["bg-emerald-400", "bg-violet-400", "bg-amber-400", "bg-pink-300", "bg-teal-400"];
+    const colorByKey: Record<string, string> = {};
+    const classByKey: Record<string, string> = {};
+
+    hourlySeries.modelKeys.forEach((key, index) => {
+      if (key === "其他") {
+        colorByKey[key] = "rgba(148,163,184,0.58)";
+        classByKey[key] = "bg-slate-400";
+        return;
+      }
+      colorByKey[key] = HOURLY_MODEL_COLORS[index % HOURLY_MODEL_COLORS.length];
+      classByKey[key] = palette[index % palette.length] ?? "bg-slate-400";
+    });
+
+    colorByKey["总请求"] = "#3b82f6";
+    classByKey["总请求"] = "bg-blue-500";
+
+    return { colorByKey, classByKey };
+  }, [hourlySeries.modelKeys]);
+
+  const hourlyTokenPalette = useMemo(() => {
+    return {
+      colorByKey: {
+        输入: "rgba(110,231,183,0.88)",
+        输出: "rgba(196,181,253,0.88)",
+        推理: "rgba(252,211,77,0.88)",
+        缓存: "rgba(94,234,212,0.88)",
+        "总 Token": "#3b82f6",
+      } as Record<string, string>,
+      classByKey: {
+        输入: "bg-emerald-400",
+        输出: "bg-violet-400",
+        推理: "bg-amber-400",
+        缓存: "bg-teal-400",
+        "总 Token": "bg-blue-500",
+      } as Record<string, string>,
+    };
+  }, []);
+
+  useEffect(() => {
+    setHourlyModelSelected((prev) => {
+      const next = { ...prev };
+      for (const key of hourlySeries.modelKeys) {
+        if (!(key in next)) next[key] = true;
+      }
+      if (!("总请求" in next)) next["总请求"] = true;
+      return next;
+    });
+  }, [hourlySeries.modelKeys]);
+
+  useEffect(() => {
+    setHourlyTokenSelected((prev) => {
+      const next = { ...prev };
+      for (const key of hourlySeries.tokenKeys) {
+        if (!(key in next)) next[key] = true;
+      }
+      if (!("总 Token" in next)) next["总 Token"] = true;
+      return next;
+    });
+  }, [hourlySeries.tokenKeys]);
+
   const modelDistributionOption = useMemo(() => {
     return {
       backgroundColor: "transparent",
       color: [...CHART_COLORS, "#94a3b8"],
       tooltip: {
         trigger: "item",
+        renderMode: "html",
+        appendToBody: true,
+        confine: true,
         borderWidth: 0,
         backgroundColor: "rgba(15, 23, 42, 0.92)",
         textStyle: { color: "#fff" },
+        extraCssText: "z-index: 10000;",
         formatter: (params: { name: string; value: number; percent: number }) => {
           const valueLabel = formatCompact(params.value ?? 0);
           return `${params.name}<br/>${valueLabel}（${(params.percent ?? 0).toFixed(1)}%）`;
@@ -419,6 +517,22 @@ export function MonitorPage() {
       animationDurationUpdate: 360,
     };
   }, [isDark, modelDistributionData]);
+
+  const dailyLegendAvailability = useMemo(() => {
+    const points = dailySeries.filter(
+      (item) => item.requests > 0 || item.inputTokens > 0 || item.outputTokens > 0,
+    );
+    const visiblePoints = points.length > 0 ? points : dailySeries;
+    const requestY = visiblePoints.map((item) => item.requests);
+    const inputY = visiblePoints.map((item) => item.inputTokens);
+    const outputY = visiblePoints.map((item) => item.outputTokens);
+
+    return {
+      hasInput: inputY.some((value) => value > 0),
+      hasOutput: outputY.some((value) => value > 0),
+      hasRequests: requestY.some((value) => value > 0),
+    };
+  }, [dailySeries]);
 
   const modelDistributionLegend = useMemo(() => {
     const total = modelDistributionData.reduce(
@@ -476,44 +590,69 @@ export function MonitorPage() {
     const hasOutput = outputY.some((value) => value > 0);
     const hasRequests = requestY.some((value) => value > 0);
 
-    const tokenAxisMaxRaw = tokenTotals.reduce((acc, value) => Math.max(acc, value), 0);
-    const requestAxisMaxRaw = requestY.reduce((acc, value) => Math.max(acc, value), 0);
+    const showInput = hasInput && (dailyLegendSelected["输入 Token"] ?? true);
+    const showOutput = hasOutput && (dailyLegendSelected["输出 Token"] ?? true);
+    const showRequests = hasRequests && (dailyLegendSelected["请求数"] ?? true);
+
+    const tokenAxisAnchor =
+      showInput || showOutput
+        ? visiblePoints.map((item) => {
+            const candidates: number[] = [];
+            if (showInput) candidates.push(item.inputTokens);
+            if (showOutput) candidates.push(item.outputTokens);
+            return candidates.length > 0 ? Math.max(...candidates) : 0;
+          })
+        : tokenTotals;
+
+    const requestAxisAnchor = showRequests ? requestY : requestY.map(() => 0);
+
+    const tokenAxisMaxRaw = tokenAxisAnchor.reduce((acc, value) => Math.max(acc, value), 0);
+    const requestAxisMaxRaw = requestAxisAnchor.reduce((acc, value) => Math.max(acc, value), 0);
     const tokenAxisMax = Math.max(1, Math.ceil(tokenAxisMaxRaw * 1.1));
     const requestAxisMax = Math.max(1, Math.ceil(requestAxisMaxRaw * 1.1));
 
-    const legendData: Array<string | { name: string; icon: "circle" }> = [];
-    if (hasInput) legendData.push({ name: "输入 Token", icon: "circle" });
-    if (hasOutput) legendData.push({ name: "输出 Token", icon: "circle" });
-    if (hasRequests) legendData.push("请求数");
-
     const series: Array<Record<string, unknown>> = [];
-    if (hasInput) {
-      series.push({
-        name: "输入 Token",
-        type: "bar",
-        stack: "tokens",
-        yAxisIndex: 0,
-        barMaxWidth,
-        itemStyle: { borderRadius: 0, color: "rgba(196,181,253,0.88)" },
-        emphasis: { focus: "series" },
-        data: inputY,
-      });
+    const inputSeries = showInput
+      ? {
+          name: "输入 Token",
+          type: "bar",
+          yAxisIndex: 0,
+          barMaxWidth,
+          itemStyle: { borderRadius: 0, color: "rgba(196,181,253,0.88)" },
+          emphasis: { focus: "series" },
+          data: inputY,
+        }
+      : null;
+
+    const outputSeries = showOutput
+      ? {
+          name: "输出 Token",
+          type: "bar",
+          yAxisIndex: 0,
+          barMaxWidth,
+          itemStyle: { borderRadius: [4, 4, 0, 0], color: "rgba(110,231,183,0.88)" },
+          emphasis: { focus: "series" },
+          data: outputY,
+        }
+      : null;
+
+    if (inputSeries && outputSeries) {
+      const inputMax = inputY.reduce((acc, value) => Math.max(acc, value), 0);
+      const outputMax = outputY.reduce((acc, value) => Math.max(acc, value), 0);
+      const inputSum = inputY.reduce((acc, value) => acc + value, 0);
+      const outputSum = outputY.reduce((acc, value) => acc + value, 0);
+      const inputSmaller = inputMax === outputMax ? inputSum <= outputSum : inputMax <= outputMax;
+      const front = inputSmaller ? inputSeries : outputSeries;
+      const back = inputSmaller ? outputSeries : inputSeries;
+      series.push({ ...back, z: 2 });
+      series.push({ ...front, z: 3, barGap: "-100%" });
+    } else if (inputSeries) {
+      series.push({ ...inputSeries, z: 2 });
+    } else if (outputSeries) {
+      series.push({ ...outputSeries, z: 2 });
     }
 
-    if (hasOutput) {
-      series.push({
-        name: "输出 Token",
-        type: "bar",
-        stack: "tokens",
-        yAxisIndex: 0,
-        barMaxWidth,
-        itemStyle: { borderRadius: [4, 4, 0, 0], color: "rgba(110,231,183,0.88)" },
-        emphasis: { focus: "series" },
-        data: outputY,
-      });
-    }
-
-    if (hasRequests) {
+    if (showRequests) {
       series.push({
         name: "请求数",
         type: "line",
@@ -521,9 +660,10 @@ export function MonitorPage() {
         smooth: true,
         symbol: "circle",
         symbolSize: 7,
-        lineStyle: { width: 3 },
+        lineStyle: { width: 3, color: "#3b82f6" },
         itemStyle: { color: "#3b82f6" },
         data: requestY,
+        z: 10,
       });
     }
 
@@ -531,7 +671,7 @@ export function MonitorPage() {
       name: "__token_axis__",
       type: "line",
       yAxisIndex: 0,
-      data: tokenTotals,
+      data: tokenAxisAnchor,
       showSymbol: false,
       silent: true,
       tooltip: { show: false },
@@ -544,7 +684,7 @@ export function MonitorPage() {
       name: "__request_axis__",
       type: "line",
       yAxisIndex: 1,
-      data: requestY,
+      data: requestAxisAnchor,
       showSymbol: false,
       silent: true,
       tooltip: { show: false },
@@ -564,12 +704,9 @@ export function MonitorPage() {
         textStyle: { color: "#fff" },
       },
       legend: {
-        bottom: 0,
-        itemWidth: 10,
-        itemHeight: 10,
-        data: legendData,
+        show: false,
       },
-      grid: { left: 74, right: 74, top: 18, bottom: 42 },
+      grid: { left: 74, right: 74, top: 18, bottom: 64 },
       xAxis: {
         type: "category",
         data: x,
@@ -623,13 +760,16 @@ export function MonitorPage() {
       animationDuration: 520,
       animationDurationUpdate: 360,
     };
-  }, [dailySeries, isDark, timeRange]);
+  }, [dailyLegendSelected, dailySeries, isDark, timeRange]);
 
   const hourlyModelOption = useMemo(() => {
     const x = hourlySeries.modelPoints.map((point) => point.label);
     const barMaxWidth = hourWindow <= 6 ? 44 : hourWindow <= 12 ? 32 : 24;
 
-    const series = hourlySeries.modelKeys.map((key) => {
+    const selectedKeys = hourlySeries.modelKeys.filter((key) => hourlyModelSelected[key] ?? true);
+    const showTotalLine = hourlyModelSelected["总请求"] ?? true;
+
+    const series = selectedKeys.map((key) => {
       const data = hourlySeries.modelPoints.map((point) => {
         const item = point.stacks.find((stack) => stack.key === key);
         return item?.value ?? 0;
@@ -640,10 +780,7 @@ export function MonitorPage() {
         stack: "requests",
         emphasis: { focus: "series" },
         barMaxWidth,
-        itemStyle:
-          key === "其他"
-            ? { borderRadius: 0, color: "rgba(148,163,184,0.58)" }
-            : { borderRadius: 0 },
+        itemStyle: { borderRadius: 0, color: hourlyModelPalette.colorByKey[key] ?? "rgba(148,163,184,0.58)" },
         data,
       };
     });
@@ -653,6 +790,18 @@ export function MonitorPage() {
     );
 
     const totalLineColor = "#3b82f6";
+    const selectedSums = hourlySeries.modelPoints.map((point) =>
+      point.stacks.reduce((acc, item) => {
+        if (!selectedKeys.includes(item.key)) return acc;
+        return acc + (Number.isFinite(item.value) ? item.value : 0);
+      }, 0),
+    );
+
+    const yAxisMaxRaw = Math.max(
+      selectedSums.reduce((acc, value) => Math.max(acc, value), 0),
+      showTotalLine ? totals.reduce((acc, value) => Math.max(acc, value), 0) : 0,
+    );
+    const yAxisMax = Math.max(1, Math.ceil(yAxisMaxRaw * 1.1));
 
     return {
       backgroundColor: "transparent",
@@ -665,13 +814,7 @@ export function MonitorPage() {
         textStyle: { color: "#fff" },
       },
       legend: {
-        type: "scroll",
-        bottom: 0,
-        left: "center",
-        width: "80%",
-        itemWidth: 10,
-        itemHeight: 10,
-        data: hourlySeries.modelKeys,
+        show: false,
       },
       grid: { left: 74, right: 74, top: 18, bottom: 64 },
       xAxis: {
@@ -685,6 +828,8 @@ export function MonitorPage() {
       },
       yAxis: {
         type: "value",
+        min: 0,
+        max: yAxisMax,
         splitNumber: 4,
         axisLabel: {
           formatter: (value: number) => formatNumber(value),
@@ -698,36 +843,48 @@ export function MonitorPage() {
       },
       series: [
         ...series,
+        ...(showTotalLine
+          ? [
+              {
+                name: "总请求",
+                type: "line",
+                smooth: true,
+                symbol: "circle",
+                symbolSize: 6,
+                lineStyle: { width: 3, color: totalLineColor },
+                itemStyle: { color: totalLineColor },
+                emphasis: { focus: "series" },
+                data: totals,
+                z: 10,
+              },
+            ]
+          : []),
         {
-          name: "总请求",
+          name: "__axis__",
           type: "line",
-          smooth: true,
-          symbol: "circle",
-          symbolSize: 6,
-          lineStyle: { width: 3, color: totalLineColor },
-          itemStyle: { color: totalLineColor },
-          emphasis: { focus: "series" },
-          data: totals,
-          z: 10,
+          data: showTotalLine ? totals : selectedSums,
+          showSymbol: false,
+          silent: true,
+          tooltip: { show: false },
+          emphasis: { disabled: true },
+          lineStyle: { opacity: 0 },
+          itemStyle: { opacity: 0 },
         },
       ],
       animationEasing: "cubicOut" as const,
       animationDuration: 520,
       animationDurationUpdate: 360,
     };
-  }, [hourWindow, hourlySeries.modelKeys, hourlySeries.modelPoints, isDark]);
+  }, [hourWindow, hourlyModelPalette.colorByKey, hourlyModelSelected, hourlySeries.modelKeys, hourlySeries.modelPoints, isDark]);
 
   const hourlyTokenOption = useMemo(() => {
     const x = hourlySeries.tokenPoints.map((point) => point.label);
     const barMaxWidth = hourWindow <= 6 ? 44 : hourWindow <= 12 ? 32 : 24;
-    const keyColor: Record<string, string> = {
-      输入: "rgba(110,231,183,0.88)",
-      输出: "rgba(196,181,253,0.88)",
-      推理: "rgba(252,211,77,0.88)",
-      缓存: "rgba(94,234,212,0.88)",
-    };
 
-    const series = hourlySeries.tokenKeys.map((key) => {
+    const selectedKeys = hourlySeries.tokenKeys.filter((key) => hourlyTokenSelected[key] ?? true);
+    const showTotalLine = hourlyTokenSelected["总 Token"] ?? true;
+
+    const series = selectedKeys.map((key) => {
       const data = hourlySeries.tokenPoints.map((point) => {
         const item = point.stacks.find((stack) => stack.key === key);
         return item?.value ?? 0;
@@ -738,7 +895,7 @@ export function MonitorPage() {
         stack: "tokens",
         emphasis: { focus: "series" },
         barMaxWidth,
-        itemStyle: { color: keyColor[key] ?? "rgba(148,163,184,0.58)", borderRadius: 0 },
+        itemStyle: { color: hourlyTokenPalette.colorByKey[key] ?? "rgba(148,163,184,0.58)", borderRadius: 0 },
         data,
       };
     });
@@ -747,14 +904,26 @@ export function MonitorPage() {
       point.stacks.reduce((acc, item) => acc + (Number.isFinite(item.value) ? item.value : 0), 0),
     );
     const totalLineColor = "#3b82f6";
+    const selectedSums = hourlySeries.tokenPoints.map((point) =>
+      point.stacks.reduce((acc, item) => {
+        if (!selectedKeys.includes(item.key as (typeof hourlySeries.tokenKeys)[number])) return acc;
+        return acc + (Number.isFinite(item.value) ? item.value : 0);
+      }, 0),
+    );
+
+    const yAxisMaxRaw = Math.max(
+      selectedSums.reduce((acc, value) => Math.max(acc, value), 0),
+      showTotalLine ? totals.reduce((acc, value) => Math.max(acc, value), 0) : 0,
+    );
+    const yAxisMax = Math.max(1, Math.ceil(yAxisMaxRaw * 1.1));
 
     return {
       backgroundColor: "transparent",
       color: [
-        "rgba(110,231,183,0.88)",
-        "rgba(196,181,253,0.88)",
-        "rgba(252,211,77,0.88)",
-        "rgba(94,234,212,0.88)",
+        hourlyTokenPalette.colorByKey["输入"],
+        hourlyTokenPalette.colorByKey["输出"],
+        hourlyTokenPalette.colorByKey["推理"],
+        hourlyTokenPalette.colorByKey["缓存"],
       ],
       tooltip: {
         trigger: "axis",
@@ -764,13 +933,7 @@ export function MonitorPage() {
         textStyle: { color: "#fff" },
       },
       legend: {
-        type: "scroll",
-        bottom: 0,
-        left: "center",
-        width: "80%",
-        itemWidth: 10,
-        itemHeight: 10,
-        data: hourlySeries.tokenKeys.map((key) => ({ name: key, icon: "circle" as const })),
+        show: false,
       },
       grid: { left: 74, right: 74, top: 18, bottom: 64 },
       xAxis: {
@@ -784,6 +947,8 @@ export function MonitorPage() {
       },
       yAxis: {
         type: "value",
+        min: 0,
+        max: yAxisMax,
         splitNumber: 4,
         axisLabel: {
           formatter: (value: number) => formatNumber(value),
@@ -797,24 +962,39 @@ export function MonitorPage() {
       },
       series: [
         ...series,
+        ...(showTotalLine
+          ? [
+              {
+                name: "总 Token",
+                type: "line",
+                smooth: true,
+                symbol: "circle",
+                symbolSize: 6,
+                lineStyle: { width: 3, color: totalLineColor },
+                itemStyle: { color: totalLineColor },
+                emphasis: { focus: "series" },
+                data: totals,
+                z: 10,
+              },
+            ]
+          : []),
         {
-          name: "总 Token",
+          name: "__axis__",
           type: "line",
-          smooth: true,
-          symbol: "circle",
-          symbolSize: 6,
-          lineStyle: { width: 3, color: totalLineColor },
-          itemStyle: { color: totalLineColor },
-          emphasis: { focus: "series" },
-          data: totals,
-          z: 10,
+          data: showTotalLine ? totals : selectedSums,
+          showSymbol: false,
+          silent: true,
+          tooltip: { show: false },
+          emphasis: { disabled: true },
+          lineStyle: { opacity: 0 },
+          itemStyle: { opacity: 0 },
         },
       ],
       animationEasing: "cubicOut" as const,
       animationDuration: 520,
       animationDurationUpdate: 360,
     };
-  }, [hourWindow, hourlySeries.tokenKeys, hourlySeries.tokenPoints, isDark]);
+  }, [hourWindow, hourlySeries.tokenKeys, hourlySeries.tokenPoints, hourlyTokenPalette.colorByKey, hourlyTokenSelected, isDark]);
 
   const hourActions = (
     <div className="inline-flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
@@ -868,7 +1048,7 @@ export function MonitorPage() {
   }, [refreshData]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -977,14 +1157,18 @@ export function MonitorPage() {
       ) : (
         <>
           <Reveal>
-            <section className="grid gap-4 lg:grid-cols-[560px_1fr]">
+            <section className="grid gap-4 lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)]">
               <Card
                 title="模型用量分布"
                 description={`最近 ${timeRange} 天 · 按${modelMetric === "requests" ? "请求数" : "Token"} · Top10`}
                 actions={modelActions}
               >
-                <div className="grid h-72 grid-cols-[1fr_220px] gap-4">
-                  <EChart option={modelDistributionOption} loading={isLoading} className="h-72" />
+                <div className="grid h-72 grid-cols-[minmax(0,1fr)_220px] gap-4">
+                  <EChart
+                    option={modelDistributionOption}
+                    loading={isLoading}
+                    className="h-72 min-w-0"
+                  />
                   <div className="flex h-72 flex-col justify-center gap-2 overflow-y-auto pr-1">
                     {modelDistributionLegend.map((item) => (
                       <div
@@ -1015,7 +1199,52 @@ export function MonitorPage() {
                 title="每日用量趋势"
                 description={`最近 ${timeRange} 天 · 请求数与 Token 用量趋势`}
               >
-                <EChart option={dailyTrendOption} loading={isLoading} className="h-72" />
+                <div className="relative h-72 min-w-0">
+                  <EChart
+                    option={dailyTrendOption}
+                    loading={isLoading}
+                    className="h-full min-w-0"
+                    notMerge
+                  />
+                  <ChartLegend
+                    className="absolute inset-x-0 bottom-0 pb-2"
+                    items={[
+                      ...(dailyLegendAvailability.hasInput
+                        ? [
+                            {
+                              key: "输入 Token",
+                              label: "输入 Token",
+                              colorClass: "bg-violet-400",
+                              enabled: dailyLegendSelected["输入 Token"] ?? true,
+                              onToggle: toggleDailyLegend,
+                            },
+                          ]
+                        : []),
+                      ...(dailyLegendAvailability.hasOutput
+                        ? [
+                            {
+                              key: "输出 Token",
+                              label: "输出 Token",
+                              colorClass: "bg-emerald-400",
+                              enabled: dailyLegendSelected["输出 Token"] ?? true,
+                              onToggle: toggleDailyLegend,
+                            },
+                          ]
+                        : []),
+                      ...(dailyLegendAvailability.hasRequests
+                        ? [
+                            {
+                              key: "请求数",
+                              label: "请求数",
+                              colorClass: "bg-blue-500",
+                              enabled: dailyLegendSelected["请求数"] ?? true,
+                              onToggle: toggleDailyLegend,
+                            },
+                          ]
+                        : []),
+                    ]}
+                  />
+                </div>
               </Card>
             </section>
           </Reveal>
@@ -1026,7 +1255,33 @@ export function MonitorPage() {
               description="按小时聚合（Top5 模型 + 其他）"
               actions={hourActions}
             >
-              <EChart option={hourlyModelOption} loading={isLoading} className="h-72" />
+              <div className="relative h-72">
+                <EChart
+                  option={hourlyModelOption}
+                  loading={isLoading}
+                  className="h-full"
+                  notMerge
+                />
+                <ChartLegend
+                  className="absolute inset-x-0 bottom-0 pb-2"
+                  items={[
+                    ...hourlySeries.modelKeys.map((key) => ({
+                      key,
+                      label: key,
+                      colorClass: hourlyModelPalette.classByKey[key] ?? "bg-slate-400",
+                      enabled: hourlyModelSelected[key] ?? true,
+                      onToggle: toggleHourlyModelLegend,
+                    })),
+                    {
+                      key: "总请求",
+                      label: "总请求",
+                      colorClass: hourlyModelPalette.classByKey["总请求"] ?? "bg-blue-500",
+                      enabled: hourlyModelSelected["总请求"] ?? true,
+                      onToggle: toggleHourlyModelLegend,
+                    },
+                  ]}
+                />
+              </div>
             </Card>
           </Reveal>
 
@@ -1036,7 +1291,33 @@ export function MonitorPage() {
               description="按小时聚合（输入 / 输出 / 推理 / 缓存）"
               actions={hourActions}
             >
-              <EChart option={hourlyTokenOption} loading={isLoading} className="h-72" />
+              <div className="relative h-72">
+                <EChart
+                  option={hourlyTokenOption}
+                  loading={isLoading}
+                  className="h-full"
+                  notMerge
+                />
+                <ChartLegend
+                  className="absolute inset-x-0 bottom-0 pb-2"
+                  items={[
+                    ...hourlySeries.tokenKeys.map((key) => ({
+                      key,
+                      label: key,
+                      colorClass: hourlyTokenPalette.classByKey[key] ?? "bg-slate-400",
+                      enabled: hourlyTokenSelected[key] ?? true,
+                      onToggle: toggleHourlyTokenLegend,
+                    })),
+                    {
+                      key: "总 Token",
+                      label: "总 Token",
+                      colorClass: hourlyTokenPalette.classByKey["总 Token"] ?? "bg-blue-500",
+                      enabled: hourlyTokenSelected["总 Token"] ?? true,
+                      onToggle: toggleHourlyTokenLegend,
+                    },
+                  ]}
+                />
+              </div>
             </Card>
           </Reveal>
         </>
