@@ -14,6 +14,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  ScrollText,
   Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/modules/auth/AuthProvider";
@@ -31,9 +32,15 @@ interface ShellContextState {
 
 const ShellContext = createContext<ShellContextState | null>(null);
 
-const NAV_ITEMS = [{ to: "/monitor", label: "监控中心", icon: Activity }] as const;
+const NAV_ITEMS = [
+  { to: "/monitor", label: "监控中心", icon: Activity },
+  { to: "/monitor/request-logs", label: "请求日志", icon: ScrollText },
+] as const;
 
 const getPageTitle = (pathname: string): string => {
+  if (pathname.startsWith("/monitor/request-logs")) {
+    return "请求日志";
+  }
   if (pathname.startsWith("/monitor")) {
     return "监控中心";
   }
@@ -46,6 +53,13 @@ function ShellFrame({ children }: PropsWithChildren) {
 
 function ShellSidebar({ collapsed }: { collapsed: boolean }) {
   const location = useLocation();
+  const activeTo = useMemo(() => {
+    const pathname = location.pathname;
+    const sorted = [...NAV_ITEMS].sort((a, b) => b.to.length - a.to.length);
+    return (
+      sorted.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))?.to ?? null
+    );
+  }, [location.pathname]);
 
   return (
     <aside
@@ -70,8 +84,7 @@ function ShellSidebar({ collapsed }: { collapsed: boolean }) {
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const active =
-              location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+            const active = activeTo === item.to;
             return (
               <Link
                 key={item.to}

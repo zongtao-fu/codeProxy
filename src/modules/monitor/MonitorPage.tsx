@@ -223,13 +223,17 @@ const Card = ({
         {children}
         {loading ? (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/65 backdrop-blur-sm dark:bg-neutral-950/45">
-            <span
-              className="h-6 w-6 rounded-full border-2 border-slate-300/80 border-t-slate-900 motion-reduce:animate-none motion-safe:animate-spin dark:border-white/20 dark:border-t-white/85"
-              aria-hidden="true"
-            />
-            <span className="sr-only" role="status">
-              加载中…
-            </span>
+            <div
+              role="status"
+              aria-live="polite"
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-4 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-white/80"
+            >
+              <span
+                className="h-4 w-4 rounded-full border-2 border-slate-300/80 border-t-slate-900 motion-reduce:animate-none motion-safe:animate-spin dark:border-white/20 dark:border-t-white/85"
+                aria-hidden="true"
+              />
+              <span className="tabular-nums">加载中…</span>
+            </div>
           </div>
         ) : null}
       </div>
@@ -766,12 +770,12 @@ export function MonitorPage() {
       legend: {
         show: false,
       },
-      grid: { left: 74, right: 74, top: 18, bottom: 64 },
+      grid: { left: 74, right: 74, top: 18, bottom: 78 },
       xAxis: {
         type: "category",
         data: x,
         axisTick: { show: false },
-        axisLabel: { margin: 24, hideOverlap: true },
+        axisLabel: { margin: 34, hideOverlap: true },
         axisLine: {
           lineStyle: { color: isDark ? "rgba(255,255,255,0.16)" : "rgba(148, 163, 184, 0.55)" },
         },
@@ -882,12 +886,12 @@ export function MonitorPage() {
       legend: {
         show: false,
       },
-      grid: { left: 74, right: 74, top: 18, bottom: 64 },
+      grid: { left: 74, right: 74, top: 18, bottom: 78 },
       xAxis: {
         type: "category",
         data: x,
         axisTick: { show: false },
-        axisLabel: { margin: 24, hideOverlap: true },
+        axisLabel: { margin: 34, hideOverlap: true },
         axisLine: {
           lineStyle: { color: isDark ? "rgba(255,255,255,0.16)" : "rgba(148, 163, 184, 0.55)" },
         },
@@ -1013,12 +1017,12 @@ export function MonitorPage() {
       legend: {
         show: false,
       },
-      grid: { left: 74, right: 74, top: 18, bottom: 64 },
+      grid: { left: 74, right: 74, top: 18, bottom: 78 },
       xAxis: {
         type: "category",
         data: x,
         axisTick: { show: false },
-        axisLabel: { margin: 24, hideOverlap: true },
+        axisLabel: { margin: 34, hideOverlap: true },
         axisLine: {
           lineStyle: { color: isDark ? "rgba(255,255,255,0.16)" : "rgba(148, 163, 184, 0.55)" },
         },
@@ -1275,14 +1279,14 @@ export function MonitorPage() {
                 description={`最近 ${timeRange} 天 · 请求数与 Token 用量趋势`}
                 loading={isRefreshing}
               >
-                <div className="relative h-72 min-w-0 overflow-hidden">
+                <div className="flex h-72 min-w-0 flex-col overflow-hidden">
                   <EChart
                     option={dailyTrendOption}
-                    className="h-full min-w-0"
+                    className="min-h-0 flex-1 min-w-0"
                     replaceMerge="series"
                   />
                   <ChartLegend
-                    className="absolute inset-x-0 bottom-0 pb-2"
+                    className="shrink-0 pt-4"
                     items={[
                       ...(dailyLegendAvailability.hasInput
                         ? [
@@ -1331,14 +1335,14 @@ export function MonitorPage() {
               actions={<HourWindowSelector value={modelHourWindow} onChange={setModelHourWindow} />}
               loading={isRefreshing}
             >
-              <div className="relative h-72 overflow-hidden">
+              <div className="flex h-72 flex-col overflow-hidden">
                 <EChart
                   option={hourlyModelOption}
-                  className="h-full"
+                  className="min-h-0 flex-1"
                   replaceMerge="series"
                 />
                 <ChartLegend
-                  className="absolute inset-x-0 bottom-0 pb-2"
+                  className="shrink-0 pt-4"
                   items={[
                     ...hourlySeries.modelKeys.map((key) => ({
                       key,
@@ -1367,14 +1371,14 @@ export function MonitorPage() {
               actions={<HourWindowSelector value={tokenHourWindow} onChange={setTokenHourWindow} />}
               loading={isRefreshing}
             >
-              <div className="relative h-72 overflow-hidden">
+              <div className="flex h-72 flex-col overflow-hidden">
                 <EChart
                   option={hourlyTokenOption}
-                  className="h-full"
+                  className="min-h-0 flex-1"
                   replaceMerge="series"
                 />
                 <ChartLegend
-                  className="absolute inset-x-0 bottom-0 pb-2"
+                  className="shrink-0 pt-4"
                   items={[
                     ...hourlySeries.tokenKeys.map((key) => ({
                       key,
