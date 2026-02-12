@@ -34,8 +34,10 @@ import { ChartLegend } from "@/modules/ui/charts/ChartLegend";
 import { useTheme } from "@/modules/ui/ThemeProvider";
 
 type TimeRange = 1 | 7 | 14 | 30;
+type HourWindow = 6 | 12 | 24;
 
 const TIME_RANGES: readonly TimeRange[] = [1, 7, 14, 30] as const;
+const HOUR_WINDOWS: readonly HourWindow[] = [6, 12, 24] as const;
 
 const createEmptyUsage = (): UsageData => ({ apis: {} });
 
@@ -160,19 +162,54 @@ const TimeRangeSelector = ({
   );
 };
 
+const HourWindowSelector = ({
+  value,
+  onChange,
+}: {
+  value: HourWindow;
+  onChange: (next: HourWindow) => void;
+}) => {
+  return (
+    <div className="inline-flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+      {HOUR_WINDOWS.map((range) => {
+        const active = value === range;
+        return (
+          <button
+            key={range}
+            type="button"
+            onClick={() => onChange(range)}
+            className={
+              active
+                ? "rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950"
+                : "rounded-xl px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+            }
+          >
+            最近{range}小时
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 const Card = ({
   title,
   description,
   actions,
+  loading = false,
   children,
 }: {
   title: string;
   description?: string;
   actions?: ReactNode;
+  loading?: boolean;
   children: ReactNode;
 }) => {
   return (
-    <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
+    <section
+      className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70"
+      aria-busy={loading}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h3>
@@ -182,7 +219,20 @@ const Card = ({
         </div>
         {actions ? <div className="shrink-0">{actions}</div> : null}
       </div>
-      <div className="mt-4">{children}</div>
+      <div className="relative mt-4 min-w-0">
+        {children}
+        {loading ? (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/65 backdrop-blur-sm dark:bg-neutral-950/45">
+            <span
+              className="h-6 w-6 rounded-full border-2 border-slate-300/80 border-t-slate-900 motion-reduce:animate-none motion-safe:animate-spin dark:border-white/20 dark:border-t-white/85"
+              aria-hidden="true"
+            />
+            <span className="sr-only" role="status">
+              加载中…
+            </span>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 };
@@ -215,10 +265,11 @@ export function MonitorPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>(7);
   const [apiFilterInput, setApiFilterInput] = useState("");
   const [apiFilter, setApiFilter] = useState("");
-  const [hourWindow, setHourWindow] = useState<6 | 12 | 24>(24);
+  const [modelHourWindow, setModelHourWindow] = useState<HourWindow>(24);
+  const [tokenHourWindow, setTokenHourWindow] = useState<HourWindow>(24);
   const [modelMetric, setModelMetric] = useState<"requests" | "tokens">("requests");
   const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(true);
   const [isPending, startTransition] = useTransition();
 
   const refreshData = useCallback(async () => {
@@ -264,6 +315,10 @@ export function MonitorPage() {
 
   const hasData = metrics.requestCount > 0;
   const isLoading = isRefreshing || isPending;
+
+  useEffect(() => {
+    void refreshData();
+  }, [refreshData]);
 
   const modelTotals = useMemo(() => {
     const byModel = new Map<string, { requests: number; tokens: number }>();
@@ -346,6 +401,7 @@ export function MonitorPage() {
   }, [records, timeRange]);
 
   const hourlySeries = useMemo(() => {
+    const hourWindow = 24;
     const now = Date.now();
     const endHour = Math.floor(now / 3_600_000);
     const startHour = endHour - hourWindow + 1;
@@ -412,7 +468,7 @@ export function MonitorPage() {
     });
 
     return { modelKeys, modelPoints, tokenKeys: [...tokenKeys], tokenPoints };
-  }, [hourWindow, records, topModelKeys]);
+  }, [records, topModelKeys]);
 
   const hourlyModelPalette = useMemo(() => {
     const palette = ["bg-emerald-400", "bg-violet-400", "bg-amber-400", "bg-pink-300", "bg-teal-400"];
@@ -699,9 +755,13 @@ export function MonitorPage() {
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
+        renderMode: "html",
+        appendToBody: true,
+        confine: true,
         borderWidth: 0,
         backgroundColor: "rgba(15, 23, 42, 0.92)",
         textStyle: { color: "#fff" },
+        extraCssText: "z-index: 10000;",
       },
       legend: {
         show: false,
@@ -711,6 +771,7 @@ export function MonitorPage() {
         type: "category",
         data: x,
         axisTick: { show: false },
+        axisLabel: { margin: 24, hideOverlap: true },
         axisLine: {
           lineStyle: { color: isDark ? "rgba(255,255,255,0.16)" : "rgba(148, 163, 184, 0.55)" },
         },
@@ -763,14 +824,15 @@ export function MonitorPage() {
   }, [dailyLegendSelected, dailySeries, isDark, timeRange]);
 
   const hourlyModelOption = useMemo(() => {
-    const x = hourlySeries.modelPoints.map((point) => point.label);
-    const barMaxWidth = hourWindow <= 6 ? 44 : hourWindow <= 12 ? 32 : 24;
+    const points = hourlySeries.modelPoints.slice(-modelHourWindow);
+    const x = points.map((point) => point.label);
+    const barMaxWidth = modelHourWindow <= 6 ? 44 : modelHourWindow <= 12 ? 32 : 24;
 
     const selectedKeys = hourlySeries.modelKeys.filter((key) => hourlyModelSelected[key] ?? true);
     const showTotalLine = hourlyModelSelected["总请求"] ?? true;
 
     const series = selectedKeys.map((key) => {
-      const data = hourlySeries.modelPoints.map((point) => {
+      const data = points.map((point) => {
         const item = point.stacks.find((stack) => stack.key === key);
         return item?.value ?? 0;
       });
@@ -785,12 +847,12 @@ export function MonitorPage() {
       };
     });
 
-    const totals = hourlySeries.modelPoints.map((point) =>
+    const totals = points.map((point) =>
       point.stacks.reduce((acc, item) => acc + (Number.isFinite(item.value) ? item.value : 0), 0),
     );
 
     const totalLineColor = "#3b82f6";
-    const selectedSums = hourlySeries.modelPoints.map((point) =>
+    const selectedSums = points.map((point) =>
       point.stacks.reduce((acc, item) => {
         if (!selectedKeys.includes(item.key)) return acc;
         return acc + (Number.isFinite(item.value) ? item.value : 0);
@@ -809,9 +871,13 @@ export function MonitorPage() {
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
+        renderMode: "html",
+        appendToBody: true,
+        confine: true,
         borderWidth: 0,
         backgroundColor: "rgba(15, 23, 42, 0.92)",
         textStyle: { color: "#fff" },
+        extraCssText: "z-index: 10000;",
       },
       legend: {
         show: false,
@@ -821,7 +887,7 @@ export function MonitorPage() {
         type: "category",
         data: x,
         axisTick: { show: false },
-        axisLabel: { margin: 12, hideOverlap: true },
+        axisLabel: { margin: 24, hideOverlap: true },
         axisLine: {
           lineStyle: { color: isDark ? "rgba(255,255,255,0.16)" : "rgba(148, 163, 184, 0.55)" },
         },
@@ -875,17 +941,25 @@ export function MonitorPage() {
       animationDuration: 520,
       animationDurationUpdate: 360,
     };
-  }, [hourWindow, hourlyModelPalette.colorByKey, hourlyModelSelected, hourlySeries.modelKeys, hourlySeries.modelPoints, isDark]);
+  }, [
+    hourlyModelPalette.colorByKey,
+    hourlyModelSelected,
+    hourlySeries.modelKeys,
+    hourlySeries.modelPoints,
+    isDark,
+    modelHourWindow,
+  ]);
 
   const hourlyTokenOption = useMemo(() => {
-    const x = hourlySeries.tokenPoints.map((point) => point.label);
-    const barMaxWidth = hourWindow <= 6 ? 44 : hourWindow <= 12 ? 32 : 24;
+    const points = hourlySeries.tokenPoints.slice(-tokenHourWindow);
+    const x = points.map((point) => point.label);
+    const barMaxWidth = tokenHourWindow <= 6 ? 44 : tokenHourWindow <= 12 ? 32 : 24;
 
     const selectedKeys = hourlySeries.tokenKeys.filter((key) => hourlyTokenSelected[key] ?? true);
     const showTotalLine = hourlyTokenSelected["总 Token"] ?? true;
 
     const series = selectedKeys.map((key) => {
-      const data = hourlySeries.tokenPoints.map((point) => {
+      const data = points.map((point) => {
         const item = point.stacks.find((stack) => stack.key === key);
         return item?.value ?? 0;
       });
@@ -900,11 +974,11 @@ export function MonitorPage() {
       };
     });
 
-    const totals = hourlySeries.tokenPoints.map((point) =>
+    const totals = points.map((point) =>
       point.stacks.reduce((acc, item) => acc + (Number.isFinite(item.value) ? item.value : 0), 0),
     );
     const totalLineColor = "#3b82f6";
-    const selectedSums = hourlySeries.tokenPoints.map((point) =>
+    const selectedSums = points.map((point) =>
       point.stacks.reduce((acc, item) => {
         if (!selectedKeys.includes(item.key as (typeof hourlySeries.tokenKeys)[number])) return acc;
         return acc + (Number.isFinite(item.value) ? item.value : 0);
@@ -928,9 +1002,13 @@ export function MonitorPage() {
       tooltip: {
         trigger: "axis",
         axisPointer: { type: "shadow" },
+        renderMode: "html",
+        appendToBody: true,
+        confine: true,
         borderWidth: 0,
         backgroundColor: "rgba(15, 23, 42, 0.92)",
         textStyle: { color: "#fff" },
+        extraCssText: "z-index: 10000;",
       },
       legend: {
         show: false,
@@ -940,7 +1018,7 @@ export function MonitorPage() {
         type: "category",
         data: x,
         axisTick: { show: false },
-        axisLabel: { margin: 12, hideOverlap: true },
+        axisLabel: { margin: 24, hideOverlap: true },
         axisLine: {
           lineStyle: { color: isDark ? "rgba(255,255,255,0.16)" : "rgba(148, 163, 184, 0.55)" },
         },
@@ -994,29 +1072,14 @@ export function MonitorPage() {
       animationDuration: 520,
       animationDurationUpdate: 360,
     };
-  }, [hourWindow, hourlySeries.tokenKeys, hourlySeries.tokenPoints, hourlyTokenPalette.colorByKey, hourlyTokenSelected, isDark]);
-
-  const hourActions = (
-    <div className="inline-flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-      {[6, 12, 24].map((range) => {
-        const active = hourWindow === range;
-        return (
-          <button
-            key={range}
-            type="button"
-            onClick={() => setHourWindow(range as 6 | 12 | 24)}
-            className={
-              active
-                ? "rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950"
-                : "rounded-xl px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-            }
-          >
-            {range}h
-          </button>
-        );
-      })}
-    </div>
-  );
+  }, [
+    hourlySeries.tokenKeys,
+    hourlySeries.tokenPoints,
+    hourlyTokenPalette.colorByKey,
+    hourlyTokenSelected,
+    isDark,
+    tokenHourWindow,
+  ]);
 
   const modelActions = (
     <div className="inline-flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
@@ -1042,10 +1105,6 @@ export function MonitorPage() {
       })}
     </div>
   );
-
-  useEffect(() => {
-    void refreshData();
-  }, [refreshData]);
 
   return (
     <div className="space-y-4">
@@ -1148,10 +1207,26 @@ export function MonitorPage() {
         </section>
       </Reveal>
 
-      {!hasData ? (
+      {!hasData && !isLoading ? (
         <Reveal>
-          <section className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center text-sm text-slate-600 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-white/70">
-            暂无监控数据，请点击“刷新”拉取后端 usage。
+          <section className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+            <div className="mx-auto flex max-w-md flex-col items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900/5 text-slate-700 dark:bg-white/10 dark:text-white/70">
+                <ChartSpline size={20} />
+              </div>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">暂无监控数据</p>
+              <p className="text-sm text-slate-600 dark:text-white/65">
+                可以点击上方“刷新”重新拉取数据。
+              </p>
+              <button
+                type="button"
+                onClick={() => void refreshData()}
+                className="inline-flex min-w-[96px] items-center justify-center gap-1.5 rounded-2xl bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-slate-200"
+              >
+                <RefreshCw size={14} />
+                刷新
+              </button>
+            </div>
           </section>
         </Reveal>
       ) : (
@@ -1162,11 +1237,11 @@ export function MonitorPage() {
                 title="模型用量分布"
                 description={`最近 ${timeRange} 天 · 按${modelMetric === "requests" ? "请求数" : "Token"} · Top10`}
                 actions={modelActions}
+                loading={isRefreshing}
               >
                 <div className="grid h-72 grid-cols-[minmax(0,1fr)_220px] gap-4">
                   <EChart
                     option={modelDistributionOption}
-                    loading={isLoading}
                     className="h-72 min-w-0"
                   />
                   <div className="flex h-72 flex-col justify-center gap-2 overflow-y-auto pr-1">
@@ -1198,13 +1273,13 @@ export function MonitorPage() {
               <Card
                 title="每日用量趋势"
                 description={`最近 ${timeRange} 天 · 请求数与 Token 用量趋势`}
+                loading={isRefreshing}
               >
-                <div className="relative h-72 min-w-0">
+                <div className="relative h-72 min-w-0 overflow-hidden">
                   <EChart
                     option={dailyTrendOption}
-                    loading={isLoading}
                     className="h-full min-w-0"
-                    notMerge
+                    replaceMerge="series"
                   />
                   <ChartLegend
                     className="absolute inset-x-0 bottom-0 pb-2"
@@ -1253,14 +1328,14 @@ export function MonitorPage() {
             <Card
               title="每小时模型请求分布"
               description="按小时聚合（Top5 模型 + 其他）"
-              actions={hourActions}
+              actions={<HourWindowSelector value={modelHourWindow} onChange={setModelHourWindow} />}
+              loading={isRefreshing}
             >
-              <div className="relative h-72">
+              <div className="relative h-72 overflow-hidden">
                 <EChart
                   option={hourlyModelOption}
-                  loading={isLoading}
                   className="h-full"
-                  notMerge
+                  replaceMerge="series"
                 />
                 <ChartLegend
                   className="absolute inset-x-0 bottom-0 pb-2"
@@ -1289,14 +1364,14 @@ export function MonitorPage() {
             <Card
               title="每小时 Token 用量"
               description="按小时聚合（输入 / 输出 / 推理 / 缓存）"
-              actions={hourActions}
+              actions={<HourWindowSelector value={tokenHourWindow} onChange={setTokenHourWindow} />}
+              loading={isRefreshing}
             >
-              <div className="relative h-72">
+              <div className="relative h-72 overflow-hidden">
                 <EChart
                   option={hourlyTokenOption}
-                  loading={isLoading}
                   className="h-full"
-                  notMerge
+                  replaceMerge="series"
                 />
                 <ChartLegend
                   className="absolute inset-x-0 bottom-0 pb-2"

@@ -1,6 +1,11 @@
 <INSTRUCTIONS>
 你必须严格遵守以下前端样式规范：
 
+0. Git 操作安全规范（必须遵守）
+   - 严禁执行任何会访问或修改远程仓库的 Git 操作（包括但不限于 `git fetch/pull/push`、配置/变更 remote 等），除非用户明确同意并指定目标与期望结果。
+   - 严禁执行任何可能覆盖/丢弃本地未提交改动的“回滚/重置/清理”操作（包括但不限于 `git checkout -- <path>`、`git restore`、`git reset`、`git clean`、`git rebase`、`git merge --abort`、`git stash` 等），除非用户明确同意。
+   - 如确需执行上述 Git 操作，必须先用中文说明：将要执行的命令、影响的文件范围、是否会丢失未提交内容、以及替代方案；得到用户确认后方可执行。
+
 1. 禁止任何“原生 CSS”写法
    - 不允许新增/修改任何自定义 CSS 选择器（如 `.xxx {}`、`:root {}`、`@media`、`@keyframes`、`::view-transition-*` 等）。
    - 不允许使用 CSS 变量方案来实现主题（如 `var(--xxx)`、`.dark { --xxx: ... }`）。
