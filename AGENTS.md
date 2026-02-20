@@ -1,106 +1,72 @@
-<INSTRUCTIONS>
-你正在为 `codeProxy` 仓库工作。本文件是 **Codex 的项目入口规范（渐进式）**：
+<!-- AI-KIT:START -->
+# AGENTS.md（入口索引）
 
-- 本文件只包含“必须遵守的强制规则 + 快速索引”
-- 详细规范按需读取 `.agent/guides/*`（单一来源），不要一次性加载全部
-- `.claude/guides/*` 为兼容目录（Claude Code 习惯路径），内容仅做跳转指引
+本文件是 **code-proxy-admin** 仓库的 AI 规范入口索引（根目录必须保留）。  
+目标：让 Agent **按需读取**、低噪声、可追溯地开发，而不是把所有规则堆在一个文件里。
 
-所有沟通与输出 **只允许使用中文**（包括解释、注释、文档、UI 文案与报错文案）。
+## 0. 必读与优先级（冲突时从高到低）
 
-# Code Proxy 前端管理后台｜开发规范（Codex 入口）
+1. `shrimp-rules.md`（项目硬性约束，最高优先级）
+2. `rules/base.md`（通用基线：角色定位、语言、行为优先级）
+3. 任务相关专项规则（见下方索引）
+4. `docs/evolution.md`（演进记录：仅在需要追溯决策/变更原因时阅读）
 
-最后更新：2026-02-13
+## 1. 渐进式按需读取规则（必须遵守）
 
-## 0. 项目概述（你需要知道的事实）
+- 每次任务先判断类型，再 **按需读取** 对应规则文件；禁止一次性通读全部规则（避免噪声与误用）。
+- 若不确定适用范围：先读 `rules/base.md`，再扩展到专项规则。
+- 交付前必须执行 `rules/workflow.md` 的“交付自检清单”（优雅/复用/冗余/类型/编译/可运行）。
+- 若属于复杂改造/大范围重构：按 `rules/workflow.md` 的“会话文档落盘（分级）”要求，在 `.sisyphus/sessions/<session>/plan/` 记录计划/变更/验证（目录约定可按项目调整）。
 
-- 这是 Code Proxy 的管理控制台前端（React + Vite + Bun + Tailwind v4）
-- 管理 API 前缀固定为：`/v0/management`（见 `src/lib/constants.ts`）
-- 路由入口：`src/app/AppRouter.tsx`，鉴权守卫：`src/app/guards/ProtectedRoute.tsx`
-- 主题切换：`src/modules/ui/ThemeProvider.tsx`（通过 `html` 的 `dark` class）
-- HTTP 客户端：`src/lib/http/client.ts`，接口封装：`src/lib/http/apis.ts`
+- **项目路径/目录结构变更联动（强制）**：任何新增/移动/重命名目录或文件、调整导出入口、调整别名（如 `tsconfig.json#paths`）等“路径变更”，必须同步更新相关规范文件：至少更新 `AGENTS.md`（索引/任务映射/关键路径），并按需更新 `rules/project-structure.md`、`README.md` 与 `docs/evolution.md`（涉及结构性变更时）。
+- 规则冲突时选择 **更严格** / **更高优先级** 的限制。
 
-## 1. 常用命令（唯一可信来源：package.json scripts）
+## 2. 任务类型 → 必读规则（必须遵守）
 
-```bash
-bun install
-bun run dev        # 本地开发（Vite）
-bun run lint       # 代码检查（oxlint）
-bun run format     # 格式化（oxfmt）
-bun run build      # tsc --noEmit + vite build
-bun run check      # lint + build（建议提交前）
-```
+- 页面/组件/布局/样式：`shrimp-rules.md`、`rules/base.md`、`rules/frontend.md`、`rules/quality.md`、`rules/workflow.md`、`rules/tooling.md`
+- 目录结构/模块重构：上述规则 + `rules/project-structure.md`、`rules/naming.md`
+- 后端/API/数据：`shrimp-rules.md`、`rules/base.md`、`rules/quality.md`、`rules/workflow.md`、`rules/tooling.md`
+- 依赖升级/版本固定：`shrimp-rules.md`、`rules/base.md`、`rules/quality.md`、`rules/tooling.md`（必要时用 Context7 核对，不要猜）
+- 规则维护/新增规范：`rules/rules-authoring.md`（并同步更新本文件索引）
 
-## 2. 渐进式规范索引（按需读取）
+## 3. 规则索引（rules/）
 
-先读索引：`.agent/guides/README.md`
+- `rules/base.md`：角色定位、语言、优先级、输出基准
+- `rules/workflow.md`：执行流程、交付自检清单、风险操作确认
+- `rules/quality.md`：架构原则、代码质量、性能与测试
+- `rules/project-structure.md`：目录职责、依赖方向、最小模块化策略
+- `rules/tooling.md`：常用命令、构建校验、升级与验证约定
+- `rules/naming.md`：命名规范（文件/组件/hook/常量）
+- `rules/frontend.md`：前端样式与组件约定（无前端则忽略）
+- `rules/rules-authoring.md`：规范写作与演进方式
 
-常见场景 → 读取文件：
+## 4. 文档归档（docs/）
 
-| 场景                           | 读取文件                               |
-| ------------------------------ | -------------------------------------- |
-| 初始化开发环境 / 工具链        | `.agent/guides/engineering.md`         |
-| 开发新功能 / 准备 PR（如需要） | `.agent/guides/feature-pr-workflow.md` |
-| 开始开发一个任务               | `.agent/guides/workflow.md`            |
-| 设计/新增模块与分层            | `.agent/guides/architecture.md`        |
-| 新增/调整管理 API 封装         | `.agent/guides/http-api.md`            |
-| 实现复杂交互/列表/表单         | `.agent/guides/patterns.md`            |
-| 命名、文件组织、导出风格       | `.agent/guides/naming.md`              |
-| 错误处理、toast、401 失效      | `.agent/guides/error-handling.md`      |
-| Tailwind v4 / Dark / 动效      | `.agent/guides/tailwind.md`            |
-| UI 视觉一致性与组件复用        | `.agent/guides/ui-design.md`           |
-| 安全与敏感信息（管理密钥等）   | `.agent/guides/security.md`            |
-| 日志与可观测性（前端）         | `.agent/guides/logging.md`             |
-| 测试与验证策略                 | `.agent/guides/testing.md`             |
-| 提交规范与 Git 安全规则        | `.agent/guides/git.md`                 |
-| 规范需要变更/演进              | `.agent/guides/evolution.md`           |
+- `docs/evolution.md`：演进记录（时间线 + 关键决策）
+- （可选）`docs/optimization-plan.md`：可维护性优化计划（按需）
+- （可选）`docs/adr/*`：架构决策记录（按需）
 
-## 3. 强制规则速查（必须遵守）
+## 5. 常用命令（按需补全）
 
-### 3.1 Git 操作安全规范（必须遵守）
+- 安装依赖：`bun install`
+- 开发启动：`bun run dev`
+- 构建：`bun run build`
+- 测试：暂无（当前仓库未配置测试框架/用例）
+- Lint：`bun run lint`
+- 格式化：`bun run format`
+- 一键验证：`bun run check`
 
-- 严禁执行任何会访问或修改远程仓库的 Git 操作（包括但不限于 `git fetch/pull/push`、配置/变更 remote 等），除非用户明确同意并指定目标与期望结果。
-- 严禁执行任何可能覆盖/丢弃本地未提交改动的“回滚/重置/清理”操作（包括但不限于 `git checkout -- <path>`、`git restore`、`git reset`、`git clean`、`git rebase`、`git merge --abort`、`git stash` 等），除非用户明确同意。
-- 如确需执行上述 Git 操作，必须先用中文说明：将要执行的命令、影响的文件范围、是否会丢失未提交内容、以及替代方案；得到用户确认后方可执行。
+## 6. 关键路径速查（按需补全）
 
-### 3.2 禁止泄露敏感信息（必须遵守）
+- 应用入口：`src/main.tsx`
+- 主要模块目录：`src/`
+- 关键配置文件：`package.json`, `tsconfig.json`, `vite.config.ts`
 
-- **禁止** 在日志、toast、报错、提交信息、截图文本中包含 `MANAGEMENT_KEY` 或任何真实密钥/Token
-- **禁止** 在代码里硬编码密钥/私有地址；需要示例时使用占位符（如 `sk-***`、`http://localhost:8317`）
+## 7. 项目内 Skills（可选）
 
-### 3.3 API 分层（必须遵守）
+- 如果出现重复性工作流（如“生成会话文档”“批量重构”“生成规范”），建议在 `.agents/skills/` 下创建项目内技能，并在此处索引。
+<!-- AI-KIT:END -->
 
-- 页面/组件 **禁止** 直接散落地写 `fetch`/拼接 URL（统一走 `src/lib/http/client.ts` + `src/lib/http/apis.ts`）
-- 401 失效 **禁止** 各处自行处理：由 `ApiClient` 触发 `unauthorized` 事件，`AuthProvider` 统一响应
-
-## 4. 前端样式规范（必须遵守）
-
-0. Git 操作安全规范（必须遵守）
-   - 见上文“3.1 Git 操作安全规范”。样式相关改动同样禁止使用破坏性 Git 操作来“回滚解决”。
-
-1. 禁止任何“原生 CSS”写法
-   - 不允许新增/修改任何自定义 CSS 选择器（如 `.xxx {}`、`:root {}`、`@media`、`@keyframes`、`::view-transition-*` 等）。
-   - 不允许使用 CSS 变量方案来实现“主题切换”（如 `var(--xxx)`、`.dark { --xxx: ... }`）。如需新增设计令牌，仅允许通过 `@theme` 声明，并通过 Tailwind utility 消费。
-   - 不允许使用独立的 CSS Modules / SCSS / LESS。
-   - 不允许使用任何内联样式（如 JSX 的 `style={{ ... }}`）或注入 `<style>` 标签。
-
-2. 只允许使用 Tailwind CSS v4
-   - 所有样式必须通过 Tailwind v4 的 utility class 在 JSX/TSX 的 `className` 中完成。
-   - light / dark 主题必须使用 Tailwind v4 的 `dark:` 变体实现。
-   - 主题切换仅允许通过给 `html`（或 `body`）切换 `dark` class 来驱动 `dark:` 变体（参考 `src/modules/ui/ThemeProvider.tsx`）。
-
-3. 前端交互：最小变化原则（必须遵守）
-   - UI 更新应尽量“局部更新”，避免不必要的整块重渲染/整页重排（例如：刷新数据时不要通过 `key` 强制 remount 整个列表/面板）。
-   - Loading 状态必须与真实异步生命周期绑定：请求开始即进入 loading，请求结束（成功或失败）立刻退出 loading。
-   - 避免视觉跳动：对数值展示使用 `tabular-nums`，必要时为按钮/数值容器设置稳定宽度（`min-w-*` 等），并避免文案切换导致布局抖动。
-   - 动效必须克制且可降级：默认使用 `motion-safe:`，并尊重 `prefers-reduced-motion`（`motion-reduce:`）。
-
-4. 全局样式文件限制
-   - 项目允许保留一个 Tailwind 入口 CSS 文件（`src/styles/index.css`），其内容只允许包含 Tailwind v4 指令（例如 `@import "tailwindcss";`、`@custom-variant ...`、`@theme ...`）。
-   - 该文件不得包含任何自定义选择器与原生 CSS 规则。
-
-## 5. 交付自检清单（每次改动后）
-
-- 运行 `bun run format`（避免格式噪声与冲突）。
-- 运行 `bun run check`（至少确保 `bun run build` 通过）。
-- 手动自测：登录/登出、鉴权守卫、主题切换、主要页面加载与错误提示。
-  </INSTRUCTIONS>
+<!-- PROJECT-OVERRIDES:START -->
+（可选）在此处追加本项目特有的关键路径、命令、约束与注意事项。该区块不会被生成脚本覆盖。
+<!-- PROJECT-OVERRIDES:END -->
