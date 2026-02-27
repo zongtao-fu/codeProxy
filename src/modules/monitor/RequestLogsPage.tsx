@@ -402,14 +402,30 @@ export function RequestLogsPage() {
       setLastUpdatedAt(Date.now());
 
       // Debug: log key name resolution info
+      console.info(`[RequestLogs] Loaded ${entries.length} API key entries for name resolution`);
       if (entries.length > 0) {
-        console.info(`[RequestLogs] Loaded ${entries.length} API key entries for name resolution`);
+        entries.forEach((e) => {
+          const masked = e.key.length > 8 ? e.key.slice(0, 5) + "***" + e.key.slice(-3) : e.key;
+          console.info(`[RequestLogs]   Entry: key=${masked}, name="${e.name || "(no name)"}"`);
+        });
+      } else {
+        console.warn("[RequestLogs] ⚠ No API key entries loaded — key names will not be displayed");
       }
       const apiKeys = Object.keys(next.apis ?? {});
-      if (apiKeys.length > 0 && entries.length > 0) {
-        const entryKeys = new Set(entries.map((e) => e.key));
-        const matched = apiKeys.filter((k) => entryKeys.has(k));
-        console.info(`[RequestLogs] Usage has ${apiKeys.length} API keys, ${matched.length} match entries`);
+      if (apiKeys.length > 0) {
+        console.info(`[RequestLogs] Usage API keys (${apiKeys.length}):`);
+        apiKeys.forEach((k) => {
+          const masked = k.length > 8 ? k.slice(0, 5) + "***" + k.slice(-3) : k;
+          console.info(`[RequestLogs]   Usage key: ${masked}`);
+        });
+        if (entries.length > 0) {
+          const entryKeys = new Set(entries.map((e) => e.key));
+          const matched = apiKeys.filter((k) => entryKeys.has(k));
+          console.info(`[RequestLogs] ✓ ${matched.length}/${apiKeys.length} usage keys matched to entries`);
+          if (matched.length === 0) {
+            console.warn("[RequestLogs] ⚠ No usage keys match any entry keys — names cannot be resolved");
+          }
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "请求日志刷新失败";
