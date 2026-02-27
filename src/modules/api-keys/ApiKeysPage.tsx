@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
     Plus,
     Copy,
@@ -57,50 +56,74 @@ const formatLimit = (limit: number | undefined) => {
     return limit.toLocaleString();
 };
 
-/* ─── usage stats per key ─── */
+const formatTimestamp = (value: string): string => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value || "--";
+    return date.toLocaleString();
+};
 
-interface KeyUsageStats {
-    requestCount: number;
-    successCount: number;
-    failedCount: number;
+const formatLatencyMs = (value: number): string => {
+    if (!Number.isFinite(value) || value < 0) return "--";
+    if (value < 1) return "<1ms";
+    if (value < 1000) return `${Math.round(value)}ms`;
+    const seconds = value / 1000;
+    const fixed = seconds.toFixed(seconds < 10 ? 2 : 1);
+    const trimmed = fixed.endsWith(".0") ? fixed.slice(0, -2) : fixed;
+    return `${trimmed}s`;
+};
+
+const readLatencyText = (detail: Record<string, unknown>): string => {
+    const candidates = [
+        detail["latency_ms"],
+        detail["latencyMs"],
+        detail["duration_ms"],
+        detail["latency"],
+    ];
+    for (const candidate of candidates) {
+        if (typeof candidate === "number") return formatLatencyMs(candidate);
+        if (typeof candidate === "string" && candidate.trim()) return candidate.trim();
+    }
+    return "--";
+};
+
+/* ─── usage detail row type ─── */
+
+interface UsageLogRow {
+    id: string;
+    timestamp: string;
+    model: string;
+    failed: boolean;
+    latencyText: string;
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
-    models: string[];
 }
 
-const computeKeyUsage = (usage: UsageData, apiKey: string): KeyUsageStats => {
+const buildUsageRows = (usage: UsageData, apiKey: string): UsageLogRow[] => {
     const apiData = (usage.apis ?? {})[apiKey];
-    if (!apiData) {
-        return { requestCount: 0, successCount: 0, failedCount: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0, models: [] };
-    }
-    let requestCount = 0;
-    let successCount = 0;
-    let failedCount = 0;
-    let inputTokens = 0;
-    let outputTokens = 0;
-    let totalTokens = 0;
-    const models: string[] = [];
-
+    if (!apiData) return [];
+    const rows: UsageLogRow[] = [];
+    let id = 0;
     Object.entries(apiData.models ?? {}).forEach(([model, modelData]) => {
-        models.push(model);
         (modelData.details ?? []).forEach((detail: any) => {
-            requestCount++;
-            if (detail.failed) {
-                failedCount++;
-            } else {
-                successCount++;
-            }
             const tokens = detail.tokens;
-            if (tokens) {
-                inputTokens += tokens.input_tokens ?? 0;
-                outputTokens += tokens.output_tokens ?? 0;
-                totalTokens += tokens.total_tokens ?? (tokens.input_tokens ?? 0) + (tokens.output_tokens ?? 0);
-            }
+            rows.push({
+                id: `${id++}`,
+                timestamp: detail.timestamp ?? "",
+                model,
+                failed: Boolean(detail.failed),
+                latencyText: readLatencyText(detail),
+                inputTokens: tokens?.input_tokens ?? 0,
+                outputTokens: tokens?.output_tokens ?? 0,
+                totalTokens: tokens?.total_tokens ?? (tokens?.input_tokens ?? 0) + (tokens?.output_tokens ?? 0),
+            });
         });
     });
-
-    return { requestCount, successCount, failedCount, inputTokens, outputTokens, totalTokens, models };
+    return rows.sort((a, b) => {
+        const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return tb - ta;
+    });
 };
 
 /* ─── types ─── */
@@ -197,10 +220,7 @@ export function ApiKeysPage() {
                 "daily-limit": form.dailyLimit ? parseInt(form.dailyLimit, 10) || 0 : undefined,
                 "total-quota": form.totalQuota ? parseInt(form.totalQuota, 10) || 0 : undefined,
                 "allowed-models": form.allowedModels
-                    ? form.allowedModels
-                        .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean)
+                    ? form.allowedModels.split(",").map((s) => s.trim()).filter(Boolean)
                     : undefined,
                 "created-at": new Date().toISOString(),
             };
@@ -244,10 +264,7 @@ export function ApiKeysPage() {
                     "daily-limit": form.dailyLimit ? parseInt(form.dailyLimit, 10) || 0 : 0,
                     "total-quota": form.totalQuota ? parseInt(form.totalQuota, 10) || 0 : 0,
                     "allowed-models": form.allowedModels
-                        ? form.allowedModels
-                            .split(",")
-                            .map((s) => s.trim())
-                            .filter(Boolean)
+                        ? form.allowedModels.split(",").map((s) => s.trim()).filter(Boolean)
                         : [],
                 },
             });
@@ -297,9 +314,9 @@ export function ApiKeysPage() {
         void loadUsage();
     };
 
-    const viewingStats = useMemo<KeyUsageStats | null>(() => {
-        if (!usageViewKey) return null;
-        return computeKeyUsage(usage, usageViewKey);
+    const usageRows = useMemo<UsageLogRow[]>(() => {
+        if (!usageViewKey) return [];
+        return buildUsageRows(usage, usageViewKey);
     }, [usageViewKey, usage]);
 
     /* ─── render form ─── */
@@ -443,7 +460,7 @@ export function ApiKeysPage() {
                                                 </span>
                                             </OverflowTooltip>
                                         </td>
-                                        <td className="border-b border-slate-100 px-4 align-middle dark:border-neutral-900">
+                                        <td className="whitespace-nowrap border-b border-slate-100 px-4 align-middle dark:border-neutral-900">
                                             <code className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-neutral-800 dark:text-white/70">
                                                 {maskKey(entry.key)}
                                             </code>
@@ -603,74 +620,69 @@ export function ApiKeysPage() {
                 )}
             </Modal>
 
-            {/* Usage View Modal */}
+            {/* Usage View — detailed call log table */}
             <Modal
                 open={usageViewKey !== null}
                 onClose={() => setUsageViewKey(null)}
                 title={`调用情况 — ${usageViewName}`}
-                description={usageViewKey ? `Key: ${maskKey(usageViewKey)}` : ""}
-                footer={
-                    <>
-                        <Button variant="secondary" onClick={() => setUsageViewKey(null)}>
-                            关闭
-                        </Button>
-                        <Link to={`/monitor/request-logs`}>
-                            <Button variant="primary" size="sm">
-                                查看完整日志
-                            </Button>
-                        </Link>
-                    </>
-                }
+                description={usageViewKey ? `Key: ${maskKey(usageViewKey)}  ·  共 ${usageRows.length} 条记录` : ""}
             >
-                {viewingStats && (
-                    <div className="space-y-4">
-                        <div className="grid gap-3 sm:grid-cols-3">
-                            <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-950/60">
-                                <div className="text-xs text-slate-500 dark:text-white/55">总请求数</div>
-                                <div className="mt-1 text-xl font-bold tabular-nums text-slate-900 dark:text-white">
-                                    {viewingStats.requestCount.toLocaleString()}
-                                </div>
-                            </div>
-                            <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-950/60">
-                                <div className="text-xs text-slate-500 dark:text-white/55">成功 / 失败</div>
-                                <div className="mt-1 text-xl font-bold tabular-nums">
-                                    <span className="text-emerald-600 dark:text-emerald-400">{viewingStats.successCount.toLocaleString()}</span>
-                                    <span className="mx-1 text-slate-300 dark:text-white/20">/</span>
-                                    <span className="text-rose-600 dark:text-rose-400">{viewingStats.failedCount.toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-950/60">
-                                <div className="text-xs text-slate-500 dark:text-white/55">总 Token</div>
-                                <div className="mt-1 text-xl font-bold tabular-nums text-slate-900 dark:text-white">
-                                    {viewingStats.totalTokens.toLocaleString()}
-                                </div>
-                                <div className="mt-0.5 text-xs text-slate-500 dark:text-white/50">
-                                    输入 {viewingStats.inputTokens.toLocaleString()} · 输出 {viewingStats.outputTokens.toLocaleString()}
-                                </div>
-                            </div>
-                        </div>
-
-                        {viewingStats.models.length > 0 && (
-                            <div>
-                                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-white/55">
-                                    使用过的模型
-                                </div>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {viewingStats.models.map((m) => (
-                                        <span
-                                            key={m}
-                                            className="inline-block rounded-lg bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
-                                        >
-                                            {m}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {usageLoading && (
-                            <div className="text-center text-xs text-slate-500 dark:text-white/50">加载中...</div>
-                        )}
+                {usageLoading ? (
+                    <div className="py-8 text-center text-sm text-slate-500 dark:text-white/50">加载中...</div>
+                ) : usageRows.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-slate-500 dark:text-white/50">暂无调用记录</div>
+                ) : (
+                    <div className="max-h-[60vh] overflow-auto rounded-xl border border-slate-200 dark:border-neutral-800">
+                        <table className="w-full min-w-[700px] table-fixed border-separate border-spacing-0 text-sm">
+                            <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur dark:bg-neutral-950/75">
+                                <tr className="h-11 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-white/55">
+                                    <th className="w-48 border-b border-slate-200 px-4 dark:border-neutral-800">时间</th>
+                                    <th className="w-48 border-b border-slate-200 px-4 dark:border-neutral-800">模型</th>
+                                    <th className="w-16 border-b border-slate-200 px-4 dark:border-neutral-800">状态</th>
+                                    <th className="w-20 border-b border-slate-200 px-4 text-right dark:border-neutral-800">用时</th>
+                                    <th className="w-20 border-b border-slate-200 px-4 text-right dark:border-neutral-800">输入</th>
+                                    <th className="w-20 border-b border-slate-200 px-4 text-right dark:border-neutral-800">输出</th>
+                                    <th className="w-24 border-b border-slate-200 px-4 text-right dark:border-neutral-800">总 Token</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-slate-900 dark:text-white">
+                                {usageRows.map((row) => (
+                                    <tr key={row.id} className="h-10 text-sm transition hover:bg-slate-50/70 dark:hover:bg-white/5">
+                                        <td className="border-b border-slate-100 px-4 align-middle font-mono text-xs tabular-nums text-slate-700 dark:border-neutral-900 dark:text-slate-200">
+                                            <span className="block min-w-0 truncate">{formatTimestamp(row.timestamp)}</span>
+                                        </td>
+                                        <td className="border-b border-slate-100 px-4 align-middle dark:border-neutral-900">
+                                            <OverflowTooltip content={row.model} className="block min-w-0">
+                                                <span className="block min-w-0 truncate">{row.model}</span>
+                                            </OverflowTooltip>
+                                        </td>
+                                        <td className="border-b border-slate-100 px-4 align-middle dark:border-neutral-900">
+                                            {row.failed ? (
+                                                <span className="inline-flex min-w-[44px] justify-center rounded-lg bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
+                                                    失败
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex min-w-[44px] justify-center rounded-lg bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
+                                                    成功
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="border-b border-slate-100 px-4 text-right align-middle font-mono text-xs tabular-nums text-slate-700 dark:border-neutral-900 dark:text-slate-200">
+                                            {row.latencyText}
+                                        </td>
+                                        <td className="border-b border-slate-100 px-4 text-right align-middle font-mono text-xs tabular-nums text-slate-700 dark:border-neutral-900 dark:text-slate-200">
+                                            {row.inputTokens.toLocaleString()}
+                                        </td>
+                                        <td className="border-b border-slate-100 px-4 text-right align-middle font-mono text-xs tabular-nums text-slate-700 dark:border-neutral-900 dark:text-slate-200">
+                                            {row.outputTokens.toLocaleString()}
+                                        </td>
+                                        <td className="border-b border-slate-100 px-4 text-right align-middle font-mono text-xs tabular-nums text-slate-900 dark:border-neutral-900 dark:text-white">
+                                            {row.totalTokens.toLocaleString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </Modal>
