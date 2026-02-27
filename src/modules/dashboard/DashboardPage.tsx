@@ -13,6 +13,7 @@ import { KpiCard, MonitorCard } from "@/modules/monitor/MonitorPagePieces";
 import { Button } from "@/modules/ui/Button";
 import { EmptyState } from "@/modules/ui/EmptyState";
 import { useToast } from "@/modules/ui/ToastProvider";
+import { OpenAILogo, GeminiLogo, ClaudeLogo, VertexLogo } from "@/modules/dashboard/ProviderLogos";
 
 const createEmptyUsage = (): UsageData => ({ apis: {} });
 
@@ -144,6 +145,30 @@ export function DashboardPage() {
           hint="失败请求数（用于定位 provider/key 质量问题）"
           icon={TriangleAlert}
         />
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+        <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-white">
+          支持的 AI 供应商
+        </h3>
+        <div className="flex flex-wrap items-center gap-6">
+          {[
+            { Logo: OpenAILogo, name: "OpenAI", color: "text-slate-900 dark:text-white" },
+            { Logo: GeminiLogo, name: "Gemini", color: "" },
+            { Logo: ClaudeLogo, name: "Claude", color: "text-[#D97757]" },
+            { Logo: VertexLogo, name: "Vertex AI", color: "" },
+          ].map(({ Logo, name, color }) => (
+            <div
+              key={name}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-all hover:scale-105 hover:bg-slate-50 dark:hover:bg-white/5"
+            >
+              <Logo size={28} className={color} />
+              <span className="text-sm font-medium text-slate-700 dark:text-white/80">
+                {name}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <MonitorCard
