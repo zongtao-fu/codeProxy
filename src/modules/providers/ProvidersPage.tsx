@@ -256,6 +256,12 @@ export function ProvidersPage() {
   );
 
   const commitKeyDraft = useCallback((): ProviderSimpleConfig | null => {
+    const name = keyDraft.name.trim();
+    if (!name) {
+      setKeyDraftError("渠道名称不能为空");
+      return null;
+    }
+
     const apiKey = keyDraft.apiKey.trim();
     if (!apiKey) {
       setKeyDraftError("API Key 不能为空");
@@ -277,7 +283,7 @@ export function ProvidersPage() {
 
     const result: ProviderSimpleConfig = {
       apiKey,
-      ...(keyDraft.name.trim() ? { name: keyDraft.name.trim() } : {}),
+      name,
       ...(keyDraft.prefix.trim() ? { prefix: keyDraft.prefix.trim() } : {}),
       ...(keyDraft.baseUrl.trim() ? { baseUrl: keyDraft.baseUrl.trim() } : {}),
       ...(keyDraft.proxyUrl.trim() ? { proxyUrl: keyDraft.proxyUrl.trim() } : {}),
@@ -823,7 +829,6 @@ export function ProvidersPage() {
               onEdit={(idx) => openKeyEditor("gemini", idx)}
               onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "gemini", index: idx })}
               onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("gemini", idx, enabled)}
-              onCopy={(idx) => void copyText((geminiKeys[idx]?.apiKey ?? "").trim())}
               getStats={getSimpleStats}
               getStatusBar={getSimpleStatusBar}
             />
@@ -839,7 +844,6 @@ export function ProvidersPage() {
               onEdit={(idx) => openKeyEditor("claude", idx)}
               onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "claude", index: idx })}
               onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("claude", idx, enabled)}
-              onCopy={(idx) => void copyText((claudeKeys[idx]?.apiKey ?? "").trim())}
               getStats={getSimpleStats}
               getStatusBar={getSimpleStatusBar}
             />
@@ -855,7 +859,6 @@ export function ProvidersPage() {
               onEdit={(idx) => openKeyEditor("codex", idx)}
               onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "codex", index: idx })}
               onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("codex", idx, enabled)}
-              onCopy={(idx) => void copyText((codexKeys[idx]?.apiKey ?? "").trim())}
               getStats={getSimpleStats}
               getStatusBar={getSimpleStatusBar}
             />
@@ -870,7 +873,6 @@ export function ProvidersPage() {
               onAdd={() => openKeyEditor("vertex", null)}
               onEdit={(idx) => openKeyEditor("vertex", idx)}
               onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "vertex", index: idx })}
-              onCopy={(idx) => void copyText((vertexKeys[idx]?.apiKey ?? "").trim())}
               getStats={getSimpleStats}
               getStatusBar={getSimpleStatusBar}
             />

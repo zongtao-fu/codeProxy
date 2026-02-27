@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Copy, Plus, Settings2, Trash2 } from "lucide-react";
+import { Plus, Settings2, Trash2 } from "lucide-react";
 import type { ProviderSimpleConfig } from "@/lib/http/types";
 import { Button } from "@/modules/ui/Button";
 import { Card } from "@/modules/ui/Card";
@@ -34,7 +34,6 @@ export function ProviderKeyListCard({
   onEdit: (index: number) => void;
   onDelete: (index: number) => void;
   onToggleEnabled?: (index: number, enabled: boolean) => void;
-  onCopy: (index: number) => void;
   getStats: (item: ProviderSimpleConfig) => KeyStatBucket;
   getStatusBar: (item: ProviderSimpleConfig) => StatusBarData;
 }) {
@@ -156,15 +155,6 @@ export function ProviderKeyListCard({
                         />
                       </div>
                     ) : null}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => onCopy(idx)}
-                      title="复制 API Key"
-                    >
-                      <Copy size={14} />
-                      复制
-                    </Button>
                     <Button variant="secondary" size="sm" onClick={() => onEdit(idx)}>
                       <Settings2 size={14} />
                       编辑
