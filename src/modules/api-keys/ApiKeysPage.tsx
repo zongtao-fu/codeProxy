@@ -10,7 +10,7 @@ import {
     Infinity,
     BarChart3,
 } from "lucide-react";
-import { apiKeyEntriesApi, type ApiKeyEntry } from "@/lib/http/apis/api-keys";
+import { apiKeyEntriesApi, apiKeysApi, type ApiKeyEntry } from "@/lib/http/apis/api-keys";
 import { usageApi } from "@/lib/http/apis";
 import type { UsageData } from "@/lib/http/types";
 import { Card } from "@/modules/ui/Card";
@@ -164,8 +164,30 @@ export function ApiKeysPage() {
     const loadEntries = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await apiKeyEntriesApi.list();
-            setEntries(data);
+            const [entriesData, legacyKeys] = await Promise.all([
+                apiKeyEntriesApi.list(),
+                apiKeysApi.list().catch(() => [] as string[]),
+            ]);
+
+            // Auto-migrate: old api-keys not in api-key-entries get added as unnamed entries
+            const entryKeySet = new Set(entriesData.map((e) => e.key));
+            const newEntries = legacyKeys
+                .filter((k) => k && !entryKeySet.has(k))
+                .map((k): ApiKeyEntry => ({ key: k, "created-at": new Date().toISOString() }));
+
+            if (newEntries.length > 0) {
+                const merged = [...entriesData, ...newEntries];
+                try {
+                    await apiKeyEntriesApi.replace(merged);
+                    setEntries(merged);
+                    notify({ type: "success", message: `已自动导入 ${newEntries.length} 个旧 API Key` });
+                } catch {
+                    // If save fails, still show the merged list in-memory
+                    setEntries(merged);
+                }
+            } else {
+                setEntries(entriesData);
+            }
         } catch (err: unknown) {
             notify({ type: "error", message: err instanceof Error ? err.message : "加载 API Keys 失败" });
         } finally {
