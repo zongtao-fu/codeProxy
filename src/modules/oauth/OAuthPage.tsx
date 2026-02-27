@@ -323,8 +323,8 @@ export function OAuthPage() {
                 </div>
               ) : null}
 
-              <div className="grid gap-3">
-                <div className="grid gap-2 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+              <div className="grid min-w-0 gap-3">
+                <div className="grid min-w-0 gap-2 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-white/55">
                       授权链接
@@ -350,7 +350,7 @@ export function OAuthPage() {
                       </Button>
                     </div>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-800 dark:border-neutral-800 dark:bg-neutral-950 dark:text-slate-100">
+                  <div className="min-w-0 overflow-hidden break-all rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-800 dark:border-neutral-800 dark:bg-neutral-950 dark:text-slate-100">
                     {url ? url : "--"}
                   </div>
                   <div className="text-xs text-slate-600 dark:text-white/65">

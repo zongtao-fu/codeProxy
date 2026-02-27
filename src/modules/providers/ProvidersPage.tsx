@@ -121,49 +121,70 @@ export function ProvidersPage() {
           ? "Codex"
           : "Vertex";
 
-  const refreshAll = useCallback(async () => {
-    setLoading(true);
+  // 按 Tab 加载数据，切换 Tab 时只请求当前 Tab 的数据
+  const refreshTab = useCallback(
+    async (tabId: typeof tab) => {
+      setLoading(true);
+      try {
+        switch (tabId) {
+          case "gemini":
+            setGeminiKeys(await providersApi.getGeminiKeys());
+            break;
+          case "claude":
+            setClaudeKeys(await providersApi.getClaudeConfigs());
+            break;
+          case "codex":
+            setCodexKeys(await providersApi.getCodexConfigs());
+            break;
+          case "vertex":
+            setVertexKeys(await providersApi.getVertexConfigs());
+            break;
+          case "openai":
+            setOpenaiProviders(await providersApi.getOpenAIProviders());
+            break;
+          case "ampcode": {
+            const [amp, ampMap] = await Promise.all([
+              ampcodeApi.getAmpcode(),
+              ampcodeApi.getModelMappings(),
+            ]);
+            const ampObj =
+              amp && typeof amp === "object" && !Array.isArray(amp)
+                ? (amp as Record<string, unknown>)
+                : {};
+            setAmpcode(ampObj);
+            setAmpUpstreamUrl(readString(ampObj, "upstreamUrl", "upstream-url"));
+            setAmpForceMappings(readBool(ampObj, "forceModelMappings", "force-model-mappings"));
+
+            const mappings = Array.isArray(ampMap) ? ampMap : [];
+            const entries: AmpMappingEntry[] = mappings
+              .map((item, idx) => {
+                if (!item || typeof item !== "object") return null;
+                const record = item as Record<string, unknown>;
+                const from = String(record.from ?? "").trim();
+                const to = String(record.to ?? "").trim();
+                if (!from || !to) return null;
+                return { id: `map-${idx}-${from}`, from, to };
+              })
+              .filter(Boolean) as AmpMappingEntry[];
+            setAmpMappings(
+              entries.length ? entries : [{ id: `map-${Date.now()}`, from: "", to: "" }],
+            );
+            break;
+          }
+        }
+      } catch (err: unknown) {
+        notify({ type: "error", message: err instanceof Error ? err.message : "加载配置失败" });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [notify],
+  );
+
+  // Usage 统计单独加载一次
+  const loadUsage = useCallback(async () => {
     try {
-      const usagePromise = usageApi.getUsage().catch(() => null);
-
-      const [gemini, claude, codex, vertex, openai, amp, ampMap, usage] = await Promise.all([
-        providersApi.getGeminiKeys(),
-        providersApi.getClaudeConfigs(),
-        providersApi.getCodexConfigs(),
-        providersApi.getVertexConfigs(),
-        providersApi.getOpenAIProviders(),
-        ampcodeApi.getAmpcode(),
-        ampcodeApi.getModelMappings(),
-        usagePromise,
-      ]);
-
-      setGeminiKeys(gemini);
-      setClaudeKeys(claude);
-      setCodexKeys(codex);
-      setVertexKeys(vertex);
-      setOpenaiProviders(openai);
-
-      const ampObj =
-        amp && typeof amp === "object" && !Array.isArray(amp)
-          ? (amp as Record<string, unknown>)
-          : {};
-      setAmpcode(ampObj);
-      setAmpUpstreamUrl(readString(ampObj, "upstreamUrl", "upstream-url"));
-      setAmpForceMappings(readBool(ampObj, "forceModelMappings", "force-model-mappings"));
-
-      const mappings = Array.isArray(ampMap) ? ampMap : [];
-      const entries: AmpMappingEntry[] = mappings
-        .map((item, idx) => {
-          if (!item || typeof item !== "object") return null;
-          const record = item as Record<string, unknown>;
-          const from = String(record.from ?? "").trim();
-          const to = String(record.to ?? "").trim();
-          if (!from || !to) return null;
-          return { id: `map-${idx}-${from}`, from, to };
-        })
-        .filter(Boolean) as AmpMappingEntry[];
-      setAmpMappings(entries.length ? entries : [{ id: `map-${Date.now()}`, from: "", to: "" }]);
-
+      const usage = await usageApi.getUsage().catch(() => null);
       if (usage) {
         const flattened = iterateUsageRecords(usage);
         const normalized = flattened
@@ -183,20 +204,22 @@ export function ProvidersPage() {
 
         setUsageEntries(normalized);
         setUsageStatsBySource(stats);
-      } else {
-        setUsageEntries([]);
-        setUsageStatsBySource({});
       }
-    } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : "加载配置失败" });
-    } finally {
-      setLoading(false);
+    } catch {
+      // usage加载失败不影响主要功能
     }
-  }, [notify]);
+  }, []);
+
+  // refreshAll 保留作为兼容入口（保存后刷新当前 Tab）
+  const refreshAll = useCallback(async () => {
+    await refreshTab(tab);
+  }, [refreshTab, tab]);
 
   useEffect(() => {
-    void refreshAll();
-  }, [refreshAll]);
+    void refreshTab(tab);
+    void loadUsage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const closeKeyEditor = useCallback(() => {
     setEditKeyOpen(false);
@@ -766,7 +789,7 @@ export function ProvidersPage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => void refreshAll()}
+              onClick={() => void refreshTab(tab)}
               disabled={loading}
             >
               <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -776,7 +799,11 @@ export function ProvidersPage() {
         }
         loading={loading}
       >
-        <Tabs value={tab} onValueChange={(next) => setTab(next as typeof tab)}>
+        <Tabs value={tab} onValueChange={(next) => {
+          const nextTab = next as typeof tab;
+          setTab(nextTab);
+          void refreshTab(nextTab);
+        }}>
           <TabsList>
             <TabsTrigger value="gemini">Gemini</TabsTrigger>
             <TabsTrigger value="claude">Claude</TabsTrigger>
