@@ -54,6 +54,7 @@ import {
   createModelDistributionOption,
 } from "@/modules/monitor/monitor-chart-options";
 import { Button } from "@/modules/ui/Button";
+import { Tabs, TabsList, TabsTrigger } from "@/modules/ui/Tabs";
 import { useToast } from "@/modules/ui/ToastProvider";
 
 const createEmptyUsage = (): UsageData => ({ apis: {} });
@@ -526,28 +527,12 @@ export function MonitorPage() {
   );
 
   const modelActions = (
-    <div className="inline-flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-      {[
-        { key: "requests", label: "请求" },
-        { key: "tokens", label: "Token" },
-      ].map((item) => {
-        const active = modelMetric === item.key;
-        return (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => setModelMetric(item.key as "requests" | "tokens")}
-            className={
-              active
-                ? "rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950"
-                : "rounded-xl px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-            }
-          >
-            {item.label}
-          </button>
-        );
-      })}
-    </div>
+    <Tabs value={modelMetric} onValueChange={(next) => setModelMetric(next as "requests" | "tokens")}>
+      <TabsList>
+        <TabsTrigger value="requests">请求</TabsTrigger>
+        <TabsTrigger value="tokens">Token</TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 
   return (
@@ -769,36 +754,36 @@ export function MonitorPage() {
                     items={[
                       ...(dailyLegendAvailability.hasInput
                         ? [
-                            {
-                              key: "输入 Token",
-                              label: "输入 Token",
-                              colorClass: "bg-violet-400",
-                              enabled: dailyLegendSelected["输入 Token"] ?? true,
-                              onToggle: toggleDailyLegend,
-                            },
-                          ]
+                          {
+                            key: "输入 Token",
+                            label: "输入 Token",
+                            colorClass: "bg-violet-400",
+                            enabled: dailyLegendSelected["输入 Token"] ?? true,
+                            onToggle: toggleDailyLegend,
+                          },
+                        ]
                         : []),
                       ...(dailyLegendAvailability.hasOutput
                         ? [
-                            {
-                              key: "输出 Token",
-                              label: "输出 Token",
-                              colorClass: "bg-emerald-400",
-                              enabled: dailyLegendSelected["输出 Token"] ?? true,
-                              onToggle: toggleDailyLegend,
-                            },
-                          ]
+                          {
+                            key: "输出 Token",
+                            label: "输出 Token",
+                            colorClass: "bg-emerald-400",
+                            enabled: dailyLegendSelected["输出 Token"] ?? true,
+                            onToggle: toggleDailyLegend,
+                          },
+                        ]
                         : []),
                       ...(dailyLegendAvailability.hasRequests
                         ? [
-                            {
-                              key: "请求数",
-                              label: "请求数",
-                              colorClass: "bg-blue-500",
-                              enabled: dailyLegendSelected["请求数"] ?? true,
-                              onToggle: toggleDailyLegend,
-                            },
-                          ]
+                          {
+                            key: "请求数",
+                            label: "请求数",
+                            colorClass: "bg-blue-500",
+                            enabled: dailyLegendSelected["请求数"] ?? true,
+                            onToggle: toggleDailyLegend,
+                          },
+                        ]
                         : []),
                     ]}
                   />

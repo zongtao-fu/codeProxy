@@ -5,6 +5,7 @@ import {
   type HourWindow,
   type TimeRange,
 } from "@/modules/monitor/monitor-constants";
+import { Tabs, TabsList, TabsTrigger } from "@/modules/ui/Tabs";
 
 export const KpiCard = ({
   title,
@@ -39,26 +40,18 @@ export const TimeRangeSelector = ({
   onChange: (next: TimeRange) => void;
 }) => {
   return (
-    <div className="inline-flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-      {TIME_RANGES.map((range) => {
-        const active = value === range;
-        const label = range === 1 ? "今天" : `${range} 天`;
-        return (
-          <button
-            key={range}
-            type="button"
-            onClick={() => onChange(range)}
-            className={
-              active
-                ? "rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950"
-                : "rounded-xl px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-            }
-          >
-            {label}
-          </button>
-        );
-      })}
-    </div>
+    <Tabs value={String(value)} onValueChange={(next) => onChange(Number(next) as TimeRange)}>
+      <TabsList>
+        {TIME_RANGES.map((range) => {
+          const label = range === 1 ? "今天" : `${range} 天`;
+          return (
+            <TabsTrigger key={range} value={String(range)}>
+              {label}
+            </TabsTrigger>
+          );
+        })}
+      </TabsList>
+    </Tabs>
   );
 };
 
@@ -70,25 +63,15 @@ export const HourWindowSelector = ({
   onChange: (next: HourWindow) => void;
 }) => {
   return (
-    <div className="inline-flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-      {HOUR_WINDOWS.map((range) => {
-        const active = value === range;
-        return (
-          <button
-            key={range}
-            type="button"
-            onClick={() => onChange(range)}
-            className={
-              active
-                ? "rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950"
-                : "rounded-xl px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-            }
-          >
+    <Tabs value={String(value)} onValueChange={(next) => onChange(Number(next) as HourWindow)}>
+      <TabsList>
+        {HOUR_WINDOWS.map((range) => (
+          <TabsTrigger key={range} value={String(range)}>
             最近{range}小时
-          </button>
-        );
-      })}
-    </div>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   );
 };
 

@@ -12,6 +12,7 @@ import {
 import { KpiCard, MonitorCard } from "@/modules/monitor/MonitorPagePieces";
 import { Button } from "@/modules/ui/Button";
 import { EmptyState } from "@/modules/ui/EmptyState";
+import { Tabs, TabsList, TabsTrigger } from "@/modules/ui/Tabs";
 import { useToast } from "@/modules/ui/ToastProvider";
 
 const createEmptyUsage = (): UsageData => ({ apis: {} });
@@ -69,25 +70,15 @@ export function DashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-            {RANGE_OPTIONS.map((opt) => {
-              const active = opt.value === range;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setRange(opt.value)}
-                  className={
-                    active
-                      ? "rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950"
-                      : "rounded-xl px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
-                  }
-                >
+          <Tabs value={String(range)} onValueChange={(next) => setRange(Number(next) as DashboardRange)}>
+            <TabsList>
+              {RANGE_OPTIONS.map((opt) => (
+                <TabsTrigger key={opt.value} value={String(opt.value)}>
                   {opt.label}
-                </button>
-              );
-            })}
-          </div>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
           <Button
             variant="secondary"

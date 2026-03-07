@@ -12,6 +12,7 @@ import { providersApi, usageApi } from "@/lib/http/apis";
 import { apiKeyEntriesApi, apiKeysApi, type ApiKeyEntry } from "@/lib/http/apis/api-keys";
 import type { UsageData } from "@/lib/http/types";
 import { TextInput } from "@/modules/ui/Input";
+import { Tabs, TabsList, TabsTrigger } from "@/modules/ui/Tabs";
 import { useToast } from "@/modules/ui/ToastProvider";
 import { OverflowTooltip } from "@/modules/ui/Tooltip";
 
@@ -104,26 +105,18 @@ const TimeRangeSelector = ({
   onChange: (next: TimeRange) => void;
 }) => {
   return (
-    <div className="inline-flex gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-      {TIME_RANGES.map((range) => {
-        const active = value === range;
-        const label = range === 1 ? "今天" : `${range} 天`;
-        return (
-          <button
-            key={range}
-            type="button"
-            onClick={() => onChange(range)}
-            className={
-              active
-                ? "rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/35 dark:bg-white dark:text-neutral-950 dark:focus-visible:ring-white/15"
-                : "rounded-xl px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/35 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white dark:focus-visible:ring-white/15"
-            }
-          >
-            {label}
-          </button>
-        );
-      })}
-    </div>
+    <Tabs value={String(value)} onValueChange={(next) => onChange(Number(next) as TimeRange)}>
+      <TabsList>
+        {TIME_RANGES.map((range) => {
+          const label = range === 1 ? "今天" : `${range} 天`;
+          return (
+            <TabsTrigger key={range} value={String(range)}>
+              {label}
+            </TabsTrigger>
+          );
+        })}
+      </TabsList>
+    </Tabs>
   );
 };
 
