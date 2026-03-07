@@ -787,372 +787,373 @@ export function ProvidersPage() {
 
   return (
     <div className="space-y-6">
-      <Card
-        title="配置总览"
-        description="在各标签页管理 API Key / OpenAI 提供商 / Ampcode 映射。已自动关联使用统计用于展示成功/失败与近况。"
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => void refreshTab(tab)}
-              disabled={loading}
-            >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-              刷新
-            </Button>
-          </div>
-        }
-        loading={loading}
-      >
-        <Tabs value={tab} onValueChange={(next) => {
-          const nextTab = next as typeof tab;
-          setTab(nextTab);
-          void refreshTab(nextTab);
-        }}>
-          <TabsList>
-            <TabsTrigger value="gemini">Gemini</TabsTrigger>
-            <TabsTrigger value="claude">Claude</TabsTrigger>
-            <TabsTrigger value="codex">Codex</TabsTrigger>
-            <TabsTrigger value="vertex">Vertex</TabsTrigger>
-            <TabsTrigger value="openai">OpenAI 兼容</TabsTrigger>
-            <TabsTrigger value="ampcode">Ampcode</TabsTrigger>
-          </TabsList>
+      {/* 标题头：描述 + 刷新 */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-0.5">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white">配置总览</h2>
+          <p className="text-xs text-slate-500 dark:text-white/55">
+            在各标签页管理 API Key / OpenAI 提供商 / Ampcode 映射。
+          </p>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => void refreshTab(tab)}
+          disabled={loading}
+        >
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          刷新
+        </Button>
+      </div>
 
-          <TabsContent value="gemini" className="mt-6">
-            <ProviderKeyListCard
-              icon={Globe}
-              title="Gemini Keys"
-              description="API Key / Prefix / Base URL / Excluded Models / Headers / Models"
-              items={geminiKeys}
-              onAdd={() => openKeyEditor("gemini", null)}
-              onEdit={(idx) => openKeyEditor("gemini", idx)}
-              onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "gemini", index: idx })}
-              onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("gemini", idx, enabled)}
-              getStats={getSimpleStats}
-              getStatusBar={getSimpleStatusBar}
-            />
-          </TabsContent>
+      {/* Tabs 导航 */}
+      <Tabs value={tab} onValueChange={(next) => {
+        const nextTab = next as typeof tab;
+        setTab(nextTab);
+        void refreshTab(nextTab);
+      }}>
+        <TabsList>
+          <TabsTrigger value="gemini">Gemini</TabsTrigger>
+          <TabsTrigger value="claude">Claude</TabsTrigger>
+          <TabsTrigger value="codex">Codex</TabsTrigger>
+          <TabsTrigger value="vertex">Vertex</TabsTrigger>
+          <TabsTrigger value="openai">OpenAI 兼容</TabsTrigger>
+          <TabsTrigger value="ampcode">Ampcode</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="claude" className="mt-6">
-            <ProviderKeyListCard
-              icon={Bot}
-              title="Claude Keys"
-              description="支持 proxyUrl / 自定义 headers / 模型别名 / Excluded Models（用 * 一键禁用）。"
-              items={claudeKeys}
-              onAdd={() => openKeyEditor("claude", null)}
-              onEdit={(idx) => openKeyEditor("claude", idx)}
-              onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "claude", index: idx })}
-              onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("claude", idx, enabled)}
-              getStats={getSimpleStats}
-              getStatusBar={getSimpleStatusBar}
-            />
-          </TabsContent>
+        <TabsContent value="gemini" className="mt-6">
+          <ProviderKeyListCard
+            icon={Globe}
+            title="Gemini Keys"
+            description="API Key / Prefix / Base URL / Excluded Models / Headers / Models"
+            items={geminiKeys}
+            onAdd={() => openKeyEditor("gemini", null)}
+            onEdit={(idx) => openKeyEditor("gemini", idx)}
+            onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "gemini", index: idx })}
+            onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("gemini", idx, enabled)}
+            getStats={getSimpleStats}
+            getStatusBar={getSimpleStatusBar}
+          />
+        </TabsContent>
 
-          <TabsContent value="codex" className="mt-6">
-            <ProviderKeyListCard
-              icon={FileKey}
-              title="Codex Keys"
-              description="支持 baseUrl / proxyUrl / headers / models 等配置。"
-              items={codexKeys}
-              onAdd={() => openKeyEditor("codex", null)}
-              onEdit={(idx) => openKeyEditor("codex", idx)}
-              onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "codex", index: idx })}
-              onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("codex", idx, enabled)}
-              getStats={getSimpleStats}
-              getStatusBar={getSimpleStatusBar}
-            />
-          </TabsContent>
+        <TabsContent value="claude" className="mt-6">
+          <ProviderKeyListCard
+            icon={Bot}
+            title="Claude Keys"
+            description="支持 proxyUrl / 自定义 headers / 模型别名 / Excluded Models（用 * 一键禁用）。"
+            items={claudeKeys}
+            onAdd={() => openKeyEditor("claude", null)}
+            onEdit={(idx) => openKeyEditor("claude", idx)}
+            onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "claude", index: idx })}
+            onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("claude", idx, enabled)}
+            getStats={getSimpleStats}
+            getStatusBar={getSimpleStatusBar}
+          />
+        </TabsContent>
 
-          <TabsContent value="vertex" className="mt-6">
-            <ProviderKeyListCard
-              icon={Database}
-              title="Vertex Keys"
-              description="models 必须维护 name=>alias，用于将下游模型名映射到 Vertex。"
-              items={vertexKeys}
-              onAdd={() => openKeyEditor("vertex", null)}
-              onEdit={(idx) => openKeyEditor("vertex", idx)}
-              onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "vertex", index: idx })}
-              getStats={getSimpleStats}
-              getStatusBar={getSimpleStatusBar}
-            />
-          </TabsContent>
+        <TabsContent value="codex" className="mt-6">
+          <ProviderKeyListCard
+            icon={FileKey}
+            title="Codex Keys"
+            description="支持 baseUrl / proxyUrl / headers / models 等配置。"
+            items={codexKeys}
+            onAdd={() => openKeyEditor("codex", null)}
+            onEdit={(idx) => openKeyEditor("codex", idx)}
+            onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "codex", index: idx })}
+            onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("codex", idx, enabled)}
+            getStats={getSimpleStats}
+            getStatusBar={getSimpleStatusBar}
+          />
+        </TabsContent>
 
-          <TabsContent value="openai" className="mt-6">
-            <Card
-              title="OpenAI 兼容提供商"
-              description="多密钥、headers、模型别名与 /models 发现。"
-              actions={
-                <Button variant="primary" size="sm" onClick={() => openOpenAIEditor(null)}>
-                  <Plus size={14} />
-                  新增提供商
-                </Button>
-              }
-            >
-              {openaiProviders.length === 0 ? (
-                <EmptyState title="暂无 OpenAI 提供商" description="点击“新增提供商”开始配置。" />
-              ) : (
-                <div className="space-y-3">
-                  {openaiProviders.map((provider, idx) => {
-                    const headerEntries = Object.entries(provider.headers || {});
-                    const stats = getOpenAIProviderStats(provider);
-                    const statusData = getOpenAIProviderStatusBar(provider);
+        <TabsContent value="vertex" className="mt-6">
+          <ProviderKeyListCard
+            icon={Database}
+            title="Vertex Keys"
+            description="models 必须维护 name=>alias，用于将下游模型名映射到 Vertex。"
+            items={vertexKeys}
+            onAdd={() => openKeyEditor("vertex", null)}
+            onEdit={(idx) => openKeyEditor("vertex", idx)}
+            onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "vertex", index: idx })}
+            getStats={getSimpleStats}
+            getStatusBar={getSimpleStatusBar}
+          />
+        </TabsContent>
 
-                    return (
-                      <div
-                        key={`${provider.name}:${idx}`}
-                        className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                              {provider.name}
-                            </p>
-                            {provider.prefix ? (
-                              <p className="mt-1 truncate font-mono text-xs text-slate-700 dark:text-slate-200">
-                                prefix：{provider.prefix}
-                              </p>
-                            ) : null}
+        <TabsContent value="openai" className="mt-6">
+          <Card
+            title="OpenAI 兼容提供商"
+            description="多密钥、headers、模型别名与 /models 发现。"
+            actions={
+              <Button variant="primary" size="sm" onClick={() => openOpenAIEditor(null)}>
+                <Plus size={14} />
+                新增提供商
+              </Button>
+            }
+          >
+            {openaiProviders.length === 0 ? (
+              <EmptyState title="暂无 OpenAI 提供商" description="点击“新增提供商”开始配置。" />
+            ) : (
+              <div className="space-y-3">
+                {openaiProviders.map((provider, idx) => {
+                  const headerEntries = Object.entries(provider.headers || {});
+                  const stats = getOpenAIProviderStats(provider);
+                  const statusData = getOpenAIProviderStatusBar(provider);
+
+                  return (
+                    <div
+                      key={`${provider.name}:${idx}`}
+                      className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                            {provider.name}
+                          </p>
+                          {provider.prefix ? (
                             <p className="mt-1 truncate font-mono text-xs text-slate-700 dark:text-slate-200">
-                              baseUrl：{provider.baseUrl || "--"}
+                              prefix：{provider.prefix}
                             </p>
+                          ) : null}
+                          <p className="mt-1 truncate font-mono text-xs text-slate-700 dark:text-slate-200">
+                            baseUrl：{provider.baseUrl || "--"}
+                          </p>
 
-                            {headerEntries.length ? (
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                {headerEntries.map(([k, v]) => (
-                                  <span
-                                    key={k}
-                                    className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-white/75"
-                                  >
-                                    <span className="font-semibold">{k}:</span> {String(v)}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : null}
-
-                            {provider.apiKeyEntries?.length ? (
-                              <div className="mt-2 space-y-1">
-                                <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
-                                  Keys：{provider.apiKeyEntries.length}
-                                </p>
-                                <div className="space-y-1">
-                                  {provider.apiKeyEntries.map((entry, entryIndex) => {
-                                    const entryCandidates = buildCandidateUsageSourceIds({
-                                      apiKey: entry.apiKey,
-                                      masker: maskApiKey,
-                                    });
-                                    const entryStats = sumStatsByCandidates(
-                                      entryCandidates,
-                                      usageStatsBySource,
-                                    );
-                                    return (
-                                      <div
-                                        key={`${entry.apiKey}:${entryIndex}`}
-                                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-xs dark:border-neutral-800 dark:bg-neutral-950/60"
-                                      >
-                                        <div className="min-w-0">
-                                          <p className="truncate font-mono text-slate-900 dark:text-white">
-                                            {entryIndex + 1}. {maskApiKey(entry.apiKey)}
-                                          </p>
-                                          {entry.proxyUrl ? (
-                                            <p className="mt-0.5 truncate font-mono text-slate-600 dark:text-white/55">
-                                              proxy：{entry.proxyUrl}
-                                            </p>
-                                          ) : null}
-                                        </div>
-                                        <div className="flex items-center gap-2 tabular-nums">
-                                          <span className="rounded-full bg-emerald-600/10 px-2 py-0.5 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
-                                            成功 {entryStats.success}
-                                          </span>
-                                          <span className="rounded-full bg-rose-600/10 px-2 py-0.5 text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
-                                            失败 {entryStats.failure}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            ) : null}
-
-                            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-white/65 tabular-nums">
-                              <span>models：{provider.models?.length ?? 0}</span>
-                              <span>·</span>
-                              <span>成功：{stats.success}</span>
-                              <span>·</span>
-                              <span>失败：{stats.failure}</span>
-                              {provider.testModel ? (
-                                <>
-                                  <span>·</span>
-                                  <span className="truncate">testModel：{provider.testModel}</span>
-                                </>
-                              ) : null}
+                          {headerEntries.length ? (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {headerEntries.map(([k, v]) => (
+                                <span
+                                  key={k}
+                                  className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-white/75"
+                                >
+                                  <span className="font-semibold">{k}:</span> {String(v)}
+                                </span>
+                              ))}
                             </div>
+                          ) : null}
 
-                            {provider.models?.length ? (
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                {provider.models.map((model) => (
-                                  <span
-                                    key={model.name}
-                                    className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] text-white dark:bg-white dark:text-neutral-950"
-                                    title={
-                                      model.alias && model.alias !== model.name
-                                        ? `${model.name} => ${model.alias}`
-                                        : model.name
-                                    }
-                                  >
-                                    {model.alias && model.alias !== model.name
-                                      ? `${model.name} → ${model.alias}`
-                                      : model.name}
-                                  </span>
-                                ))}
+                          {provider.apiKeyEntries?.length ? (
+                            <div className="mt-2 space-y-1">
+                              <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
+                                Keys：{provider.apiKeyEntries.length}
+                              </p>
+                              <div className="space-y-1">
+                                {provider.apiKeyEntries.map((entry, entryIndex) => {
+                                  const entryCandidates = buildCandidateUsageSourceIds({
+                                    apiKey: entry.apiKey,
+                                    masker: maskApiKey,
+                                  });
+                                  const entryStats = sumStatsByCandidates(
+                                    entryCandidates,
+                                    usageStatsBySource,
+                                  );
+                                  return (
+                                    <div
+                                      key={`${entry.apiKey}:${entryIndex}`}
+                                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-xs dark:border-neutral-800 dark:bg-neutral-950/60"
+                                    >
+                                      <div className="min-w-0">
+                                        <p className="truncate font-mono text-slate-900 dark:text-white">
+                                          {entryIndex + 1}. {maskApiKey(entry.apiKey)}
+                                        </p>
+                                        {entry.proxyUrl ? (
+                                          <p className="mt-0.5 truncate font-mono text-slate-600 dark:text-white/55">
+                                            proxy：{entry.proxyUrl}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                      <div className="flex items-center gap-2 tabular-nums">
+                                        <span className="rounded-full bg-emerald-600/10 px-2 py-0.5 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
+                                          成功 {entryStats.success}
+                                        </span>
+                                        <span className="rounded-full bg-rose-600/10 px-2 py-0.5 text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
+                                          失败 {entryStats.failure}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            ) : null}
+                            </div>
+                          ) : null}
 
-                            <ProviderStatusBar data={statusData} />
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-white/65 tabular-nums">
+                            <span>models：{provider.models?.length ?? 0}</span>
+                            <span>·</span>
+                            <span>成功：{stats.success}</span>
+                            <span>·</span>
+                            <span>失败：{stats.failure}</span>
+                            {provider.testModel ? (
+                              <>
+                                <span>·</span>
+                                <span className="truncate">testModel：{provider.testModel}</span>
+                              </>
+                            ) : null}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => openOpenAIEditor(idx)}
-                            >
-                              <Settings2 size={14} />
-                              编辑
-                            </Button>
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => setConfirm({ type: "deleteOpenAI", index: idx })}
-                            >
-                              <Trash2 size={14} />
-                              删除
-                            </Button>
-                          </div>
+
+                          {provider.models?.length ? (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {provider.models.map((model) => (
+                                <span
+                                  key={model.name}
+                                  className="rounded-full bg-slate-900 px-2 py-0.5 text-[11px] text-white dark:bg-white dark:text-neutral-950"
+                                  title={
+                                    model.alias && model.alias !== model.name
+                                      ? `${model.name} => ${model.alias}`
+                                      : model.name
+                                  }
+                                >
+                                  {model.alias && model.alias !== model.name
+                                    ? `${model.name} → ${model.alias}`
+                                    : model.name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+
+                          <ProviderStatusBar data={statusData} />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => openOpenAIEditor(idx)}
+                          >
+                            <Settings2 size={14} />
+                            编辑
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => setConfirm({ type: "deleteOpenAI", index: idx })}
+                          >
+                            <Trash2 size={14} />
+                            删除
+                          </Button>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="ampcode" className="mt-6">
-            <Card
-              title="Ampcode 集成"
-              description="配置上游 URL / API Key、模型映射与强制映射开关。"
-              actions={
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => void saveAmpcode()}
-                  disabled={loading || isPending}
-                >
-                  <Save size={14} />
-                  保存
-                </Button>
-              }
-            >
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="space-y-3">
-                  <TextInput
-                    value={ampUpstreamUrl}
-                    onChange={(e) => setAmpUpstreamUrl(e.currentTarget.value)}
-                    placeholder="upstream-url（为空则清除）"
-                  />
-                  <TextInput
-                    value={ampUpstreamApiKey}
-                    onChange={(e) => setAmpUpstreamApiKey(e.currentTarget.value)}
-                    placeholder="upstream-api-key（仅用于更新；为空不改）"
-                  />
-                  <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-                    <ToggleSwitch
-                      label="强制模型映射"
-                      description="开启后仅允许映射列表中的模型。"
-                      checked={ampForceMappings}
-                      onCheckedChange={setAmpForceMappings}
-                    />
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-                    <p className="text-xs text-slate-600 dark:text-white/65">
-                      当前：{ampcode ? "已加载" : "未加载"} · 映射 {ampMappings.length} 条
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">模型映射</p>
-                  {ampMappings.map((entry, idx) => (
-                    <div key={entry.id} className="grid gap-2 md:grid-cols-12">
-                      <div className="md:col-span-5">
-                        <TextInput
-                          value={entry.from}
-                          onChange={(e) => {
-                            const value = e.currentTarget.value;
-                            setAmpMappings((prev) =>
-                              prev.map((it, i) => (i === idx ? { ...it, from: value } : it)),
-                            );
-                          }}
-                          placeholder="from"
-                        />
-                      </div>
-                      <div className="md:col-span-5">
-                        <TextInput
-                          value={entry.to}
-                          onChange={(e) => {
-                            const value = e.currentTarget.value;
-                            setAmpMappings((prev) =>
-                              prev.map((it, i) => (i === idx ? { ...it, to: value } : it)),
-                            );
-                          }}
-                          placeholder="to"
-                        />
-                      </div>
-                      <div className="md:col-span-2 flex items-center justify-end">
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => setAmpMappings((prev) => prev.filter((_, i) => i !== idx))}
-                          disabled={ampMappings.length <= 1}
-                          aria-label="删除映射"
-                          title="删除映射"
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
                     </div>
-                  ))}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() =>
-                        setAmpMappings((prev) => [
-                          ...prev,
-                          { id: `map-${Date.now()}`, from: "", to: "" },
-                        ])
-                      }
-                    >
-                      <Plus size={14} />
-                      新增
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() =>
-                        setAmpMappings([{ id: `map-${Date.now()}`, from: "", to: "" }])
-                      }
-                    >
-                      清空
-                    </Button>
-                  </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ampcode" className="mt-6">
+          <Card
+            title="Ampcode 集成"
+            description="配置上游 URL / API Key、模型映射与强制映射开关。"
+            actions={
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => void saveAmpcode()}
+                disabled={loading || isPending}
+              >
+                <Save size={14} />
+                保存
+              </Button>
+            }
+          >
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="space-y-3">
+                <TextInput
+                  value={ampUpstreamUrl}
+                  onChange={(e) => setAmpUpstreamUrl(e.currentTarget.value)}
+                  placeholder="upstream-url（为空则清除）"
+                />
+                <TextInput
+                  value={ampUpstreamApiKey}
+                  onChange={(e) => setAmpUpstreamApiKey(e.currentTarget.value)}
+                  placeholder="upstream-api-key（仅用于更新；为空不改）"
+                />
+                <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+                  <ToggleSwitch
+                    label="强制模型映射"
+                    description="开启后仅允许映射列表中的模型。"
+                    checked={ampForceMappings}
+                    onCheckedChange={setAmpForceMappings}
+                  />
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+                  <p className="text-xs text-slate-600 dark:text-white/65">
+                    当前：{ampcode ? "已加载" : "未加载"} · 映射 {ampMappings.length} 条
+                  </p>
                 </div>
               </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </Card>
+
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">模型映射</p>
+                {ampMappings.map((entry, idx) => (
+                  <div key={entry.id} className="grid gap-2 md:grid-cols-12">
+                    <div className="md:col-span-5">
+                      <TextInput
+                        value={entry.from}
+                        onChange={(e) => {
+                          const value = e.currentTarget.value;
+                          setAmpMappings((prev) =>
+                            prev.map((it, i) => (i === idx ? { ...it, from: value } : it)),
+                          );
+                        }}
+                        placeholder="from"
+                      />
+                    </div>
+                    <div className="md:col-span-5">
+                      <TextInput
+                        value={entry.to}
+                        onChange={(e) => {
+                          const value = e.currentTarget.value;
+                          setAmpMappings((prev) =>
+                            prev.map((it, i) => (i === idx ? { ...it, to: value } : it)),
+                          );
+                        }}
+                        placeholder="to"
+                      />
+                    </div>
+                    <div className="md:col-span-2 flex items-center justify-end">
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => setAmpMappings((prev) => prev.filter((_, i) => i !== idx))}
+                        disabled={ampMappings.length <= 1}
+                        aria-label="删除映射"
+                        title="删除映射"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      setAmpMappings((prev) => [
+                        ...prev,
+                        { id: `map-${Date.now()}`, from: "", to: "" },
+                      ])
+                    }
+                  >
+                    <Plus size={14} />
+                    新增
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      setAmpMappings([{ id: `map-${Date.now()}`, from: "", to: "" }])
+                    }
+                  >
+                    清空
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Modal
         open={editKeyOpen}
@@ -1719,6 +1720,6 @@ export function ProvidersPage() {
           void deleteKey(action.keyType, action.index);
         }}
       />
-    </div>
+    </div >
   );
 }
