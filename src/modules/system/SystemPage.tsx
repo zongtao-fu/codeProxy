@@ -9,6 +9,24 @@ import { Button } from "@/modules/ui/Button";
 import { TextInput } from "@/modules/ui/Input";
 import { useToast } from "@/modules/ui/ToastProvider";
 
+// Vendor SVG icons
+import iconClaude from "@/assets/icons/claude.svg";
+import iconOpenaiLight from "@/assets/icons/openai-light.svg";
+import iconOpenaiDark from "@/assets/icons/openai-dark.svg";
+import iconGemini from "@/assets/icons/gemini.svg";
+import iconDeepseek from "@/assets/icons/deepseek.svg";
+import iconQwen from "@/assets/icons/qwen.svg";
+import iconMinimax from "@/assets/icons/minimax.svg";
+import iconGrok from "@/assets/icons/grok.svg";
+import iconKimiLight from "@/assets/icons/kimi-light.svg";
+import iconKimiDark from "@/assets/icons/kimi-dark.svg";
+import iconCodexLight from "@/assets/icons/codex_light.svg";
+import iconCodexDark from "@/assets/icons/codex_drak.svg";
+import iconGlm from "@/assets/icons/glm.svg";
+import iconKiro from "@/assets/icons/kiro.svg";
+import iconVertex from "@/assets/icons/vertex.svg";
+import iconIflow from "@/assets/icons/iflow.svg";
+
 /* ═══════════════════════════════════════════════════════════
    Helpers
    ═══════════════════════════════════════════════════════════ */
@@ -55,9 +73,35 @@ const VENDOR_COLORS: Record<string, { bg: string; text: string; border: string }
   qwen: { bg: "bg-violet-50 dark:bg-violet-950/20", text: "text-violet-700 dark:text-violet-300", border: "border-violet-200/60 dark:border-violet-800/30" },
   llama: { bg: "bg-indigo-50 dark:bg-indigo-950/20", text: "text-indigo-700 dark:text-indigo-300", border: "border-indigo-200/60 dark:border-indigo-800/30" },
   mistral: { bg: "bg-amber-50 dark:bg-amber-950/20", text: "text-amber-700 dark:text-amber-300", border: "border-amber-200/60 dark:border-amber-800/30" },
+  minimax: { bg: "bg-sky-50 dark:bg-sky-950/20", text: "text-sky-700 dark:text-sky-300", border: "border-sky-200/60 dark:border-sky-800/30" },
+  grok: { bg: "bg-slate-50 dark:bg-slate-900/30", text: "text-slate-700 dark:text-slate-300", border: "border-slate-200/60 dark:border-slate-700/30" },
+  kimi: { bg: "bg-slate-50 dark:bg-slate-900/30", text: "text-slate-700 dark:text-slate-300", border: "border-slate-200/60 dark:border-slate-700/30" },
+  codex: { bg: "bg-emerald-50 dark:bg-emerald-950/20", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200/60 dark:border-emerald-800/30" },
+  glm: { bg: "bg-blue-50 dark:bg-blue-950/20", text: "text-blue-700 dark:text-blue-300", border: "border-blue-200/60 dark:border-blue-800/30" },
+  kiro: { bg: "bg-amber-50 dark:bg-amber-950/20", text: "text-amber-700 dark:text-amber-300", border: "border-amber-200/60 dark:border-amber-800/30" },
 };
 
 const DEFAULT_VENDOR = { bg: "bg-slate-50 dark:bg-neutral-900/40", text: "text-slate-600 dark:text-slate-300", border: "border-slate-200/60 dark:border-neutral-700/40" };
+
+/** Vendor prefix → icon (light, dark) */
+const VENDOR_ICONS: Record<string, { light: string; dark: string }> = {
+  claude: { light: iconClaude, dark: iconClaude },
+  gpt: { light: iconOpenaiLight, dark: iconOpenaiDark },
+  o1: { light: iconOpenaiLight, dark: iconOpenaiDark },
+  o3: { light: iconOpenaiLight, dark: iconOpenaiDark },
+  o4: { light: iconOpenaiLight, dark: iconOpenaiDark },
+  gemini: { light: iconGemini, dark: iconGemini },
+  deepseek: { light: iconDeepseek, dark: iconDeepseek },
+  qwen: { light: iconQwen, dark: iconQwen },
+  minimax: { light: iconMinimax, dark: iconMinimax },
+  grok: { light: iconGrok, dark: iconGrok },
+  kimi: { light: iconKimiLight, dark: iconKimiDark },
+  codex: { light: iconCodexLight, dark: iconCodexDark },
+  glm: { light: iconGlm, dark: iconGlm },
+  kiro: { light: iconKiro, dark: iconKiro },
+  vertex: { light: iconVertex, dark: iconVertex },
+  iflow: { light: iconIflow, dark: iconIflow },
+};
 
 function getVendorColor(modelId: string) {
   const lower = modelId.toLowerCase();
@@ -65,6 +109,26 @@ function getVendorColor(modelId: string) {
     if (lower.startsWith(prefix)) return color;
   }
   return DEFAULT_VENDOR;
+}
+
+function getVendorPrefix(modelId: string): string {
+  const lower = modelId.toLowerCase();
+  for (const prefix of Object.keys(VENDOR_ICONS)) {
+    if (lower.startsWith(prefix)) return prefix;
+  }
+  return "";
+}
+
+function VendorIcon({ modelId, size = 14 }: { modelId: string; size?: number }) {
+  const prefix = getVendorPrefix(modelId);
+  const icons = prefix ? VENDOR_ICONS[prefix] : null;
+  if (!icons) return null;
+  return (
+    <>
+      <img src={icons.light} alt="" width={size} height={size} className="dark:hidden" />
+      <img src={icons.dark} alt="" width={size} height={size} className="hidden dark:block" />
+    </>
+  );
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -153,7 +217,10 @@ function ModelTag({ id }: { id: string }) {
           已复制
         </>
       ) : (
-        id
+        <>
+          <VendorIcon modelId={id} size={14} />
+          {id}
+        </>
       )}
     </button>
   );
@@ -313,8 +380,11 @@ export function SystemPage() {
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-2.5 dark:border-neutral-800/60">
             {vendorStats.map(([vendor, count]) => {
               const vc = VENDOR_COLORS[vendor] ?? DEFAULT_VENDOR;
+              // Use vendor name as a fake model id to get the icon
+              const iconKey = vendor + "-placeholder";
               return (
-                <span key={vendor} className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-semibold ${vc.bg} ${vc.text} ${vc.border}`}>
+                <span key={vendor} className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold ${vc.bg} ${vc.text} ${vc.border}`}>
+                  <VendorIcon modelId={iconKey} size={12} />
                   {vendor}
                   <span className="tabular-nums">{count}</span>
                 </span>
