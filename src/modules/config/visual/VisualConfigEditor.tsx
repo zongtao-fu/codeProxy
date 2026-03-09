@@ -50,6 +50,8 @@ function Field({
   );
 }
 
+import { Select } from "@/modules/ui/Select";
+
 function SelectInput({
   value,
   onChange,
@@ -64,31 +66,13 @@ function SelectInput({
   ariaLabel: string;
 }) {
   return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.currentTarget.value)}
-        disabled={disabled}
-        aria-label={ariaLabel}
-        className={[
-          "w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-9 text-sm text-slate-900 outline-none transition",
-          "focus-visible:ring-2 focus-visible:ring-slate-400/35 dark:border-neutral-800 dark:bg-neutral-900 dark:text-slate-100 dark:focus-visible:ring-white/15",
-          disabled ? "opacity-60" : null,
-        ]
-          .filter(Boolean)
-          .join(" ")}
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={16}
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-white/50"
-      />
-    </div>
+    <Select
+      value={value}
+      onChange={onChange}
+      options={options.map((opt) => ({ value: opt.value, label: opt.label }))}
+      aria-label={ariaLabel}
+      className={disabled ? "pointer-events-none opacity-60" : undefined}
+    />
   );
 }
 

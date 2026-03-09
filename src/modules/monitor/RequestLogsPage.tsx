@@ -1,21 +1,20 @@
 import {
   useCallback,
-  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
-import { Filter, RefreshCw, ScrollText, Search } from "lucide-react";
+import { Filter, RefreshCw, ScrollText } from "lucide-react";
 import { providersApi, usageApi } from "@/lib/http/apis";
 import { apiKeyEntriesApi, apiKeysApi, type ApiKeyEntry } from "@/lib/http/apis/api-keys";
 import type { UsageData } from "@/lib/http/types";
-import { TextInput } from "@/modules/ui/Input";
 import { Tabs, TabsList, TabsTrigger } from "@/modules/ui/Tabs";
 import { useToast } from "@/modules/ui/ToastProvider";
 import { OverflowTooltip } from "@/modules/ui/Tooltip";
 import { Select } from "@/modules/ui/Select";
+import { SearchableSelect } from "@/modules/ui/SearchableSelect";
 
 type TimeRange = 1 | 7 | 14 | 30;
 type StatusFilter = "" | "success" | "failed";
@@ -398,9 +397,6 @@ export function RequestLogsPage() {
   const [modelQuery, setModelQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
 
-  const deferredApiQuery = useDeferredValue(apiQuery.trim());
-  const deferredModelQuery = useDeferredValue(modelQuery.trim());
-
   const fetchInFlightRef = useRef(false);
 
   const fetchUsage = useCallback(async () => {
@@ -508,18 +504,41 @@ export function RequestLogsPage() {
     return entries.sort((a, b) => b.timestampMs - a.timestampMs);
   }, [timeRange, usage.apis, keyNameMap, providerNameMap]);
 
-  const filteredRows = useMemo(() => {
-    const apiNeedle = deferredApiQuery.toLowerCase();
-    const modelNeedle = deferredModelQuery.toLowerCase();
+  // Build unique lists for SearchableSelect
+  const keyOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    rows.forEach((row) => {
+      if (!seen.has(row.apiKey)) {
+        seen.set(row.apiKey, row.apiKeyName || row.maskedApiKey);
+      }
+    });
+    return [
+      { value: "", label: "全部 Key" },
+      ...[...seen.entries()].map(([key, name]) => ({
+        value: key,
+        label: name || key,
+        searchText: `${name} ${key}`,
+      })),
+    ];
+  }, [rows]);
 
+  const modelOptions = useMemo(() => {
+    const models = [...new Set(rows.map((r) => r.model))].sort();
+    return [
+      { value: "", label: "全部模型" },
+      ...models.map((m) => ({ value: m, label: m })),
+    ];
+  }, [rows]);
+
+  const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      if (apiNeedle && !row.apiKey.toLowerCase().includes(apiNeedle)) return false;
-      if (modelNeedle && !row.model.toLowerCase().includes(modelNeedle)) return false;
+      if (apiQuery && row.apiKey !== apiQuery) return false;
+      if (modelQuery && row.model !== modelQuery) return false;
       if (statusFilter === "success" && row.failed) return false;
       if (statusFilter === "failed" && !row.failed) return false;
       return true;
     });
-  }, [deferredApiQuery, deferredModelQuery, rows, statusFilter]);
+  }, [apiQuery, modelQuery, rows, statusFilter]);
 
   const summary = useMemo(() => {
     const total = filteredRows.length;
@@ -569,34 +588,22 @@ export function RequestLogsPage() {
 
         {/* 筛选 + 统计（内联一行） */}
         <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-5 py-3 dark:border-neutral-800/60">
-          <div className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm transition focus-within:ring-2 focus-within:ring-slate-400/35 dark:border-neutral-800 dark:bg-neutral-950/60 dark:focus-within:ring-white/15">
-            <Search size={14} className="text-slate-500 dark:text-white/55" aria-hidden="true" />
-            <TextInput
-              value={apiQuery}
-              onChange={(event) => setApiQuery(event.target.value)}
-              variant="ghost"
-              className="w-32"
-              placeholder="API key…"
-              aria-label="按 API key 过滤"
-              name="apiKeyFilter"
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </div>
-          <div className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm transition focus-within:ring-2 focus-within:ring-slate-400/35 dark:border-neutral-800 dark:bg-neutral-950/60 dark:focus-within:ring-white/15">
-            <Search size={14} className="text-slate-500 dark:text-white/55" aria-hidden="true" />
-            <TextInput
-              value={modelQuery}
-              onChange={(event) => setModelQuery(event.target.value)}
-              variant="ghost"
-              className="w-32"
-              placeholder="模型…"
-              aria-label="按模型过滤"
-              name="modelFilter"
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </div>
+          <SearchableSelect
+            value={apiQuery}
+            onChange={setApiQuery}
+            options={keyOptions}
+            placeholder="全部 Key"
+            searchPlaceholder="搜索 Key…"
+            aria-label="按 Key 名称过滤"
+          />
+          <SearchableSelect
+            value={modelQuery}
+            onChange={setModelQuery}
+            options={modelOptions}
+            placeholder="全部模型"
+            searchPlaceholder="搜索模型…"
+            aria-label="按模型过滤"
+          />
           <Select
             value={statusFilter}
             onChange={(v) => setStatusFilter(v as StatusFilter)}
