@@ -15,6 +15,8 @@ import { AnimatedNumber } from "@/modules/ui/AnimatedNumber";
 import { Reveal } from "@/modules/ui/Reveal";
 import { EChart } from "@/modules/ui/charts/EChart";
 import { ChartLegend } from "@/modules/ui/charts/ChartLegend";
+import { OverflowTooltip } from "@/modules/ui/Tooltip";
+import { VirtualTable, type VirtualTableColumn } from "@/modules/ui/VirtualTable";
 import type { UsageData, UsageDetail } from "@/lib/http/types";
 import type { TimeRange } from "@/modules/monitor/monitor-constants";
 import { CHART_COLOR_CLASSES, HOURLY_MODEL_COLORS } from "@/modules/monitor/monitor-constants";
@@ -99,6 +101,109 @@ function flattenUsageToLogs(data: UsageData): FlatRecord[] {
 
 const createEmptyUsage = (): UsageData => ({ apis: {} });
 
+const formatTimestamp = (value: string): string => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value || "--";
+    return date.toLocaleString();
+};
+
+const formatLatencyMs = (value: number | undefined): string => {
+    if (value == null || !Number.isFinite(value) || value < 0) return "--";
+    if (value < 1) return "<1ms";
+    if (value < 1000) return `${Math.round(value)}ms`;
+    const seconds = value / 1000;
+    const fixed = seconds.toFixed(seconds < 10 ? 2 : 1);
+    const trimmed = fixed.endsWith(".0") ? fixed.slice(0, -2) : fixed;
+    return `${trimmed}s`;
+};
+
+const lookupLogColumns: VirtualTableColumn<FlatRecord>[] = [
+    {
+        key: "timestamp",
+        label: "时间",
+        width: "w-52",
+        cellClassName: "font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+        render: (row) => (
+            <OverflowTooltip content={formatTimestamp(row.timestamp)} className="block min-w-0">
+                <span className="block min-w-0 truncate">{formatTimestamp(row.timestamp)}</span>
+            </OverflowTooltip>
+        ),
+    },
+    {
+        key: "model",
+        label: "模型",
+        width: "w-56",
+        render: (row) => (
+            <OverflowTooltip content={row.model} className="block min-w-0">
+                <span className="block min-w-0 truncate">{row.model}</span>
+            </OverflowTooltip>
+        ),
+    },
+    {
+        key: "status",
+        label: "状态",
+        width: "w-20",
+        render: (row) =>
+            row.failed ? (
+                <span className="inline-flex min-w-[52px] justify-center rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
+                    失败
+                </span>
+            ) : (
+                <span className="inline-flex min-w-[52px] justify-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+                    成功
+                </span>
+            ),
+    },
+    {
+        key: "source",
+        label: "来源",
+        width: "w-32",
+        render: (row) => (
+            <OverflowTooltip content={row.source || "--"} className="block min-w-0">
+                <span className={`block min-w-0 truncate text-xs font-medium ${row.source ? "text-violet-600 dark:text-violet-400" : "text-slate-400 dark:text-white/30"}`}>
+                    {row.source || "--"}
+                </span>
+            </OverflowTooltip>
+        ),
+    },
+    {
+        key: "latency",
+        label: "用时",
+        width: "w-24",
+        headerClassName: "text-right",
+        cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+        render: (row) => (
+            <OverflowTooltip content={formatLatencyMs(row.latencyMs)} className="block min-w-0">
+                <span className="block min-w-0 truncate">{formatLatencyMs(row.latencyMs)}</span>
+            </OverflowTooltip>
+        ),
+    },
+    {
+        key: "inputTokens",
+        label: "输入",
+        width: "w-24",
+        headerClassName: "text-right",
+        cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+        render: (row) => <span>{(row.tokens?.input_tokens ?? 0).toLocaleString()}</span>,
+    },
+    {
+        key: "outputTokens",
+        label: "输出",
+        width: "w-24",
+        headerClassName: "text-right",
+        cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+        render: (row) => <span>{(row.tokens?.output_tokens ?? 0).toLocaleString()}</span>,
+    },
+    {
+        key: "totalTokens",
+        label: "总 Token",
+        width: "w-28",
+        headerClassName: "text-right",
+        cellClassName: "text-right font-mono text-xs tabular-nums text-slate-900 dark:text-white",
+        render: (row) => <span>{(row.tokens?.total_tokens ?? 0).toLocaleString()}</span>,
+    },
+];
+
 export function ApiKeyLookupPage() {
     const {
         state: { mode },
@@ -122,11 +227,11 @@ export function ApiKeyLookupPage() {
         请求数: true,
     });
 
-    const fetchData = useCallback(async (key: string) => {
+    const fetchData = useCallback(async (key: string, isRefresh = false) => {
         if (!key.trim()) return;
         setIsLoading(true);
         setError(null);
-        setFound(null);
+        // Don't reset found — try/catch will set the correct value, avoids flicker
         try {
             const result = await fetchPublicUsage(key.trim());
             startTransition(() => {
@@ -164,7 +269,7 @@ export function ApiKeyLookupPage() {
     );
 
     const handleRefresh = useCallback(() => {
-        if (queriedKey) void fetchData(queriedKey);
+        if (queriedKey) void fetchData(queriedKey, true);
     }, [queriedKey, fetchData]);
 
     const filteredUsage = useMemo(
@@ -394,6 +499,11 @@ export function ApiKeyLookupPage() {
                                     <div>
                                         <p className="text-sm font-medium text-slate-500 dark:text-white/55">
                                             当前查询 Key
+                                            {activeTab === "logs" && (
+                                                <span className="ml-2 text-xs font-normal text-slate-400 dark:text-white/40">
+                                                    · 请求日志 共 {logRecords.length} 条
+                                                </span>
+                                            )}
                                         </p>
                                         <p className="font-mono text-sm font-semibold text-slate-900 dark:text-white">
                                             {maskedKey}
@@ -586,116 +696,32 @@ export function ApiKeyLookupPage() {
                             </div>
                         )}
 
-                        {/* 请求日志 Tab */}
                         {activeTab === "logs" && (
-                            <Reveal>
-                                <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
-                                    <div className="border-b border-slate-200 px-5 py-3 dark:border-neutral-800">
-                                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                                            请求日志
-                                            <span className="ml-2 text-xs font-normal text-slate-500 dark:text-white/55">
-                                                共 {logRecords.length} 条
-                                            </span>
-                                        </h3>
+                            <section className="relative rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
+                                <div className="relative px-5 pb-5 pt-4">
+                                    <VirtualTable<FlatRecord>
+                                        rows={logRecords}
+                                        columns={lookupLogColumns}
+                                        rowKey={(row, idx) => `${row.timestamp}-${row.model}-${idx}`}
+                                        rowHeight={44}
+                                        height="h-[calc(100vh-400px)]"
+                                        minWidth="min-w-[900px]"
+                                        caption="请求日志表格"
+                                        emptyText="该时间范围内暂无请求日志"
+                                    />
+                                </div>
+                                {busy && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70 backdrop-blur-sm dark:bg-neutral-950/55">
+                                        <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-white/75">
+                                            <span
+                                                className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-slate-900 motion-reduce:animate-none motion-safe:animate-spin dark:border-white/20 dark:border-t-white/80"
+                                                aria-hidden="true"
+                                            />
+                                            <span role="status">加载中…</span>
+                                        </div>
                                     </div>
-                                    <div className="max-h-[600px] overflow-auto">
-                                        <table className="w-full text-left text-sm">
-                                            <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-neutral-900">
-                                                <tr className="border-b border-slate-200 dark:border-neutral-800">
-                                                    <th className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-600 dark:text-white/65">
-                                                        时间
-                                                    </th>
-                                                    <th className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-600 dark:text-white/65">
-                                                        模型
-                                                    </th>
-                                                    <th className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-600 dark:text-white/65">
-                                                        状态
-                                                    </th>
-                                                    <th className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-600 dark:text-white/65">
-                                                        来源
-                                                    </th>
-                                                    <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium text-slate-600 dark:text-white/65">
-                                                        请求时间 (S)
-                                                    </th>
-                                                    <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium text-slate-600 dark:text-white/65">
-                                                        输入 Token
-                                                    </th>
-                                                    <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium text-slate-600 dark:text-white/65">
-                                                        输出 Token
-                                                    </th>
-                                                    <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium text-slate-600 dark:text-white/65">
-                                                        总 Token
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {logRecords.length === 0 ? (
-                                                    <tr>
-                                                        <td
-                                                            colSpan={8}
-                                                            className="px-4 py-10 text-center text-slate-500 dark:text-white/55"
-                                                        >
-                                                            该时间范围内暂无请求日志
-                                                        </td>
-                                                    </tr>
-                                                ) : (
-                                                    logRecords.map((row, index) => {
-                                                        const ts = new Date(row.timestamp);
-                                                        const timeStr = Number.isFinite(ts.getTime())
-                                                            ? ts.toLocaleString("zh-CN", {
-                                                                month: "2-digit",
-                                                                day: "2-digit",
-                                                                hour: "2-digit",
-                                                                minute: "2-digit",
-                                                                second: "2-digit",
-                                                            })
-                                                            : row.timestamp;
-                                                        return (
-                                                            <tr
-                                                                key={`${row.timestamp}-${row.model}-${index}`}
-                                                                className="border-b border-slate-100 transition hover:bg-slate-50/60 dark:border-neutral-800/60 dark:hover:bg-white/[0.03]"
-                                                            >
-                                                                <td className="whitespace-nowrap px-4 py-2 tabular-nums text-slate-700 dark:text-white/75">
-                                                                    {timeStr}
-                                                                </td>
-                                                                <td className="max-w-[180px] truncate px-4 py-2 font-medium text-slate-900 dark:text-white">
-                                                                    {row.model}
-                                                                </td>
-                                                                <td className="px-4 py-2">
-                                                                    {row.failed ? (
-                                                                        <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600 ring-1 ring-red-200/60 dark:bg-red-950/30 dark:text-red-400 dark:ring-red-900/40">
-                                                                            失败
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-600 ring-1 ring-green-200/60 dark:bg-green-950/30 dark:text-green-400 dark:ring-green-900/40">
-                                                                            成功
-                                                                        </span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="max-w-[120px] truncate px-4 py-2 text-slate-600 dark:text-white/65">
-                                                                    {row.source || "-"}
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums text-slate-700 dark:text-white/75">
-                                                                    {row.latencyMs != null ? (row.latencyMs / 1000).toFixed(3).replace(/\.?0+$/, "") : "-"}
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums text-slate-700 dark:text-white/75">
-                                                                    {formatNumber(row.tokens?.input_tokens ?? 0)}
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums text-slate-700 dark:text-white/75">
-                                                                    {formatNumber(row.tokens?.output_tokens ?? 0)}
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums font-semibold text-slate-900 dark:text-white">
-                                                                    {formatNumber(row.tokens?.total_tokens ?? 0)}
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </section>
-                            </Reveal>
+                                )}
+                            </section>
                         )}
                     </>
                 )}
