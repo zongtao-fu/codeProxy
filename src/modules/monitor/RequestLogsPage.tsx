@@ -13,6 +13,7 @@ import { useToast } from "@/modules/ui/ToastProvider";
 import { OverflowTooltip } from "@/modules/ui/Tooltip";
 import { Select } from "@/modules/ui/Select";
 import { SearchableSelect } from "@/modules/ui/SearchableSelect";
+import { LogContentModal } from "@/modules/monitor/LogContentModal";
 
 type TimeRange = 1 | 7 | 14 | 30;
 type StatusFilter = "" | "success" | "failed";
@@ -32,6 +33,7 @@ interface LogRow {
   cachedTokens: number;
   outputTokens: number;
   totalTokens: number;
+  hasContent: boolean;
 }
 
 const PAGE_SIZE = 50;
@@ -86,141 +88,169 @@ const TimeRangeSelector = ({
 
 import { VirtualTable, type VirtualTableColumn } from "@/modules/ui/VirtualTable";
 
-const logColumns: VirtualTableColumn<LogRow>[] = [
-  {
-    key: "timestamp",
-    label: "时间",
-    width: "w-52",
-    cellClassName:
-      "font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
-    render: (row) => (
-      <OverflowTooltip content={formatTimestamp(row.timestamp)} className="block min-w-0">
-        <span className="block min-w-0 truncate">{formatTimestamp(row.timestamp)}</span>
-      </OverflowTooltip>
-    ),
-  },
-  {
-    key: "apiKeyName",
-    label: "Key 名称",
-    width: "w-32",
-    render: (row) => (
-      <OverflowTooltip content={row.apiKeyName || "--"} className="block min-w-0">
-        <span
-          className={`block min-w-0 truncate text-xs font-medium ${row.apiKeyName ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-white/30"}`}
-        >
-          {row.apiKeyName || "--"}
-        </span>
-      </OverflowTooltip>
-    ),
-  },
-  {
-    key: "model",
-    label: "模型",
-    width: "w-56",
-    render: (row) => (
-      <OverflowTooltip content={row.model} className="block min-w-0">
-        <span className="block min-w-0 truncate">{row.model}</span>
-      </OverflowTooltip>
-    ),
-  },
-  {
-    key: "channelName",
-    label: "渠道名",
-    width: "w-32",
-    render: (row) => (
-      <OverflowTooltip content={row.channelName || "--"} className="block min-w-0">
-        <span
-          className={`block min-w-0 truncate text-xs font-medium ${row.channelName ? "text-violet-600 dark:text-violet-400" : "text-slate-400 dark:text-white/30"}`}
-        >
-          {row.channelName || "--"}
-        </span>
-      </OverflowTooltip>
-    ),
-  },
-  {
-    key: "status",
-    label: "状态",
-    width: "w-20",
-    render: (row) =>
-      row.failed ? (
-        <span className="inline-flex min-w-[52px] justify-center rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
-          失败
-        </span>
-      ) : (
-        <span className="inline-flex min-w-[52px] justify-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
-          成功
-        </span>
+function buildLogColumns(
+  onContentClick?: (logId: number, tab: "input" | "output") => void,
+): VirtualTableColumn<LogRow>[] {
+  return [
+    {
+      key: "timestamp",
+      label: "时间",
+      width: "w-52",
+      cellClassName:
+        "font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      render: (row) => (
+        <OverflowTooltip content={formatTimestamp(row.timestamp)} className="block min-w-0">
+          <span className="block min-w-0 truncate">{formatTimestamp(row.timestamp)}</span>
+        </OverflowTooltip>
       ),
-  },
-  {
-    key: "latency",
-    label: "用时",
-    width: "w-24",
-    headerClassName: "text-right",
-    cellClassName:
-      "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
-    render: (row) => (
-      <OverflowTooltip content={row.latencyText} className="block min-w-0">
-        <span className="block min-w-0 truncate">{row.latencyText}</span>
-      </OverflowTooltip>
-    ),
-  },
-  {
-    key: "inputTokens",
-    label: "输入",
-    width: "w-24",
-    headerClassName: "text-right",
-    cellClassName:
-      "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
-    render: (row) => (
-      <OverflowTooltip content={row.inputTokens.toLocaleString()} className="block min-w-0">
-        <span className="block min-w-0 truncate">{row.inputTokens.toLocaleString()}</span>
-      </OverflowTooltip>
-    ),
-  },
-  {
-    key: "cachedTokens",
-    label: "缓存读取",
-    width: "w-24",
-    headerClassName: "text-right",
-    cellClassName: "text-right font-mono text-xs tabular-nums",
-    render: (row) => (
-      <OverflowTooltip content={row.cachedTokens.toLocaleString()} className="block min-w-0">
-        <span
-          className={`block min-w-0 truncate ${row.cachedTokens > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-slate-400 dark:text-white/30"}`}
-        >
-          {row.cachedTokens > 0 ? row.cachedTokens.toLocaleString() : "0"}
-        </span>
-      </OverflowTooltip>
-    ),
-  },
-  {
-    key: "outputTokens",
-    label: "输出",
-    width: "w-24",
-    headerClassName: "text-right",
-    cellClassName:
-      "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
-    render: (row) => (
-      <OverflowTooltip content={row.outputTokens.toLocaleString()} className="block min-w-0">
-        <span className="block min-w-0 truncate">{row.outputTokens.toLocaleString()}</span>
-      </OverflowTooltip>
-    ),
-  },
-  {
-    key: "totalTokens",
-    label: "总 Token",
-    width: "w-28",
-    headerClassName: "text-right",
-    cellClassName:
-      "text-right font-mono text-xs tabular-nums text-slate-900 dark:text-white",
-    render: (row) => (
-      <OverflowTooltip content={row.totalTokens.toLocaleString()} className="block min-w-0">
-        <span className="block min-w-0 truncate">{row.totalTokens.toLocaleString()}</span>
-      </OverflowTooltip>
-    ),
-  },
-];
+    },
+    {
+      key: "apiKeyName",
+      label: "Key 名称",
+      width: "w-32",
+      render: (row) => (
+        <OverflowTooltip content={row.apiKeyName || "--"} className="block min-w-0">
+          <span
+            className={`block min-w-0 truncate text-xs font-medium ${row.apiKeyName ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-white/30"}`}
+          >
+            {row.apiKeyName || "--"}
+          </span>
+        </OverflowTooltip>
+      ),
+    },
+    {
+      key: "model",
+      label: "模型",
+      width: "w-56",
+      render: (row) => (
+        <OverflowTooltip content={row.model} className="block min-w-0">
+          <span className="block min-w-0 truncate">{row.model}</span>
+        </OverflowTooltip>
+      ),
+    },
+    {
+      key: "channelName",
+      label: "渠道名",
+      width: "w-32",
+      render: (row) => (
+        <OverflowTooltip content={row.channelName || "--"} className="block min-w-0">
+          <span
+            className={`block min-w-0 truncate text-xs font-medium ${row.channelName ? "text-violet-600 dark:text-violet-400" : "text-slate-400 dark:text-white/30"}`}
+          >
+            {row.channelName || "--"}
+          </span>
+        </OverflowTooltip>
+      ),
+    },
+    {
+      key: "status",
+      label: "状态",
+      width: "w-20",
+      render: (row) =>
+        row.failed ? (
+          <span className="inline-flex min-w-[52px] justify-center rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 dark:bg-rose-500/15 dark:text-rose-300">
+            失败
+          </span>
+        ) : (
+          <span className="inline-flex min-w-[52px] justify-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+            成功
+          </span>
+        ),
+    },
+    {
+      key: "latency",
+      label: "用时",
+      width: "w-24",
+      headerClassName: "text-right",
+      cellClassName:
+        "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      render: (row) => (
+        <OverflowTooltip content={row.latencyText} className="block min-w-0">
+          <span className="block min-w-0 truncate">{row.latencyText}</span>
+        </OverflowTooltip>
+      ),
+    },
+    {
+      key: "inputTokens",
+      label: "输入",
+      width: "w-24",
+      headerClassName: "text-right",
+      cellClassName:
+        "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      render: (row) =>
+        row.hasContent && onContentClick ? (
+          <button
+            type="button"
+            onClick={() => onContentClick(Number(row.id), "input")}
+            className="block min-w-0 w-full text-right cursor-pointer rounded px-1 -mx-1 transition hover:bg-sky-50 dark:hover:bg-sky-950/30"
+            title="点击查看输入内容"
+          >
+            <span className="truncate text-sky-600 dark:text-sky-400 underline decoration-sky-300/50 dark:decoration-sky-500/40 underline-offset-2">
+              {row.inputTokens.toLocaleString()}
+            </span>
+          </button>
+        ) : (
+          <OverflowTooltip content={row.inputTokens.toLocaleString()} className="block min-w-0">
+            <span className="block min-w-0 truncate">{row.inputTokens.toLocaleString()}</span>
+          </OverflowTooltip>
+        ),
+    },
+    {
+      key: "cachedTokens",
+      label: "缓存读取",
+      width: "w-24",
+      headerClassName: "text-right",
+      cellClassName: "text-right font-mono text-xs tabular-nums",
+      render: (row) => (
+        <OverflowTooltip content={row.cachedTokens.toLocaleString()} className="block min-w-0">
+          <span
+            className={`block min-w-0 truncate ${row.cachedTokens > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-slate-400 dark:text-white/30"}`}
+          >
+            {row.cachedTokens > 0 ? row.cachedTokens.toLocaleString() : "0"}
+          </span>
+        </OverflowTooltip>
+      ),
+    },
+    {
+      key: "outputTokens",
+      label: "输出",
+      width: "w-24",
+      headerClassName: "text-right",
+      cellClassName:
+        "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      render: (row) =>
+        row.hasContent && onContentClick ? (
+          <button
+            type="button"
+            onClick={() => onContentClick(Number(row.id), "output")}
+            className="block min-w-0 w-full text-right cursor-pointer rounded px-1 -mx-1 transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+            title="点击查看输出内容"
+          >
+            <span className="truncate text-emerald-600 dark:text-emerald-400 underline decoration-emerald-300/50 dark:decoration-emerald-500/40 underline-offset-2">
+              {row.outputTokens.toLocaleString()}
+            </span>
+          </button>
+        ) : (
+          <OverflowTooltip content={row.outputTokens.toLocaleString()} className="block min-w-0">
+            <span className="block min-w-0 truncate">{row.outputTokens.toLocaleString()}</span>
+          </OverflowTooltip>
+        ),
+    },
+    {
+      key: "totalTokens",
+      label: "总 Token",
+      width: "w-28",
+      headerClassName: "text-right",
+      cellClassName:
+        "text-right font-mono text-xs tabular-nums text-slate-900 dark:text-white",
+      render: (row) => (
+        <OverflowTooltip content={row.totalTokens.toLocaleString()} className="block min-w-0">
+          <span className="block min-w-0 truncate">{row.totalTokens.toLocaleString()}</span>
+        </OverflowTooltip>
+      ),
+    },
+  ];
+}
 
 
 /** Convert a backend log item to a UI-friendly LogRow */
@@ -240,11 +270,26 @@ function toLogRow(item: UsageLogItem): LogRow {
     cachedTokens: item.cached_tokens,
     outputTokens: item.output_tokens,
     totalTokens: item.total_tokens,
+    hasContent: item.has_content ?? false,
   };
 }
 
 export function RequestLogsPage() {
   const { notify } = useToast();
+
+  // Content modal state
+  const [contentModalOpen, setContentModalOpen] = useState(false);
+  const [contentModalLogId, setContentModalLogId] = useState<number | null>(null);
+  const [contentModalTab, setContentModalTab] = useState<"input" | "output">("input");
+
+  const handleContentClick = useCallback((logId: number, tab: "input" | "output") => {
+    setContentModalLogId(logId);
+    setContentModalTab(tab);
+    setContentModalOpen(true);
+  }, []);
+
+  // Build columns with content click handler
+  const logColumns = useMemo(() => buildLogColumns(handleContentClick), [handleContentClick]);
 
   // Accumulated raw items from all loaded pages (name resolution done by backend)
   const [rawItems, setRawItems] = useState<UsageLogItem[]>([]);
@@ -473,6 +518,13 @@ export function RequestLogsPage() {
           ) : null}
         </div>
       </div>
+
+      <LogContentModal
+        open={contentModalOpen}
+        logId={contentModalLogId}
+        initialTab={contentModalTab}
+        onClose={() => setContentModalOpen(false)}
+      />
     </section>
   );
 }
