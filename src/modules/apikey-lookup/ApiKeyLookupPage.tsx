@@ -231,8 +231,7 @@ export function ApiKeyLookupPage() {
         if (!key.trim()) return;
         setIsLoading(true);
         setError(null);
-        // Only reset found for new queries, not refreshes — avoids flicker
-        if (!isRefresh) setFound(null);
+        // Don't reset found — try/catch will set the correct value, avoids flicker
         try {
             const result = await fetchPublicUsage(key.trim());
             startTransition(() => {
