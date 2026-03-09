@@ -235,7 +235,7 @@ function VirtualRequestLogTable({ rows, loading }: { rows: readonly LogRow[]; lo
       <div
         ref={containerRef}
         onScroll={onScroll}
-        className="h-[calc(100vh-280px)] min-h-[360px] overflow-auto"
+        className="h-[calc(100vh-260px)] min-h-[360px] overflow-auto"
       >
         <table className="w-full min-w-[1320px] table-fixed border-separate border-spacing-0 text-sm">
           <caption className="sr-only">请求日志表格</caption>
