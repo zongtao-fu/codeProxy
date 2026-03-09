@@ -185,7 +185,7 @@ export function VirtualTable<T>({
                                 return (
                                     <th
                                         key={col.key}
-                                        className={`bg-slate-100 px-4 py-3 dark:bg-neutral-800 ${col.width ?? ""} ${col.headerClassName ?? ""} ${roundCls}`}
+                                        className={`whitespace-nowrap bg-slate-100 px-4 py-3 dark:bg-neutral-800 ${col.width ?? ""} ${col.headerClassName ?? ""} ${roundCls}`}
                                     >
                                         {col.label}
                                     </th>
