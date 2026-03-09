@@ -67,6 +67,10 @@ export const usageApi = {
   getDashboardSummary(days = 7): Promise<DashboardSummary> {
     return apiClient.get<DashboardSummary>(`/dashboard-summary?days=${days}`);
   },
+
+  async getLogContent(id: number): Promise<LogContentResponse> {
+    return apiClient.get<LogContentResponse>(`/usage/logs/${id}/content`);
+  },
 };
 
 export interface DashboardSummary {
@@ -110,6 +114,7 @@ export interface UsageLogItem {
   reasoning_tokens: number;
   cached_tokens: number;
   total_tokens: number;
+  has_content: boolean;
 }
 
 export interface UsageLogsResponse {
@@ -127,4 +132,11 @@ export interface UsageLogsResponse {
     success_rate: number;
     total_tokens: number;
   };
+}
+
+export interface LogContentResponse {
+  id: number;
+  input_content: string;
+  output_content: string;
+  model: string;
 }
