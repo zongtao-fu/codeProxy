@@ -19,6 +19,7 @@ import {
     Check,
 } from "lucide-react";
 import Markdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
@@ -128,7 +129,12 @@ const PROSE_CLASSES = `prose prose-sm dark:prose-invert max-w-none break-words l
   dark:prose-code:bg-neutral-800 dark:prose-code:text-slate-300
   prose-pre:rounded-lg prose-pre:bg-slate-900 prose-pre:text-xs dark:prose-pre:bg-neutral-900
   prose-strong:font-semibold
-  prose-blockquote:border-l-2 prose-blockquote:border-slate-300 dark:prose-blockquote:border-neutral-600`;
+  prose-blockquote:border-l-2 prose-blockquote:border-slate-300 dark:prose-blockquote:border-neutral-600
+  prose-table:border-collapse prose-table:text-sm prose-table:w-full
+  prose-th:border prose-th:border-slate-300 prose-th:bg-slate-100 prose-th:px-3 prose-th:py-2 prose-th:text-left prose-th:font-semibold
+  dark:prose-th:border-neutral-700 dark:prose-th:bg-neutral-800
+  prose-td:border prose-td:border-slate-300 prose-td:px-3 prose-td:py-2
+  dark:prose-td:border-neutral-700`;
 
 /* ---- macOS-style code block with syntax highlighting & copy ---- */
 
@@ -140,40 +146,27 @@ function CodeBlock({ language, children }: { language: string; children: string 
             setTimeout(() => setCopied(false), 2000);
         });
     };
-    const displayLang = language || "text";
 
     return (
-        <div className="group overflow-hidden rounded-xl border border-slate-200 dark:border-neutral-700 my-3">
-            {/* macOS title bar */}
-            <div className="flex items-center justify-between bg-slate-100 px-4 py-2 dark:bg-neutral-800">
-                <div className="flex items-center gap-3">
-                    {/* Traffic light dots */}
-                    <div className="flex items-center gap-1.5">
-                        <span className="inline-block h-3 w-3 rounded-full bg-[#FF5F57]" />
-                        <span className="inline-block h-3 w-3 rounded-full bg-[#FEBC2E]" />
-                        <span className="inline-block h-3 w-3 rounded-full bg-[#28C840]" />
-                    </div>
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{displayLang}</span>
-                </div>
-                <button
-                    type="button"
-                    onClick={handleCopy}
-                    className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-neutral-700 dark:hover:text-slate-300"
-                >
-                    {copied ? (
-                        <><Check size={13} className="text-emerald-500" /><span className="text-emerald-500">已复制</span></>
-                    ) : (
-                        <><Copy size={13} /><span>复制</span></>
-                    )}
-                </button>
-            </div>
-            {/* Code content */}
+        <div className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-neutral-700 my-3">
+            {/* Floating copy button */}
+            <button
+                type="button"
+                onClick={handleCopy}
+                className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md bg-slate-700/70 px-2 py-1 text-xs text-slate-300 opacity-0 backdrop-blur transition-opacity group-hover:opacity-100 hover:bg-slate-600/80 hover:text-white"
+            >
+                {copied ? (
+                    <><Check size={13} className="text-emerald-400" /><span className="text-emerald-400">已复制</span></>
+                ) : (
+                    <><Copy size={13} /><span>复制</span></>
+                )}
+            </button>
             <SyntaxHighlighter
-                language={displayLang}
+                language={language || "text"}
                 style={oneDark}
                 customStyle={{
                     margin: 0,
-                    borderRadius: 0,
+                    borderRadius: "12px",
                     fontSize: "13px",
                     lineHeight: "1.6",
                     padding: "16px",
@@ -209,7 +202,7 @@ const markdownComponents: Partial<Components> = {
 function MarkdownBlock({ text }: { text: string }) {
     return (
         <div className={PROSE_CLASSES}>
-            <Markdown components={markdownComponents}>{text}</Markdown>
+            <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{text}</Markdown>
         </div>
     );
 }
