@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { usageApi } from "@/lib/http/apis";
 import { createPortal } from "react-dom";
 import {
@@ -7,6 +7,14 @@ import {
     FileOutput,
     ChevronDown,
     X,
+    Settings,
+    ClipboardList,
+    User,
+    Bot,
+    Wrench,
+    Zap,
+    Upload,
+    MessageSquare,
 } from "lucide-react";
 import Markdown from "react-markdown";
 
@@ -29,60 +37,60 @@ type Msg = { role: string; content: string };
 
 const ROLE_STYLES: Record<
     string,
-    { label: string; icon: string; border: string; headerBg: string; headerText: string }
+    { label: string; icon: ReactNode; border: string; headerBg: string; headerText: string }
 > = {
     system: {
         label: "系统提示词",
-        icon: "⚙️",
+        icon: <Settings size={15} />,
         border: "border-violet-500/25 dark:border-violet-400/20",
         headerBg: "bg-violet-50 dark:bg-violet-500/10",
         headerText: "text-violet-700 dark:text-violet-300",
     },
     developer: {
         label: "开发者指令",
-        icon: "⚙️",
+        icon: <Settings size={15} />,
         border: "border-violet-500/25 dark:border-violet-400/20",
         headerBg: "bg-violet-50 dark:bg-violet-500/10",
         headerText: "text-violet-700 dark:text-violet-300",
     },
     instructions: {
         label: "指令 (Instructions)",
-        icon: "📋",
+        icon: <ClipboardList size={15} />,
         border: "border-indigo-500/25 dark:border-indigo-400/20",
         headerBg: "bg-indigo-50 dark:bg-indigo-500/10",
         headerText: "text-indigo-700 dark:text-indigo-300",
     },
     user: {
         label: "用户消息",
-        icon: "👤",
+        icon: <User size={15} />,
         border: "border-sky-500/25 dark:border-sky-400/20",
         headerBg: "bg-sky-50 dark:bg-sky-500/10",
         headerText: "text-sky-700 dark:text-sky-300",
     },
     assistant: {
         label: "模型回复",
-        icon: "🤖",
+        icon: <Bot size={15} />,
         border: "border-emerald-500/25 dark:border-emerald-400/20",
         headerBg: "bg-emerald-50 dark:bg-emerald-500/10",
         headerText: "text-emerald-700 dark:text-emerald-300",
     },
     tool: {
         label: "工具结果",
-        icon: "🔧",
+        icon: <Wrench size={15} />,
         border: "border-amber-500/25 dark:border-amber-400/20",
         headerBg: "bg-amber-50 dark:bg-amber-500/10",
         headerText: "text-amber-700 dark:text-amber-300",
     },
     function_call: {
         label: "函数调用",
-        icon: "⚡",
+        icon: <Zap size={15} />,
         border: "border-orange-500/25 dark:border-orange-400/20",
         headerBg: "bg-orange-50 dark:bg-orange-500/10",
         headerText: "text-orange-700 dark:text-orange-300",
     },
     function_call_output: {
         label: "函数返回",
-        icon: "📤",
+        icon: <Upload size={15} />,
         border: "border-teal-500/25 dark:border-teal-400/20",
         headerBg: "bg-teal-50 dark:bg-teal-500/10",
         headerText: "text-teal-700 dark:text-teal-300",
@@ -91,7 +99,7 @@ const ROLE_STYLES: Record<
 
 const DEFAULT_STYLE = {
     label: "消息",
-    icon: "💬",
+    icon: <MessageSquare size={15} />,
     border: "border-slate-300/50 dark:border-neutral-700",
     headerBg: "bg-slate-50 dark:bg-neutral-800/60",
     headerText: "text-slate-700 dark:text-slate-300",
@@ -101,20 +109,26 @@ const DEFAULT_STYLE = {
 /*  MarkdownContent                                                           */
 /* ========================================================================== */
 
+/** Clean content: strip \r, normalize whitespace */
+function cleanContent(raw: string): string {
+    return raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+}
+
 function MarkdownContent({ content }: { content: string }) {
+    const cleaned = cleanContent(content);
     return (
         <div className="prose prose-sm dark:prose-invert max-w-none break-words leading-relaxed
       prose-headings:mt-4 prose-headings:mb-2 prose-headings:font-semibold
       prose-h1:text-lg prose-h2:text-base prose-h3:text-sm
       prose-p:my-2 prose-p:leading-relaxed
       prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5
-      prose-code:rounded prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-xs prose-code:font-mono prose-code:text-pink-600
-      dark:prose-code:bg-neutral-800 dark:prose-code:text-pink-400
+      prose-code:rounded-md prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[13px] prose-code:font-mono prose-code:text-slate-700 prose-code:before:content-none prose-code:after:content-none
+      dark:prose-code:bg-neutral-800 dark:prose-code:text-slate-300
       prose-pre:rounded-lg prose-pre:bg-slate-900 prose-pre:text-xs dark:prose-pre:bg-neutral-900
       prose-strong:font-semibold
       prose-blockquote:border-l-2 prose-blockquote:border-slate-300 dark:prose-blockquote:border-neutral-600
     ">
-            <Markdown>{content}</Markdown>
+            <Markdown>{cleaned}</Markdown>
         </div>
     );
 }
@@ -135,7 +149,7 @@ function MessageBlock({ role, content, defaultExpanded = true }: { role: string;
                 onClick={() => setExpanded((prev) => !prev)}
                 className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold transition-colors ${style.headerBg} ${style.headerText} hover:brightness-95 dark:hover:brightness-110`}
             >
-                <span className="shrink-0">{style.icon}</span>
+                <span className="shrink-0 flex items-center">{style.icon}</span>
                 <span className="flex-1 truncate">{style.label}</span>
                 <ChevronDown
                     size={16}
@@ -221,6 +235,8 @@ function parseCodexInput(data: Record<string, unknown>): Msg[] | null {
 
 function decodeEscaped(s: string): string {
     return s
+        .replace(/\\r\\n/g, "\n")
+        .replace(/\\r/g, "")
         .replace(/\\n/g, "\n")
         .replace(/\\t/g, "\t")
         .replace(/\\"/g, '"')
