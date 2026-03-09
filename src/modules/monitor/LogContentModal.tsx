@@ -134,7 +134,20 @@ function MarkdownBlock({ text }: { text: string }) {
     );
 }
 
-/* ---- Collapsible section for XML-like tagged blocks ---- */
+/* ---- Inline badge for short XML-tagged values ---- */
+
+function TagBadge({ name, content }: { name: string; content: string }) {
+    return (
+        <div className="flex items-baseline gap-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-neutral-800/50">
+            <code className="shrink-0 rounded bg-slate-200/70 px-1.5 py-0.5 font-mono text-[11px] text-slate-500 dark:bg-neutral-700 dark:text-slate-400">
+                {name}
+            </code>
+            <span className="text-sm text-slate-700 dark:text-slate-200">{content}</span>
+        </div>
+    );
+}
+
+/* ---- Collapsible section for long XML-like tagged blocks ---- */
 
 function TagSection({ name, content, defaultExpanded = false }: { name: string; content: string; defaultExpanded?: boolean }) {
     const [expanded, setExpanded] = useState(defaultExpanded);
@@ -146,7 +159,7 @@ function TagSection({ name, content, defaultExpanded = false }: { name: string; 
                 className="flex w-full items-center gap-2 bg-slate-50 px-3.5 py-2 text-left text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 dark:bg-neutral-800/50 dark:text-slate-400 dark:hover:bg-neutral-800/80"
             >
                 <code className="shrink-0 rounded bg-slate-200/70 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 dark:bg-neutral-700 dark:text-slate-300">
-                    &lt;{name}&gt;
+                    {name}
                 </code>
                 <span className="flex-1" />
                 <ChevronDown
@@ -167,59 +180,87 @@ function TagSection({ name, content, defaultExpanded = false }: { name: string; 
 
 type Segment = { type: "text"; content: string } | { type: "tag"; name: string; content: string };
 
+/**
+ * Find matching XML-like tags using greedy matching to handle
+ * inner references to the same tag name (e.g. `<tag>...</tag>` inside backticks).
+ * Searches for the LAST occurrence of the closing tag to avoid early cutoff.
+ */
 function parseContentSegments(raw: string): Segment[] {
-    // Match XML-like tags: <tag_name> or <tag name with spaces>
-    // Supports: <permissions instructions>...</permissions instructions>
-    //           <INSTRUCTIONS>...</INSTRUCTIONS>
-    //           <environment_context>...</environment_context>
-    const tagRegex = /<([\w][\w\s]*?)>\s*\n?([\s\S]*?)\n?\s*<\/\1\s*>/g;
     const segments: Segment[] = [];
-    let lastIndex = 0;
+    let remaining = raw;
 
-    let match;
-    while ((match = tagRegex.exec(raw)) !== null) {
+    while (remaining.length > 0) {
+        // Find the next opening tag
+        const openMatch = remaining.match(/<([\w][\w\s]*?)>\s*\n?/);
+        if (!openMatch || openMatch.index === undefined) {
+            // No more tags — rest is text
+            const text = remaining.trim();
+            if (text) segments.push({ type: "text", content: text });
+            break;
+        }
+
+        const tagName = openMatch[1].trim();
+        const openEnd = openMatch.index + openMatch[0].length;
+
         // Text before this tag
-        if (match.index > lastIndex) {
-            const text = raw.slice(lastIndex, match.index).trim();
+        if (openMatch.index > 0) {
+            const text = remaining.slice(0, openMatch.index).trim();
             if (text) segments.push({ type: "text", content: text });
         }
-        segments.push({ type: "tag", name: match[1].trim(), content: match[2].trim() });
-        lastIndex = tagRegex.lastIndex;
-    }
 
-    // Remaining text
-    if (lastIndex < raw.length) {
-        const text = raw.slice(lastIndex).trim();
-        if (text) segments.push({ type: "text", content: text });
+        // Find the LAST occurrence of the closing tag (greedy strategy)
+        const closePattern = `</${tagName}>`;
+        const closePatternAlt = `</ ${tagName}>`;
+        const lastCloseIdx = Math.max(
+            remaining.lastIndexOf(closePattern),
+            remaining.lastIndexOf(closePatternAlt),
+        );
+
+        if (lastCloseIdx > openEnd) {
+            const innerContent = remaining.slice(openEnd, lastCloseIdx).trim();
+            segments.push({ type: "tag", name: tagName, content: innerContent });
+            remaining = remaining.slice(lastCloseIdx + closePattern.length);
+        } else {
+            // No valid closing tag — treat the opening tag as plain text
+            const text = remaining.slice(0, openEnd).trim();
+            if (text) segments.push({ type: "text", content: text });
+            remaining = remaining.slice(openEnd);
+        }
     }
 
     return segments;
 }
 
-/* ---- MarkdownContent: auto-detects XML tags and renders collapsible sections ---- */
+/** Check if content is "short" (single value, not worth collapsing) */
+function isShortContent(content: string): boolean {
+    const lines = content.split("\n").filter((l) => l.trim().length > 0);
+    return lines.length <= 2 && content.length <= 150;
+}
+
+/* ---- MarkdownContent: auto-detects XML tags and renders appropriately ---- */
 
 function MarkdownContent({ content }: { content: string }) {
     const cleaned = cleanContent(content);
     const segments = parseContentSegments(cleaned);
 
     // No tags found — render as plain markdown
-    if (segments.length === 1 && segments[0].type === "text") {
-        return <MarkdownBlock text={cleaned} />;
-    }
-    // No segments at all (shouldn't happen, but safety)
-    if (segments.length === 0) {
+    if (segments.length <= 1 && (segments.length === 0 || segments[0].type === "text")) {
         return <MarkdownBlock text={cleaned} />;
     }
 
     return (
-        <div className="space-y-3">
-            {segments.map((seg, idx) =>
-                seg.type === "tag" ? (
-                    <TagSection key={idx} name={seg.name} content={seg.content} />
-                ) : (
-                    <MarkdownBlock key={idx} text={seg.content} />
-                ),
-            )}
+        <div className="space-y-2">
+            {segments.map((seg, idx) => {
+                if (seg.type === "text") {
+                    return <MarkdownBlock key={idx} text={seg.content} />;
+                }
+                // Short tags → colored badge
+                if (isShortContent(seg.content)) {
+                    return <TagBadge key={idx} name={seg.name} content={seg.content} />;
+                }
+                // Long tags → collapsible section
+                return <TagSection key={idx} name={seg.name} content={seg.content} />;
+            })}
         </div>
     );
 }
