@@ -1,8 +1,14 @@
-import { Cpu, HardDrive, MemoryStick, Network, Clock, Database, FileText, ArrowUp, ArrowDown, Wifi } from "lucide-react";
-import { MonitorCard } from "@/modules/monitor/MonitorPagePieces";
-import { useSystemStats, type SystemStats } from "./useSystemStats";
+import { useState } from "react";
+import {
+    Cpu, Database, FileText, Clock, MemoryStick,
+    Network, ArrowUpRight, ArrowDownRight, Wifi,
+    Activity, AlertTriangle, Zap, RefreshCw,
+} from "lucide-react";
+import { useSystemStats, type SystemStats, type ChannelLatency } from "./useSystemStats";
 
-/* ─── Helpers ─── */
+/* ═══════════════════════════════════════════════════════════
+   Helpers
+   ═══════════════════════════════════════════════════════════ */
 
 function formatBytes(bytes: number): string {
     if (bytes === 0) return "0 B";
@@ -11,249 +17,343 @@ function formatBytes(bytes: number): string {
     return `${(bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
 }
 
-function formatRate(bytesPerSec: number): string {
-    if (bytesPerSec < 1024) return `${bytesPerSec.toFixed(0)} B/s`;
-    if (bytesPerSec < 1024 * 1024) return `${(bytesPerSec / 1024).toFixed(1)} KB/s`;
-    return `${(bytesPerSec / 1024 / 1024).toFixed(2)} MB/s`;
+function formatRate(bps: number): string {
+    if (bps < 1024) return `${bps.toFixed(0)} B/s`;
+    if (bps < 1024 * 1024) return `${(bps / 1024).toFixed(1)} KB/s`;
+    return `${(bps / 1024 / 1024).toFixed(2)} MB/s`;
 }
 
-function formatUptime(seconds: number): string {
-    const d = Math.floor(seconds / 86400);
-    const h = Math.floor((seconds % 86400) / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    if (d > 0) return `${d} 天 ${h} 时 ${m} 分`;
-    if (h > 0) return `${h} 时 ${m} 分`;
-    return `${m} 分`;
+function formatUptime(s: number): string {
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (d > 0) return `${d}天 ${h}时 ${m}分`;
+    if (h > 0) return `${h}时 ${m}分`;
+    return `${m}分`;
 }
 
 function formatMs(ms: number): string {
-    if (ms < 1000) return `${Math.round(ms)} ms`;
-    return `${(ms / 1000).toFixed(2)} s`;
+    if (ms < 1000) return `${Math.round(ms)}ms`;
+    return `${(ms / 1000).toFixed(2)}s`;
 }
 
-/** Returns tailwind color class based on threshold */
-function statusColor(pct: number): string {
-    if (pct >= 95) return "text-red-500";
-    if (pct >= 80) return "text-amber-500";
-    return "text-emerald-500";
+function statusColor(pct: number) {
+    if (pct >= 95) return { text: "text-red-500", bg: "bg-red-500", ring: "stroke-red-500", bar: "bg-red-500", label: "严重", labelBg: "bg-red-500/10 text-red-500" };
+    if (pct >= 80) return { text: "text-amber-500", bg: "bg-amber-500", ring: "stroke-amber-500", bar: "bg-amber-500", label: "警告", labelBg: "bg-amber-500/10 text-amber-500" };
+    return { text: "text-emerald-500", bg: "bg-emerald-500", ring: "stroke-emerald-500", bar: "bg-emerald-500", label: "正常", labelBg: "bg-emerald-500/10 text-emerald-500" };
 }
 
-function statusBg(pct: number): string {
-    if (pct >= 95) return "bg-red-500";
-    if (pct >= 80) return "bg-amber-500";
-    return "bg-emerald-500";
+/** Compute an overall health score (0-100) from system stats */
+function computeHealthScore(s: SystemStats): number {
+    // Weighted: sys CPU 30%, sys Mem 30%, proc CPU 20%, proc Mem 20%
+    const cpuScore = Math.max(0, 100 - s.system_cpu_pct);
+    const memScore = Math.max(0, 100 - s.system_mem_pct);
+    const procCpu = Math.max(0, 100 - Math.min(s.process_cpu_pct, 100));
+    const procMem = Math.max(0, 100 - s.process_mem_pct);
+    return cpuScore * 0.3 + memScore * 0.3 + procCpu * 0.2 + procMem * 0.2;
 }
 
-function statusRing(pct: number): string {
-    if (pct >= 95) return "stroke-red-500";
-    if (pct >= 80) return "stroke-amber-500";
-    return "stroke-emerald-500";
+function healthLabel(score: number) {
+    if (score >= 90) return { text: "健康", color: "text-emerald-500" };
+    if (score >= 70) return { text: "良好", color: "text-blue-500" };
+    if (score >= 50) return { text: "警告", color: "text-amber-500" };
+    return { text: "风险", color: "text-red-500" };
 }
 
-/* ─── Gauge Component ─── */
+function healthRingColor(score: number) {
+    if (score >= 90) return "stroke-emerald-500";
+    if (score >= 70) return "stroke-blue-500";
+    if (score >= 50) return "stroke-amber-500";
+    return "stroke-red-500";
+}
 
-function CircularGauge({ value, label, sublabel }: { value: number; label: string; sublabel?: string }) {
-    const clampedValue = Math.min(100, Math.max(0, value));
-    const radius = 38;
+/* ═══════════════════════════════════════════════════════════
+   Big Health Gauge (left panel focal point)
+   ═══════════════════════════════════════════════════════════ */
+
+function HealthGauge({ score }: { score: number }) {
+    const radius = 60;
     const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (clampedValue / 100) * circumference;
+    const offset = circumference - (score / 100) * circumference;
+    const hl = healthLabel(score);
 
     return (
-        <div className="flex flex-col items-center gap-2">
-            <div className="relative h-24 w-24">
-                <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-                    <circle
-                        cx="50" cy="50" r={radius}
-                        fill="none"
-                        strokeWidth="7"
-                        className="stroke-slate-200 dark:stroke-neutral-800"
-                    />
-                    <circle
-                        cx="50" cy="50" r={radius}
-                        fill="none"
-                        strokeWidth="7"
+        <div className="flex flex-col items-center justify-center">
+            <div className="relative h-40 w-40">
+                <svg viewBox="0 0 150 150" className="h-full w-full -rotate-90">
+                    <circle cx="75" cy="75" r={radius} fill="none" strokeWidth="10"
+                        className="stroke-slate-200/60 dark:stroke-neutral-800" />
+                    <circle cx="75" cy="75" r={radius} fill="none" strokeWidth="10"
                         strokeLinecap="round"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={offset}
-                        className={`${statusRing(clampedValue)} transition-all duration-500`}
-                    />
+                        strokeDasharray={circumference} strokeDashoffset={offset}
+                        className={`${healthRingColor(score)} transition-all duration-700 ease-out`} />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-lg font-bold tabular-nums ${statusColor(clampedValue)}`}>
-                        {clampedValue.toFixed(1)}%
+                    <span className={`text-4xl font-bold tabular-nums ${hl.color}`}>
+                        {Math.round(score)}
                     </span>
+                    <span className={`mt-0.5 text-xs font-semibold ${hl.color}`}>{hl.text}</span>
                 </div>
             </div>
-            <div className="text-center">
-                <p className="text-xs font-semibold text-slate-900 dark:text-white">{label}</p>
-                {sublabel && <p className="text-[10px] text-slate-500 dark:text-white/55">{sublabel}</p>}
-            </div>
+            <p className="mt-2 text-[11px] text-slate-400 dark:text-white/40">健康状况评分</p>
         </div>
     );
 }
 
-/* ─── Stat Card ─── */
+/* ═══════════════════════════════════════════════════════════
+   Resource Bar (compact horizontal card with progress)
+   ═══════════════════════════════════════════════════════════ */
 
-function StatCard({ icon: Icon, title, value, sublabel, statusPct }: {
+function ResourceBar({ icon: Icon, label, value, pct, detail }: {
     icon: typeof Cpu;
-    title: string;
+    label: string;
     value: string;
+    pct: number;
+    detail?: string;
+}) {
+    const sc = statusColor(pct);
+    return (
+        <div className="rounded-xl border border-slate-200/80 bg-white px-3.5 py-2.5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Icon size={14} className="text-slate-400 dark:text-slate-500" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{label}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className={`text-sm font-bold tabular-nums ${sc.text}`}>{value}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${sc.labelBg}`}>{sc.label}</span>
+                </div>
+            </div>
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-neutral-800">
+                <div
+                    className={`h-full rounded-full ${sc.bar} transition-all duration-500`}
+                    style={{ width: `${Math.min(pct, 100)}%` }}
+                />
+            </div>
+            {detail && <p className="mt-1 text-[10px] text-slate-400 dark:text-white/35">{detail}</p>}
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Mini KPI (for top-right grid)
+   ═══════════════════════════════════════════════════════════ */
+
+function MiniKpi({ label, value, icon: Icon, color = "text-slate-900 dark:text-white", sublabel }: {
+    label: string;
+    value: string;
+    icon: typeof Activity;
+    color?: string;
     sublabel?: string;
-    statusPct?: number;
 }) {
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
-            <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-neutral-800">
-                    <Icon size={16} className="text-slate-600 dark:text-slate-300" />
-                </div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-white/55">{title}</span>
-                {statusPct !== undefined && (
-                    <span className={`ml-auto inline-block h-2 w-2 rounded-full ${statusBg(statusPct)}`} />
-                )}
+        <div className="rounded-xl border border-slate-200/80 bg-white px-3.5 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/40">
+                <Icon size={12} />
+                {label}
             </div>
-            <p className="mt-3 text-xl font-semibold tabular-nums text-slate-900 dark:text-white">{value}</p>
-            {sublabel && <p className="mt-1 text-xs text-slate-500 dark:text-white/55">{sublabel}</p>}
+            <p className={`mt-1.5 text-lg font-bold tabular-nums ${color}`}>{value}</p>
+            {sublabel && <p className="mt-0.5 text-[10px] text-slate-400 dark:text-white/35">{sublabel}</p>}
         </div>
     );
 }
 
-/* ─── Channel Latency Table ─── */
+/* ═══════════════════════════════════════════════════════════
+   Network Card (compact dual column)
+   ═══════════════════════════════════════════════════════════ */
 
-function ChannelLatencyTable({ data }: { data: SystemStats["channel_latency"] }) {
-    if (!data || data.length === 0) {
-        return <p className="text-xs text-slate-400 dark:text-white/40">暂无渠道数据</p>;
-    }
+function NetworkCard({ stats }: { stats: SystemStats }) {
+    return (
+        <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/40 mb-2.5">
+                <Wifi size={12} />
+                网络流量
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+                <div>
+                    <div className="flex items-center gap-1 text-emerald-500">
+                        <ArrowUpRight size={14} />
+                        <span className="text-sm font-bold tabular-nums">{formatRate(stats.net_send_rate)}</span>
+                    </div>
+                    <p className="mt-0.5 text-[10px] text-slate-400">↑ 累计 {formatBytes(stats.net_bytes_sent)}</p>
+                </div>
+                <div>
+                    <div className="flex items-center gap-1 text-blue-500">
+                        <ArrowDownRight size={14} />
+                        <span className="text-sm font-bold tabular-nums">{formatRate(stats.net_recv_rate)}</span>
+                    </div>
+                    <p className="mt-0.5 text-[10px] text-slate-400">↓ 累计 {formatBytes(stats.net_bytes_recv)}</p>
+                </div>
+            </div>
+            <div className="mt-2 flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-neutral-800/50">
+                <span className="text-[10px] text-slate-500 dark:text-white/45">总流量</span>
+                <span className="text-xs font-bold tabular-nums text-slate-700 dark:text-white">{formatBytes(stats.net_bytes_sent + stats.net_bytes_recv)}</span>
+            </div>
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Channel Latency (compact bar chart)
+   ═══════════════════════════════════════════════════════════ */
+
+function ChannelLatencyCard({ data }: { data: ChannelLatency[] }) {
+    if (!data || data.length === 0) return null;
     const maxMs = Math.max(...data.map((d) => d.avg_ms));
 
     return (
-        <div className="space-y-2">
-            {data.map((ch) => {
-                const pct = maxMs > 0 ? (ch.avg_ms / maxMs) * 100 : 0;
-                return (
-                    <div key={ch.source} className="flex items-center gap-3">
-                        <span className="w-24 shrink-0 truncate text-xs font-medium text-slate-700 dark:text-slate-300">{ch.source}</span>
-                        <div className="relative flex-1 h-5 overflow-hidden rounded-full bg-slate-100 dark:bg-neutral-800">
-                            <div
-                                className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
-                                style={{ width: `${Math.max(pct, 4)}%` }}
-                            />
+        <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/40 mb-2.5">
+                <Network size={12} />
+                渠道平均延迟
+                <span className="ml-auto text-[9px] font-normal normal-case tracking-normal">近 7 天</span>
+            </div>
+            <div className="space-y-1.5">
+                {data.map((ch) => {
+                    const pct = maxMs > 0 ? (ch.avg_ms / maxMs) * 100 : 0;
+                    return (
+                        <div key={ch.source} className="flex items-center gap-2">
+                            <span className="w-20 shrink-0 truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">{ch.source}</span>
+                            <div className="flex-1 h-4 overflow-hidden rounded bg-slate-100 dark:bg-neutral-800">
+                                <div
+                                    className="h-full rounded bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500"
+                                    style={{ width: `${Math.max(pct, 3)}%` }}
+                                />
+                            </div>
+                            <span className="w-14 shrink-0 text-right text-[11px] font-bold tabular-nums text-slate-600 dark:text-slate-300">
+                                {formatMs(ch.avg_ms)}
+                            </span>
+                            <span className="w-10 shrink-0 text-right text-[9px] text-slate-400 tabular-nums">
+                                {ch.count}次
+                            </span>
                         </div>
-                        <span className="w-16 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300">
-                            {formatMs(ch.avg_ms)}
-                        </span>
-                        <span className="w-12 shrink-0 text-right text-[10px] text-slate-400 tabular-nums">
-                            {ch.count} 次
-                        </span>
-                    </div>
-                );
-            })}
+                    );
+                })}
+            </div>
         </div>
     );
 }
 
-/* ─── Skeleton placeholder ─── */
+/* ═══════════════════════════════════════════════════════════
+   Skeleton
+   ═══════════════════════════════════════════════════════════ */
 
-function SkeletonGauge() {
+function Skeleton({ className = "" }: { className?: string }) {
+    return <div className={`animate-pulse rounded bg-slate-200 dark:bg-neutral-700 ${className}`} />;
+}
+
+function SkeletonLayout() {
     return (
-        <div className="flex flex-col items-center gap-2">
-            <div className="relative h-24 w-24">
-                <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-                    <circle cx="50" cy="50" r={38} fill="none" strokeWidth="7" className="stroke-slate-200 dark:stroke-neutral-800" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="h-5 w-10 animate-pulse rounded bg-slate-200 dark:bg-neutral-700" />
+        <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+                <div className="flex items-center justify-center rounded-xl border border-slate-200/80 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-950/60">
+                    <Skeleton className="h-40 w-40 rounded-full" />
+                </div>
+                <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-neutral-800 dark:bg-neutral-950/60">
+                            <Skeleton className="h-3 w-16 mb-3" />
+                            <Skeleton className="h-5 w-20" />
+                        </div>
+                    ))}
                 </div>
             </div>
-            <div className="h-3 w-12 animate-pulse rounded bg-slate-200 dark:bg-neutral-700" />
-        </div>
-    );
-}
-
-function SkeletonCard() {
-    return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
-            <div className="flex items-center gap-2">
-                <div className="h-8 w-8 animate-pulse rounded-lg bg-slate-200 dark:bg-neutral-700" />
-                <div className="h-3 w-16 animate-pulse rounded bg-slate-200 dark:bg-neutral-700" />
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-neutral-800 dark:bg-neutral-950/60">
+                        <Skeleton className="h-3 w-12 mb-2" />
+                        <Skeleton className="h-4 w-16 mb-2" />
+                        <Skeleton className="h-1.5 w-full" />
+                    </div>
+                ))}
             </div>
-            <div className="mt-3 h-6 w-24 animate-pulse rounded bg-slate-200 dark:bg-neutral-700" />
-            <div className="mt-2 h-3 w-20 animate-pulse rounded bg-slate-200 dark:bg-neutral-700" />
         </div>
     );
 }
 
-/* ─── Main Section ─── */
+/* ═══════════════════════════════════════════════════════════
+   Main Section — exported
+   ═══════════════════════════════════════════════════════════ */
 
 export function SystemMonitorSection() {
     const { stats, connected } = useSystemStats(3);
 
+    if (!stats) {
+        return (
+            <section className="rounded-2xl border border-slate-200 bg-white/50 p-5 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/50">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <Activity size={16} className="text-slate-600 dark:text-white" />
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">运维监控</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-slate-300 dark:bg-neutral-600" />
+                        连接中…
+                    </div>
+                </div>
+                <SkeletonLayout />
+            </section>
+        );
+    }
+
+    const health = computeHealthScore(stats);
+
     return (
-        <MonitorCard
-            title="系统监控"
-            description="服务资源使用状态（实时推送）"
-            actions={
-                <div className="flex items-center gap-2 text-xs">
+        <section className="rounded-2xl border border-slate-200 bg-white/50 p-5 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/50">
+            {/* ── Header ── */}
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <Activity size={16} className="text-slate-600 dark:text-white" />
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">运维监控</span>
+                    <span className="text-[10px] text-slate-400 dark:text-white/35">
+                        更新于 {new Date().toLocaleTimeString()}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-slate-400">
                     <span className={`inline-block h-2 w-2 rounded-full ${connected ? "bg-emerald-500 animate-pulse" : "bg-slate-300 dark:bg-neutral-600"}`} />
-                    <span className="text-slate-500 dark:text-white/55">{connected ? "实时" : "轮询"}</span>
+                    {connected ? "实时" : "轮询"}
                 </div>
-            }
-            loading={false}
-        >
-            {!stats ? (
-                <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                        <SkeletonGauge /><SkeletonGauge /><SkeletonGauge /><SkeletonGauge />
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
-                    </div>
-                </div>
-            ) : (
-                <div className="space-y-6">
-                    {/* ── Row 1: Gauges ── */}
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                        <CircularGauge value={stats.system_cpu_pct} label="系统 CPU" />
-                        <CircularGauge value={stats.system_mem_pct} label="系统内存" sublabel={`${formatBytes(stats.system_mem_used)} / ${formatBytes(stats.system_mem_total)}`} />
-                        <CircularGauge value={stats.process_cpu_pct} label="服务 CPU" />
-                        <CircularGauge value={stats.process_mem_pct} label="服务内存" sublabel={formatBytes(stats.process_mem_bytes)} />
+            </div>
+
+            <div className="space-y-4">
+                {/* ── Row 1: Health Gauge (left) + Core KPIs (right) ── */}
+                <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+                    {/* Left: big gauge */}
+                    <div className="flex items-center justify-center rounded-xl border border-slate-200/80 bg-gradient-to-br from-slate-50 to-white p-4 dark:border-neutral-800 dark:from-neutral-900/50 dark:to-neutral-950/60">
+                        <HealthGauge score={health} />
                     </div>
 
-                    {/* ── Row 2: Storage & Info ── */}
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        <StatCard icon={Database} title="数据库" value={formatBytes(stats.db_size_bytes)} sublabel="SQLite + WAL" />
-                        <StatCard icon={FileText} title="日志" value={formatBytes(stats.log_size_bytes)} sublabel="日志目录大小" />
-                        <StatCard icon={Clock} title="运行时长" value={formatUptime(stats.uptime_seconds)} sublabel={`启动于 ${new Date(stats.start_time).toLocaleString()}`} />
-                        <StatCard icon={MemoryStick} title="Go 堆内存" value={formatBytes(stats.go_heap_bytes)} sublabel={`${stats.go_routines} goroutines`} />
-                    </div>
-
-                    {/* ── Row 3: Network ── */}
-                    <div className="grid gap-3 md:grid-cols-3">
-                        <StatCard icon={ArrowUp} title="上行速率" value={formatRate(stats.net_send_rate)} sublabel={`累计 ${formatBytes(stats.net_bytes_sent)}`} />
-                        <StatCard icon={ArrowDown} title="下行速率" value={formatRate(stats.net_recv_rate)} sublabel={`累计 ${formatBytes(stats.net_bytes_recv)}`} />
-                        <StatCard
-                            icon={Wifi}
-                            title="总流量"
-                            value={formatBytes(stats.net_bytes_sent + stats.net_bytes_recv)}
-                            sublabel={`↑ ${formatBytes(stats.net_bytes_sent)} · ↓ ${formatBytes(stats.net_bytes_recv)}`}
-                        />
-                    </div>
-
-                    {/* ── Row 4: Channel latency ── */}
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-neutral-800">
-                                <Network size={16} className="text-slate-600 dark:text-slate-300" />
-                            </div>
-                            <div>
-                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-white/55">渠道平均延迟</span>
-                                <p className="text-[10px] text-slate-400 dark:text-white/40">近 7 天各渠道请求平均耗时</p>
-                            </div>
-                        </div>
-                        <ChannelLatencyTable data={stats.channel_latency} />
+                    {/* Right: core KPIs in 2x3 grid */}
+                    <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
+                        <MiniKpi label="运行时长" value={formatUptime(stats.uptime_seconds)} icon={Clock}
+                            sublabel={`启动于 ${new Date(stats.start_time).toLocaleString()}`} />
+                        <MiniKpi label="Goroutines" value={String(stats.go_routines)} icon={Zap}
+                            color="text-violet-500" sublabel={`堆 ${formatBytes(stats.go_heap_bytes)}`} />
+                        <MiniKpi label="数据库" value={formatBytes(stats.db_size_bytes)} icon={Database}
+                            sublabel="SQLite + WAL" />
+                        <MiniKpi label="日志存储" value={formatBytes(stats.log_size_bytes)} icon={FileText}
+                            sublabel="日志目录" />
+                        <NetworkCard stats={stats} />
+                        {stats.channel_latency?.length > 0 ? (
+                            <ChannelLatencyCard data={stats.channel_latency} />
+                        ) : (
+                            <MiniKpi label="渠道延迟" value="--" icon={Network} sublabel="暂无数据" />
+                        )}
                     </div>
                 </div>
-            )}
-        </MonitorCard>
+
+                {/* ── Row 2: System Resources — compact horizontal bars ── */}
+                <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
+                    <ResourceBar icon={Cpu} label="系统 CPU" value={`${stats.system_cpu_pct.toFixed(1)}%`} pct={stats.system_cpu_pct} />
+                    <ResourceBar icon={MemoryStick} label="系统内存" value={`${stats.system_mem_pct.toFixed(1)}%`} pct={stats.system_mem_pct}
+                        detail={`${formatBytes(stats.system_mem_used)} / ${formatBytes(stats.system_mem_total)}`} />
+                    <ResourceBar icon={Cpu} label="服务 CPU" value={`${stats.process_cpu_pct.toFixed(1)}%`} pct={Math.min(stats.process_cpu_pct, 100)} />
+                    <ResourceBar icon={MemoryStick} label="服务内存" value={`${stats.process_mem_pct.toFixed(1)}%`} pct={stats.process_mem_pct}
+                        detail={formatBytes(stats.process_mem_bytes)} />
+                    <ResourceBar icon={Database} label="数据库" value={formatBytes(stats.db_size_bytes)} pct={0}
+                        detail="SQLite + WAL + SHM" />
+                </div>
+            </div>
+        </section>
     );
 }
