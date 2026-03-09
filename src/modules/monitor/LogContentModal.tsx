@@ -329,9 +329,8 @@ function parseContentSegments(raw: string): Segment[] {
             segments.push({ type: "tag", name: tagName, content: innerContent });
             remaining = remaining.slice(lastCloseIdx + closePattern.length);
         } else {
-            // No valid closing tag — treat the opening tag as plain text
-            const text = unmask(remaining.slice(0, openEnd)).trim();
-            if (text) segments.push({ type: "text", content: text });
+            // No valid closing tag — silently skip the opening tag
+            // (e.g. inner <system-reminder> after outer match consumed </system-reminder>)
             remaining = remaining.slice(openEnd);
         }
     }
