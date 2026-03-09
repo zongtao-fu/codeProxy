@@ -146,27 +146,41 @@ function CodeBlock({ language, children }: { language: string; children: string 
             setTimeout(() => setCopied(false), 2000);
         });
     };
+    const displayLang = language || "text";
 
     return (
-        <div className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-neutral-700 my-3">
-            {/* Floating copy button */}
-            <button
-                type="button"
-                onClick={handleCopy}
-                className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md bg-slate-700/70 px-2 py-1 text-xs text-slate-300 opacity-0 backdrop-blur transition-opacity group-hover:opacity-100 hover:bg-slate-600/80 hover:text-white"
+        <div className="overflow-hidden rounded-xl my-3" style={{ border: "1px solid #3e4451" }}>
+            {/* Title bar — same dark bg as code */}
+            <div
+                className="flex items-center justify-between px-4 py-2.5"
+                style={{ backgroundColor: "#282c34" }}
             >
-                {copied ? (
-                    <><Check size={13} className="text-emerald-400" /><span className="text-emerald-400">已复制</span></>
-                ) : (
-                    <><Copy size={13} /><span>复制</span></>
-                )}
-            </button>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                        <span className="inline-block h-3 w-3 rounded-full bg-[#FF5F57]" />
+                        <span className="inline-block h-3 w-3 rounded-full bg-[#FEBC2E]" />
+                        <span className="inline-block h-3 w-3 rounded-full bg-[#28C840]" />
+                    </div>
+                    <span className="text-xs font-medium text-slate-400">{displayLang}</span>
+                </div>
+                <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
+                >
+                    {copied ? (
+                        <><Check size={13} className="text-emerald-400" /><span className="text-emerald-400">已复制</span></>
+                    ) : (
+                        <><Copy size={13} /><span>复制</span></>
+                    )}
+                </button>
+            </div>
             <SyntaxHighlighter
-                language={language || "text"}
+                language={displayLang}
                 style={oneDark}
                 customStyle={{
                     margin: 0,
-                    borderRadius: "12px",
+                    borderRadius: 0,
                     fontSize: "13px",
                     lineHeight: "1.6",
                     padding: "16px",
