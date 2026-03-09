@@ -227,11 +227,12 @@ export function ApiKeyLookupPage() {
         请求数: true,
     });
 
-    const fetchData = useCallback(async (key: string) => {
+    const fetchData = useCallback(async (key: string, isRefresh = false) => {
         if (!key.trim()) return;
         setIsLoading(true);
         setError(null);
-        setFound(null);
+        // Only reset found for new queries, not refreshes — avoids flicker
+        if (!isRefresh) setFound(null);
         try {
             const result = await fetchPublicUsage(key.trim());
             startTransition(() => {
@@ -269,7 +270,7 @@ export function ApiKeyLookupPage() {
     );
 
     const handleRefresh = useCallback(() => {
-        if (queriedKey) void fetchData(queriedKey);
+        if (queriedKey) void fetchData(queriedKey, true);
     }, [queriedKey, fetchData]);
 
     const filteredUsage = useMemo(
@@ -499,6 +500,11 @@ export function ApiKeyLookupPage() {
                                     <div>
                                         <p className="text-sm font-medium text-slate-500 dark:text-white/55">
                                             当前查询 Key
+                                            {activeTab === "logs" && (
+                                                <span className="ml-2 text-xs font-normal text-slate-400 dark:text-white/40">
+                                                    · 请求日志 共 {logRecords.length} 条
+                                                </span>
+                                            )}
                                         </p>
                                         <p className="font-mono text-sm font-semibold text-slate-900 dark:text-white">
                                             {maskedKey}
@@ -691,32 +697,32 @@ export function ApiKeyLookupPage() {
                             </div>
                         )}
 
-                        {/* 请求日志 Tab */}
                         {activeTab === "logs" && (
-                            <Reveal>
-                                <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
-                                    <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3 dark:border-neutral-800">
-                                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                                            请求日志
-                                            <span className="ml-2 text-xs font-normal text-slate-500 dark:text-white/55">
-                                                共 {logRecords.length} 条
-                                            </span>
-                                        </h3>
+                            <section className="relative rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
+                                <div className="relative px-5 pb-5 pt-4">
+                                    <VirtualTable<FlatRecord>
+                                        rows={logRecords}
+                                        columns={lookupLogColumns}
+                                        rowKey={(row, idx) => `${row.timestamp}-${row.model}-${idx}`}
+                                        rowHeight={44}
+                                        height="h-[calc(100vh-320px)]"
+                                        minWidth="min-w-[900px]"
+                                        caption="请求日志表格"
+                                        emptyText="该时间范围内暂无请求日志"
+                                    />
+                                </div>
+                                {busy && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70 backdrop-blur-sm dark:bg-neutral-950/55">
+                                        <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-white/75">
+                                            <span
+                                                className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-slate-900 motion-reduce:animate-none motion-safe:animate-spin dark:border-white/20 dark:border-t-white/80"
+                                                aria-hidden="true"
+                                            />
+                                            <span role="status">加载中…</span>
+                                        </div>
                                     </div>
-                                    <div className="px-5 pb-5">
-                                        <VirtualTable<FlatRecord>
-                                            rows={logRecords}
-                                            columns={lookupLogColumns}
-                                            rowKey={(row, idx) => `${row.timestamp}-${row.model}-${idx}`}
-                                            rowHeight={44}
-                                            height="h-[calc(100vh-360px)]"
-                                            minWidth="min-w-[900px]"
-                                            caption="请求日志表格"
-                                            emptyText="该时间范围内暂无请求日志"
-                                        />
-                                    </div>
-                                </section>
-                            </Reveal>
+                                )}
+                            </section>
                         )}
                     </>
                 )}
