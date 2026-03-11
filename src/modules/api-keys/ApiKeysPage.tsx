@@ -196,6 +196,7 @@ interface FormValues {
     rpmLimit: string;
     tpmLimit: string;
     allowedModels: string[];
+    systemPrompt: string;
 }
 
 /* ─── component ─── */
@@ -223,6 +224,7 @@ export function ApiKeysPage() {
         rpmLimit: "",
         tpmLimit: "",
         allowedModels: [],
+        systemPrompt: "",
     });
 
     /* ─── load models ─── */
@@ -334,6 +336,7 @@ export function ApiKeysPage() {
             rpmLimit: "",
             tpmLimit: "",
             allowedModels: [],
+            systemPrompt: "",
         });
         setShowCreate(true);
     };
@@ -358,6 +361,7 @@ export function ApiKeysPage() {
                 "rpm-limit": form.rpmLimit ? parseInt(form.rpmLimit, 10) || 0 : undefined,
                 "tpm-limit": form.tpmLimit ? parseInt(form.tpmLimit, 10) || 0 : undefined,
                 "allowed-models": form.allowedModels.length > 0 ? form.allowedModels : undefined,
+                "system-prompt": form.systemPrompt.trim() || undefined,
                 "created-at": new Date().toISOString(),
             };
             await apiKeyEntriesApi.replace([...entries, newEntry]);
@@ -384,6 +388,7 @@ export function ApiKeysPage() {
             rpmLimit: entry["rpm-limit"]?.toString() || "",
             tpmLimit: entry["tpm-limit"]?.toString() || "",
             allowedModels: entry["allowed-models"] || [],
+            systemPrompt: entry["system-prompt"] || "",
         });
         setEditIndex(index);
     };
@@ -406,6 +411,7 @@ export function ApiKeysPage() {
                     "rpm-limit": form.rpmLimit ? parseInt(form.rpmLimit, 10) || 0 : 0,
                     "tpm-limit": form.tpmLimit ? parseInt(form.tpmLimit, 10) || 0 : 0,
                     "allowed-models": form.allowedModels.length > 0 ? form.allowedModels : [],
+                    "system-prompt": form.systemPrompt.trim(),
                 },
             });
             notify({ type: "success", message: "更新成功" });
@@ -857,6 +863,22 @@ export function ApiKeysPage() {
                     placeholder="选择模型..."
                     emptyLabel="全部模型"
                 />
+            </div>
+
+            <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-white/80">
+                    系统提示词
+                </label>
+                <textarea
+                    value={form.systemPrompt}
+                    onChange={(e) => setForm((p) => ({ ...p, systemPrompt: e.target.value }))}
+                    placeholder="可选。设置后，使用此 API Key 的所有请求将自动在 messages 首位注入此系统提示词。"
+                    rows={3}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-indigo-500 resize-y"
+                />
+                <p className="mt-1 text-xs text-slate-400 dark:text-white/40">
+                    设置后，该 Key 的每次请求都会自动注入此系统提示词作为第一条 system 消息。
+                </p>
             </div>
         </div>
     );
