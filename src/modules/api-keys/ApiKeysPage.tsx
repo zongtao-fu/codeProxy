@@ -440,7 +440,7 @@ export function ApiKeysPage() {
         {
             key: "name",
             label: "名称",
-            width: "w-[100px]",
+            width: "w-[80px]",
             cellClassName: "font-medium",
             render: (row) => (
                 <OverflowTooltip content={row.name || "未命名"} className="block min-w-0">
@@ -463,7 +463,7 @@ export function ApiKeysPage() {
         {
             key: "dailyLimit",
             label: "每日限制",
-            width: "w-[90px]",
+            width: "w-[80px]",
             cellClassName: "whitespace-nowrap text-slate-700 dark:text-white/70",
             render: (row) => (
                 <span className="inline-flex items-center gap-1">
@@ -478,7 +478,7 @@ export function ApiKeysPage() {
         {
             key: "totalQuota",
             label: "总配额",
-            width: "w-[90px]",
+            width: "w-[80px]",
             cellClassName: "whitespace-nowrap text-slate-700 dark:text-white/70",
             render: (row) => (
                 <span className="inline-flex items-center gap-1">
@@ -493,7 +493,7 @@ export function ApiKeysPage() {
         {
             key: "rpmLimit",
             label: "RPM",
-            width: "w-[80px]",
+            width: "w-[70px]",
             cellClassName: "whitespace-nowrap text-slate-700 dark:text-white/70",
             headerRender: () => (
                 <HoverTooltip content="Requests Per Minute，每分钟请求数" className="inline-flex items-center gap-1">
@@ -514,7 +514,7 @@ export function ApiKeysPage() {
         {
             key: "tpmLimit",
             label: "TPM",
-            width: "w-[80px]",
+            width: "w-[70px]",
             cellClassName: "whitespace-nowrap text-slate-700 dark:text-white/70",
             headerRender: () => (
                 <HoverTooltip content="Tokens Per Minute，每分钟 Token 数" className="inline-flex items-center gap-1">
@@ -535,7 +535,7 @@ export function ApiKeysPage() {
         {
             key: "allowedModels",
             label: "可用模型",
-            width: "w-[160px]",
+            width: "w-[120px]",
             cellClassName: "text-slate-700 dark:text-white/70",
             render: (row) =>
                 row["allowed-models"]?.length ? (
@@ -838,7 +838,7 @@ export function ApiKeysPage() {
                         rowKey={(row) => row.key}
                         rowHeight={44}
                         height="h-auto max-h-[70vh]"
-                        minWidth="min-w-[900px]"
+                        minWidth="min-w-[1200px]"
                         caption="API Keys 列表"
                         emptyText="暂无 API Key"
                         rowClassName={(row) => row.disabled ? "opacity-50" : ""}
