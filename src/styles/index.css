@@ -45,3 +45,18 @@
 .dark ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* goey-toast: 修复长消息不换行 */
+.goey-wrapper {
+  max-width: min(420px, calc(100vw - 2rem));
+}
+
+.goey-title {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.goey-contentCompact {
+  max-width: min(420px, calc(100vw - 2rem));
+}
