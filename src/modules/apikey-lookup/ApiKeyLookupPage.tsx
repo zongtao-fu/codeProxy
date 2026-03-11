@@ -652,14 +652,14 @@ export function ApiKeyLookupPage() {
                                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40"
                                 />
                                 <input
-                                    type="text"
+                                    type="password"
                                     id="apikey-input"
                                     value={apiKeyInput}
                                     onChange={(e) => setApiKeyInput(e.target.value)}
                                     placeholder="输入 API Key 查询使用记录"
                                     autoComplete="off"
                                     spellCheck={false}
-                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-400/20 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-white dark:placeholder:text-white/30 dark:focus:border-neutral-600 dark:focus:ring-white/10"
+                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-white dark:placeholder:text-white/30"
                                 />
                             </div>
                         </div>
