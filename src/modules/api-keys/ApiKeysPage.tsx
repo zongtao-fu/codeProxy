@@ -585,12 +585,24 @@ export function ApiKeysPage() {
             cellClassName: "text-slate-700 dark:text-white/70",
             render: (row) =>
                 row["allowed-models"]?.length ? (
-                    <HoverTooltip content={row["allowed-models"].join(", ")} className="block min-w-0">
-                        <span className="inline-flex items-center gap-1.5 text-xs">
-                            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-md bg-indigo-50 px-1.5 font-semibold tabular-nums text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300">
+                    <HoverTooltip
+                        content={
+                            <div className="flex flex-wrap gap-1.5 max-w-xs">
+                                {row["allowed-models"].map((m) => (
+                                    <span key={m} className="inline-flex items-center gap-1 rounded-md border border-slate-200/60 bg-slate-50 px-2 py-0.5 font-mono text-[11px] text-slate-700 dark:border-neutral-700/40 dark:bg-neutral-800/60 dark:text-white/80">
+                                        <VendorIcon modelId={m} size={12} />
+                                        {m}
+                                    </span>
+                                ))}
+                            </div>
+                        }
+                        className="block min-w-0"
+                    >
+                        <span className="inline-flex items-center gap-1.5 text-xs min-w-0 max-w-full">
+                            <span className="inline-flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-md bg-indigo-50 px-1.5 font-semibold tabular-nums text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300">
                                 {row["allowed-models"].length}
                             </span>
-                            <span className="max-w-[100px] truncate text-slate-500 dark:text-white/50">
+                            <span className="truncate text-slate-500 dark:text-white/50">
                                 {row["allowed-models"][0]}
                                 {row["allowed-models"].length > 1 ? " 等" : ""}
                             </span>

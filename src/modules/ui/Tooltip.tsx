@@ -49,7 +49,7 @@ function FixedTooltipBubble({
 }: {
   id: string;
   open: boolean;
-  content: string;
+  content: ReactNode;
   anchorRef: React.RefObject<HTMLElement | null>;
   placement?: TooltipPlacement;
 }) {
@@ -116,7 +116,7 @@ export function HoverTooltip({
   disabled = false,
   placement = "top",
 }: {
-  content: string;
+  content: ReactNode;
   children: ReactNode;
   className?: string;
   disabled?: boolean;
@@ -128,7 +128,8 @@ export function HoverTooltip({
 
   const show = useCallback(() => {
     if (disabled) return;
-    if (!content.trim()) return;
+    if (!content) return;
+    if (typeof content === "string" && !content.trim()) return;
     setOpen(true);
   }, [content, disabled]);
 
