@@ -15,8 +15,7 @@ import { EmptyState } from "@/modules/ui/EmptyState";
 import { useToast } from "@/modules/ui/ToastProvider";
 import { OverflowTooltip } from "@/modules/ui/Tooltip";
 import { Modal } from "@/modules/ui/Modal";
-import { MANAGEMENT_API_PREFIX } from "@/lib/constants";
-import { detectApiBaseFromLocation } from "@/lib/connection";
+import { apiClient } from "@/lib/http/client";
 
 // Vendor SVG icons
 import iconClaude from "@/assets/icons/claude.svg";
@@ -127,16 +126,14 @@ const emptyPricing: ModelPricing = { inputPricePerMillion: 0, outputPricePerMill
 /* ─── API calls ─── */
 
 async function fetchModels(): Promise<ModelItem[]> {
-    const base = detectApiBaseFromLocation();
-    const url = `${base}${MANAGEMENT_API_PREFIX}/models`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`获取模型失败 (${resp.status})`);
-    const data = await resp.json();
-    const rawModels = (data?.data ?? []) as Array<{
-        id?: string;
-        owned_by?: string;
-        pricing?: { input_price_per_million?: number; output_price_per_million?: number; cached_price_per_million?: number };
-    }>;
+    const data = await apiClient.get<{
+        object: string; data: Array<{
+            id?: string;
+            owned_by?: string;
+            pricing?: { input_price_per_million?: number; output_price_per_million?: number; cached_price_per_million?: number };
+        }>
+    }>("/models");
+    const rawModels = data?.data ?? [];
     return rawModels
         .filter((m) => m.id)
         .map((m) => ({
@@ -154,14 +151,7 @@ async function fetchModels(): Promise<ModelItem[]> {
 }
 
 async function savePricingToBackend(items: Array<{ model_id: string; input_price_per_million: number; output_price_per_million: number; cached_price_per_million: number }>) {
-    const base = detectApiBaseFromLocation();
-    const url = `${base}${MANAGEMENT_API_PREFIX}/model-pricing`;
-    const resp = await fetch(url, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
-    });
-    if (!resp.ok) throw new Error(`保存定价失败 (${resp.status})`);
+    await apiClient.put("/model-pricing", { items });
 }
 
 /* ─── component ─── */
