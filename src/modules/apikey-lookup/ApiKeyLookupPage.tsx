@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Activity,
-    CheckCircle,
+    Check,
     ChartSpline,
     Coins,
+    Copy,
     Filter,
     Key,
+    Layers,
     RefreshCw,
     Search,
     ShieldCheck,
@@ -34,6 +36,24 @@ import type {
     ModelDistributionDatum,
     DailySeriesPoint,
 } from "@/modules/monitor/chart-options/types";
+
+// Vendor SVG icons
+import iconClaude from "@/assets/icons/claude.svg";
+import iconOpenaiLight from "@/assets/icons/openai-light.svg";
+import iconOpenaiDark from "@/assets/icons/openai-dark.svg";
+import iconGemini from "@/assets/icons/gemini.svg";
+import iconDeepseek from "@/assets/icons/deepseek.svg";
+import iconQwen from "@/assets/icons/qwen.svg";
+import iconMinimax from "@/assets/icons/minimax.svg";
+import iconGrok from "@/assets/icons/grok.svg";
+import iconKimiLight from "@/assets/icons/kimi-light.svg";
+import iconKimiDark from "@/assets/icons/kimi-dark.svg";
+import iconCodexLight from "@/assets/icons/codex_light.svg";
+import iconCodexDark from "@/assets/icons/codex_drak.svg";
+import iconGlm from "@/assets/icons/glm.svg";
+import iconKiro from "@/assets/icons/kiro.svg";
+import iconVertex from "@/assets/icons/vertex.svg";
+import iconIflow from "@/assets/icons/iflow.svg";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -93,6 +113,125 @@ interface ChartDataResponse {
     stats: { total: number; success_rate: number; total_tokens: number };
 }
 
+// ── Model Vendor Helpers ────────────────────────────────────────────────────
+
+const VENDOR_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+    claude: { bg: "bg-orange-50 dark:bg-orange-950/20", text: "text-orange-700 dark:text-orange-300", border: "border-orange-200/60 dark:border-orange-800/30" },
+    gpt: { bg: "bg-emerald-50 dark:bg-emerald-950/20", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200/60 dark:border-emerald-800/30" },
+    o1: { bg: "bg-emerald-50 dark:bg-emerald-950/20", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200/60 dark:border-emerald-800/30" },
+    o3: { bg: "bg-emerald-50 dark:bg-emerald-950/20", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200/60 dark:border-emerald-800/30" },
+    o4: { bg: "bg-emerald-50 dark:bg-emerald-950/20", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200/60 dark:border-emerald-800/30" },
+    gemini: { bg: "bg-blue-50 dark:bg-blue-950/20", text: "text-blue-700 dark:text-blue-300", border: "border-blue-200/60 dark:border-blue-800/30" },
+    deepseek: { bg: "bg-cyan-50 dark:bg-cyan-950/20", text: "text-cyan-700 dark:text-cyan-300", border: "border-cyan-200/60 dark:border-cyan-800/30" },
+    qwen: { bg: "bg-violet-50 dark:bg-violet-950/20", text: "text-violet-700 dark:text-violet-300", border: "border-violet-200/60 dark:border-violet-800/30" },
+    llama: { bg: "bg-indigo-50 dark:bg-indigo-950/20", text: "text-indigo-700 dark:text-indigo-300", border: "border-indigo-200/60 dark:border-indigo-800/30" },
+    mistral: { bg: "bg-amber-50 dark:bg-amber-950/20", text: "text-amber-700 dark:text-amber-300", border: "border-amber-200/60 dark:border-amber-800/30" },
+    minimax: { bg: "bg-sky-50 dark:bg-sky-950/20", text: "text-sky-700 dark:text-sky-300", border: "border-sky-200/60 dark:border-sky-800/30" },
+    grok: { bg: "bg-slate-50 dark:bg-slate-900/30", text: "text-slate-700 dark:text-slate-300", border: "border-slate-200/60 dark:border-slate-700/30" },
+    kimi: { bg: "bg-slate-50 dark:bg-slate-900/30", text: "text-slate-700 dark:text-slate-300", border: "border-slate-200/60 dark:border-slate-700/30" },
+    codex: { bg: "bg-emerald-50 dark:bg-emerald-950/20", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200/60 dark:border-emerald-800/30" },
+    glm: { bg: "bg-blue-50 dark:bg-blue-950/20", text: "text-blue-700 dark:text-blue-300", border: "border-blue-200/60 dark:border-blue-800/30" },
+    kiro: { bg: "bg-amber-50 dark:bg-amber-950/20", text: "text-amber-700 dark:text-amber-300", border: "border-amber-200/60 dark:border-amber-800/30" },
+};
+
+const DEFAULT_VENDOR_COLOR = { bg: "bg-slate-50 dark:bg-neutral-900/40", text: "text-slate-600 dark:text-slate-300", border: "border-slate-200/60 dark:border-neutral-700/40" };
+
+const VENDOR_ICONS: Record<string, { light: string; dark: string }> = {
+    claude: { light: iconClaude, dark: iconClaude },
+    gpt: { light: iconOpenaiLight, dark: iconOpenaiDark },
+    o1: { light: iconOpenaiLight, dark: iconOpenaiDark },
+    o3: { light: iconOpenaiLight, dark: iconOpenaiDark },
+    o4: { light: iconOpenaiLight, dark: iconOpenaiDark },
+    gemini: { light: iconGemini, dark: iconGemini },
+    deepseek: { light: iconDeepseek, dark: iconDeepseek },
+    qwen: { light: iconQwen, dark: iconQwen },
+    minimax: { light: iconMinimax, dark: iconMinimax },
+    grok: { light: iconGrok, dark: iconGrok },
+    kimi: { light: iconKimiLight, dark: iconKimiDark },
+    codex: { light: iconCodexLight, dark: iconCodexDark },
+    glm: { light: iconGlm, dark: iconGlm },
+    kiro: { light: iconKiro, dark: iconKiro },
+    vertex: { light: iconVertex, dark: iconVertex },
+    iflow: { light: iconIflow, dark: iconIflow },
+};
+
+function getVendorColor(modelId: string) {
+    const lower = modelId.toLowerCase();
+    for (const [prefix, color] of Object.entries(VENDOR_COLORS)) {
+        if (lower.startsWith(prefix)) return color;
+    }
+    return DEFAULT_VENDOR_COLOR;
+}
+
+function getVendorPrefix(modelId: string): string {
+    const lower = modelId.toLowerCase();
+    for (const prefix of Object.keys(VENDOR_ICONS)) {
+        if (lower.startsWith(prefix)) return prefix;
+    }
+    return "";
+}
+
+function VendorIcon({ modelId, size = 14 }: { modelId: string; size?: number }) {
+    const prefix = getVendorPrefix(modelId);
+    const icons = prefix ? VENDOR_ICONS[prefix] : null;
+    if (!icons) return null;
+    return (
+        <>
+            <img src={icons.light} alt="" width={size} height={size} className="dark:hidden" />
+            <img src={icons.dark} alt="" width={size} height={size} className="hidden dark:block" />
+        </>
+    );
+}
+
+function ModelTag({ id }: { id: string }) {
+    const [copied, setCopied] = useState(false);
+    const vc = getVendorColor(id);
+    const handleClick = () => {
+        void navigator.clipboard.writeText(id);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
+    return (
+        <button
+            type="button"
+            onClick={handleClick}
+            title="点击复制模型名称"
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-xs transition hover:shadow-sm active:scale-95 ${vc.bg} ${vc.text} ${vc.border}`}
+        >
+            {copied ? (
+                <>
+                    <Check size={11} className="text-emerald-500" />
+                    已复制
+                </>
+            ) : (
+                <>
+                    <VendorIcon modelId={id} size={14} />
+                    {id}
+                </>
+            )}
+        </button>
+    );
+}
+
+type V1ModelsResponse =
+    | { data?: Array<{ id?: string }> }
+    | { models?: Array<{ id?: string }> }
+    | Array<{ id?: string }>
+    | Record<string, unknown>;
+
+const extractModelIds = (payload: V1ModelsResponse): string[] => {
+    const data = Array.isArray(payload)
+        ? payload
+        : Array.isArray((payload as { data?: unknown }).data)
+            ? ((payload as { data: unknown[] }).data as Array<{ id?: string }>)
+            : Array.isArray((payload as { models?: unknown }).models)
+                ? ((payload as { models: unknown[] }).models as Array<{ id?: string }>)
+                : [];
+    return Array.from(
+        new Set(data.map((i) => (i && typeof i === "object" ? String((i as { id?: unknown }).id) : "")).map((s) => s.trim()).filter(Boolean)),
+    ).sort((a, b) => a.localeCompare(b));
+};
+
 // ── API ─────────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 50;
@@ -138,6 +277,19 @@ async function fetchPublicChartData(params: {
         throw new Error(text || `请求失败 (${resp.status})`);
     }
     return resp.json() as Promise<ChartDataResponse>;
+}
+
+async function fetchAvailableModels(apiKey: string): Promise<string[]> {
+    const base = detectApiBaseFromLocation();
+    const resp = await fetch(`${base}/v1/models`, {
+        headers: { Authorization: `Bearer ${apiKey.trim()}` },
+    });
+    if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        throw new Error(text || `请求失败 (${resp.status})`);
+    }
+    const payload = (await resp.json()) as V1ModelsResponse;
+    return extractModelIds(payload);
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -278,6 +430,113 @@ const STATUS_OPTIONS = [
     { value: "failed", label: "失败", searchText: "失败 failed" },
 ];
 
+// ── Models Tab Content ──────────────────────────────────────────────────────
+
+function ModelsTabContent({
+    models,
+    loading,
+    error,
+    searchFilter,
+    onSearchChange,
+}: {
+    models: string[];
+    loading: boolean;
+    error: string | null;
+    searchFilter: string;
+    onSearchChange: (v: string) => void;
+}) {
+    const filteredModels = useMemo(() => {
+        const needle = searchFilter.trim().toLowerCase();
+        if (!needle) return models;
+        return models.filter((id) => id.toLowerCase().includes(needle));
+    }, [searchFilter, models]);
+
+    const vendorStats = useMemo(() => {
+        const map = new Map<string, number>();
+        for (const id of models) {
+            const lower = id.toLowerCase();
+            let vendor = "其他";
+            for (const prefix of Object.keys(VENDOR_COLORS)) {
+                if (lower.startsWith(prefix)) { vendor = prefix; break; }
+            }
+            map.set(vendor, (map.get(vendor) ?? 0) + 1);
+        }
+        return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+    }, [models]);
+
+    return (
+        <div className="rounded-2xl border border-slate-200 bg-white/70 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+            {/* Header */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5 dark:border-neutral-800">
+                <div className="flex items-center gap-2.5">
+                    <Layers size={15} className="text-slate-500 dark:text-white/40" />
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">可用模型</h3>
+                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-bold tabular-nums text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300">
+                        {filteredModels.length}
+                    </span>
+                    {searchFilter && filteredModels.length !== models.length && (
+                        <span className="text-[10px] text-slate-400 dark:text-white/30">/ {models.length}</span>
+                    )}
+                </div>
+                <div className="relative">
+                    <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30 pointer-events-none" />
+                    <input
+                        value={searchFilter}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        placeholder="搜索模型…"
+                        className="w-48 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-white dark:placeholder:text-white/30 dark:focus:border-indigo-600"
+                    />
+                </div>
+            </div>
+
+            {/* Vendor stats bar */}
+            {vendorStats.length > 0 && !loading && (
+                <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-2.5 dark:border-neutral-800/60">
+                    {vendorStats.map(([vendor, count]) => {
+                        const vc = VENDOR_COLORS[vendor] ?? DEFAULT_VENDOR_COLOR;
+                        const iconKey = vendor + "-placeholder";
+                        return (
+                            <span key={vendor} className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-semibold ${vc.bg} ${vc.text} ${vc.border}`}>
+                                <VendorIcon modelId={iconKey} size={12} />
+                                {vendor}
+                                <span className="tabular-nums">{count}</span>
+                            </span>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Error */}
+            {error && (
+                <div className="border-b border-rose-100 bg-rose-50 px-5 py-2.5 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
+                    {error}
+                </div>
+            )}
+
+            {/* Model tags */}
+            <div className="max-h-[480px] overflow-y-auto px-5 py-4">
+                {loading && models.length === 0 ? (
+                    <div className="flex items-center justify-center py-12 text-sm text-slate-500 dark:text-white/50">
+                        <RefreshCw size={14} className="animate-spin mr-2" />
+                        加载模型列表…
+                    </div>
+                ) : filteredModels.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                        {filteredModels.map((id) => (
+                            <ModelTag key={id} id={id} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-white/30">
+                        <Layers size={28} className="mb-2 opacity-40" />
+                        <p className="text-sm">{models.length === 0 ? "暂无模型数据" : "无匹配结果"}</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 // ── Page Component ──────────────────────────────────────────────────────────
 
 export function ApiKeyLookupPage() {
@@ -290,7 +549,7 @@ export function ApiKeyLookupPage() {
     const [queriedKey, setQueriedKey] = useState("");
 
     // ── Tab state ──
-    const [activeTab, setActiveTab] = useState<"usage" | "logs">("usage");
+    const [activeTab, setActiveTab] = useState<"usage" | "logs" | "models">("usage");
 
     // ── Logs state (infinite scroll) ──
     const [rawItems, setRawItems] = useState<PublicLogItem[]>([]);
@@ -305,6 +564,12 @@ export function ApiKeyLookupPage() {
     const [chartData, setChartData] = useState<ChartDataResponse | null>(null);
     const [chartLoading, setChartLoading] = useState(false);
     const chartCacheRef = useRef<Record<string, ChartDataResponse>>({});
+
+    // ── Models state ──
+    const [availableModels, setAvailableModels] = useState<string[]>([]);
+    const [modelsLoading, setModelsLoading] = useState(false);
+    const [modelsError, setModelsError] = useState<string | null>(null);
+    const [modelsSearchFilter, setModelsSearchFilter] = useState("");
 
     // ── Filters ──
     const [timeRange, setTimeRange] = useState<TimeRange>(7);
@@ -455,11 +720,27 @@ export function ApiKeyLookupPage() {
         }
     }, [timeRange, modelQuery, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // ── Models fetching ──
+    const fetchModelsFn = useCallback(async (key: string) => {
+        setModelsLoading(true);
+        setModelsError(null);
+        try {
+            const ids = await fetchAvailableModels(key);
+            setAvailableModels(ids);
+        } catch (err: unknown) {
+            setModelsError(err instanceof Error ? err.message : "加载模型列表失败");
+        } finally {
+            setModelsLoading(false);
+        }
+    }, []);
+
     // When tab changes, fetch the appropriate data
     useEffect(() => {
         if (!queriedKey) return;
         if (activeTab === "usage") {
             void fetchChartDataFn(queriedKey, timeRange);
+        } else if (activeTab === "models") {
+            void fetchModelsFn(queriedKey);
         } else {
             // Always refetch when switching to logs tab to ensure
             // data matches the current timeRange & filters
@@ -499,15 +780,16 @@ export function ApiKeyLookupPage() {
                 chartCacheRef.current = {};
                 if (activeTab === "usage") {
                     void fetchChartDataFn(val, timeRange);
-                    // Also fetch first page of logs in the background for when user switches tab
                     fetchLogs(val, 1);
+                } else if (activeTab === "models") {
+                    void fetchModelsFn(val);
                 } else {
                     fetchLogs(val, 1);
                     void fetchChartDataFn(val, timeRange);
                 }
             }
         },
-        [apiKeyInput, activeTab, timeRange, fetchLogs, fetchChartDataFn],
+        [apiKeyInput, activeTab, timeRange, fetchLogs, fetchChartDataFn, fetchModelsFn],
     );
 
     const handleRefresh = useCallback(() => {
@@ -515,11 +797,13 @@ export function ApiKeyLookupPage() {
             if (activeTab === "usage") {
                 chartCacheRef.current = {};
                 void fetchChartDataFn(queriedKey, timeRange);
+            } else if (activeTab === "models") {
+                void fetchModelsFn(queriedKey);
             } else {
                 fetchLogs(queriedKey, 1);
             }
         }
-    }, [queriedKey, activeTab, timeRange, fetchLogs, fetchChartDataFn]);
+    }, [queriedKey, activeTab, timeRange, fetchLogs, fetchChartDataFn, fetchModelsFn]);
 
     // Read api_key from URL on mount
     useEffect(() => {
@@ -530,6 +814,7 @@ export function ApiKeyLookupPage() {
             setApiKeyInput(key);
             fetchLogs(key, 1);
             void fetchChartDataFn(key, timeRange);
+            void fetchModelsFn(key);
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -709,22 +994,25 @@ export function ApiKeyLookupPage() {
                         {/* Tab + Time range + Refresh */}
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="flex flex-wrap items-center gap-3">
-                                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "usage" | "logs")}>
+                                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "usage" | "logs" | "models")}>
                                     <TabsList>
                                         <TabsTrigger value="usage">使用统计</TabsTrigger>
                                         <TabsTrigger value="logs">请求日志</TabsTrigger>
+                                        <TabsTrigger value="models">可用模型</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
-                                <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
+                                {activeTab !== "models" && (
+                                    <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
+                                )}
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
                                     onClick={handleRefresh}
-                                    disabled={loading || chartLoading}
+                                    disabled={loading || chartLoading || modelsLoading}
                                     className="inline-flex h-[34px] items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-white/80 dark:hover:bg-white/10"
                                 >
-                                    <RefreshCw size={13} className={(loading || chartLoading) ? "animate-spin" : ""} />
+                                    <RefreshCw size={13} className={(loading || chartLoading || modelsLoading) ? "animate-spin" : ""} />
                                     刷新
                                 </button>
                             </div>
@@ -975,6 +1263,19 @@ export function ApiKeyLookupPage() {
                                         ) : null}
                                     </div>
                                 </section>
+                            </Reveal>
+                        )}
+
+                        {/* ========== Models Tab ========== */}
+                        {activeTab === "models" && (
+                            <Reveal>
+                                <ModelsTabContent
+                                    models={availableModels}
+                                    loading={modelsLoading}
+                                    error={modelsError}
+                                    searchFilter={modelsSearchFilter}
+                                    onSearchChange={setModelsSearchFilter}
+                                />
                             </Reveal>
                         )}
                     </>
