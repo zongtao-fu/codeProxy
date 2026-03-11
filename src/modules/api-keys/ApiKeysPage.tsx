@@ -15,6 +15,7 @@ import {
 import { apiKeyEntriesApi, apiKeysApi, type ApiKeyEntry } from "@/lib/http/apis/api-keys";
 import { usageApi } from "@/lib/http/apis";
 import type { UsageData } from "@/lib/http/types";
+import { apiClient } from "@/lib/http/client";
 import { Card } from "@/modules/ui/Card";
 import { Button } from "@/modules/ui/Button";
 import { EmptyState } from "@/modules/ui/EmptyState";
@@ -25,6 +26,60 @@ import { MultiSelect, type MultiSelectOption } from "@/modules/ui/MultiSelect";
 import { VirtualTable, type VirtualTableColumn } from "@/modules/ui/VirtualTable";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { normalizeApiBase } from "@/lib/connection";
+
+// Vendor SVG icons
+import iconClaude from "@/assets/icons/claude.svg";
+import iconOpenaiLight from "@/assets/icons/openai-light.svg";
+import iconOpenaiDark from "@/assets/icons/openai-dark.svg";
+import iconGemini from "@/assets/icons/gemini.svg";
+import iconDeepseek from "@/assets/icons/deepseek.svg";
+import iconQwen from "@/assets/icons/qwen.svg";
+import iconMinimax from "@/assets/icons/minimax.svg";
+import iconGrok from "@/assets/icons/grok.svg";
+import iconKimiLight from "@/assets/icons/kimi-light.svg";
+import iconKimiDark from "@/assets/icons/kimi-dark.svg";
+import iconCodexLight from "@/assets/icons/codex_light.svg";
+import iconCodexDark from "@/assets/icons/codex_drak.svg";
+import iconGlm from "@/assets/icons/glm.svg";
+import iconKiro from "@/assets/icons/kiro.svg";
+import iconVertex from "@/assets/icons/vertex.svg";
+import iconIflow from "@/assets/icons/iflow.svg";
+
+/* ─── vendor icon helpers ─── */
+
+const VENDOR_ICONS: Record<string, { light: string; dark: string }> = {
+    claude: { light: iconClaude, dark: iconClaude },
+    gpt: { light: iconOpenaiLight, dark: iconOpenaiDark },
+    o1: { light: iconOpenaiLight, dark: iconOpenaiDark },
+    o3: { light: iconOpenaiLight, dark: iconOpenaiDark },
+    o4: { light: iconOpenaiLight, dark: iconOpenaiDark },
+    gemini: { light: iconGemini, dark: iconGemini },
+    deepseek: { light: iconDeepseek, dark: iconDeepseek },
+    qwen: { light: iconQwen, dark: iconQwen },
+    minimax: { light: iconMinimax, dark: iconMinimax },
+    grok: { light: iconGrok, dark: iconGrok },
+    kimi: { light: iconKimiLight, dark: iconKimiDark },
+    codex: { light: iconCodexLight, dark: iconCodexDark },
+    glm: { light: iconGlm, dark: iconGlm },
+    kiro: { light: iconKiro, dark: iconKiro },
+    vertex: { light: iconVertex, dark: iconVertex },
+    iflow: { light: iconIflow, dark: iconIflow },
+};
+
+function VendorIcon({ modelId, size = 14 }: { modelId: string; size?: number }) {
+    const lower = modelId.toLowerCase();
+    let icons: { light: string; dark: string } | null = null;
+    for (const prefix of Object.keys(VENDOR_ICONS)) {
+        if (lower.startsWith(prefix)) { icons = VENDOR_ICONS[prefix]; break; }
+    }
+    if (!icons) return null;
+    return (
+        <>
+            <img src={icons.light} alt="" width={size} height={size} className="dark:hidden" />
+            <img src={icons.dark} alt="" width={size} height={size} className="hidden dark:block" />
+        </>
+    );
+}
 
 /* ─── helpers ─── */
 
@@ -174,26 +229,17 @@ export function ApiKeysPage() {
 
     /* ─── load models ─── */
 
-    const loadModels = useCallback(async (apiKeyEntries: ApiKeyEntry[]) => {
+    const loadModels = useCallback(async () => {
         try {
-            // Fetch directly from /v1/models (not via management API prefix)
-            const { apiBase } = useAuthStore.getState();
-            const serverBase = normalizeApiBase(apiBase);
-            if (!serverBase) return;
-
-            // Use an existing api-key for auth (management key is NOT a valid API key)
-            const apiKey = apiKeyEntries.find((e) => !e.disabled)?.key || apiKeyEntries[0]?.key;
-            if (!apiKey) return;
-
-            const resp = await fetch(`${serverBase}/v1/models`, {
-                headers: { Authorization: `Bearer ${apiKey}` },
-            }).catch(() => null);
-            if (!resp || !resp.ok) return;
-
-            const data = (await resp.json().catch(() => null)) as { data?: { id: string }[] } | null;
+            const data = await apiClient.get<{ data?: Array<{ id?: string }> }>("/models");
             if (data?.data) {
                 const opts: MultiSelectOption[] = data.data
-                    .map((m) => ({ value: m.id, label: m.id }))
+                    .filter((m) => m.id)
+                    .map((m) => ({
+                        value: m.id!,
+                        label: m.id!,
+                        icon: <VendorIcon modelId={m.id!} size={14} />,
+                    }))
                     .sort((a, b) => a.label.localeCompare(b.label));
                 setAvailableModels(opts);
             }
@@ -233,7 +279,7 @@ export function ApiKeysPage() {
             }
             setEntries(finalEntries);
             // Load models after entries are available (needs a valid API key)
-            void loadModels(finalEntries);
+            void loadModels();
         } catch (err: unknown) {
             notify({ type: "error", message: err instanceof Error ? err.message : "加载 API Keys 失败" });
         } finally {
