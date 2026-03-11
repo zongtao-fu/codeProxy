@@ -15,6 +15,7 @@ import {
 import { apiKeyEntriesApi, apiKeysApi, type ApiKeyEntry } from "@/lib/http/apis/api-keys";
 import { usageApi } from "@/lib/http/apis";
 import type { UsageData } from "@/lib/http/types";
+import { apiClient } from "@/lib/http/client";
 import { Card } from "@/modules/ui/Card";
 import { Button } from "@/modules/ui/Button";
 import { EmptyState } from "@/modules/ui/EmptyState";
@@ -25,6 +26,58 @@ import { MultiSelect, type MultiSelectOption } from "@/modules/ui/MultiSelect";
 import { VirtualTable, type VirtualTableColumn } from "@/modules/ui/VirtualTable";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { normalizeApiBase } from "@/lib/connection";
+
+// Vendor SVG icons
+import iconClaude from "@/assets/icons/claude.svg";
+import iconOpenai from "@/assets/icons/openai.svg";
+import iconGemini from "@/assets/icons/gemini.svg";
+import iconDeepseek from "@/assets/icons/deepseek.svg";
+import iconQwen from "@/assets/icons/qwen.svg";
+import iconMinimax from "@/assets/icons/minimax.svg";
+import iconGrok from "@/assets/icons/grok.svg";
+import iconKimiLight from "@/assets/icons/kimi-light.svg";
+import iconKimiDark from "@/assets/icons/kimi-dark.svg";
+import iconCodex from "@/assets/icons/codex.svg";
+import iconGlm from "@/assets/icons/glm.svg";
+import iconKiro from "@/assets/icons/kiro.svg";
+import iconVertex from "@/assets/icons/vertex.svg";
+import iconIflow from "@/assets/icons/iflow.svg";
+
+/* ─── vendor icon helpers ─── */
+
+const VENDOR_ICONS: Record<string, { light: string; dark: string }> = {
+    claude: { light: iconClaude, dark: iconClaude },
+    gpt: { light: iconOpenai, dark: iconOpenai },
+    o1: { light: iconOpenai, dark: iconOpenai },
+    o3: { light: iconOpenai, dark: iconOpenai },
+    o4: { light: iconOpenai, dark: iconOpenai },
+    gemini: { light: iconGemini, dark: iconGemini },
+    deepseek: { light: iconDeepseek, dark: iconDeepseek },
+    qwen: { light: iconQwen, dark: iconQwen },
+    minimax: { light: iconMinimax, dark: iconMinimax },
+    grok: { light: iconGrok, dark: iconGrok },
+    kimi: { light: iconKimiLight, dark: iconKimiDark },
+    codex: { light: iconCodex, dark: iconCodex },
+    glm: { light: iconGlm, dark: iconGlm },
+    kiro: { light: iconKiro, dark: iconKiro },
+    vertex: { light: iconVertex, dark: iconVertex },
+    iflow: { light: iconIflow, dark: iconIflow },
+};
+
+function VendorIcon({ modelId, size = 14 }: { modelId: string; size?: number }) {
+    const lower = modelId.toLowerCase();
+    let icons: { light: string; dark: string } | null = null;
+    for (const prefix of Object.keys(VENDOR_ICONS)) {
+        if (lower.startsWith(prefix)) { icons = VENDOR_ICONS[prefix]; break; }
+    }
+    if (!icons) return null;
+    return (
+        <>
+            <img src={icons.light} alt="" width={size} height={size} className="dark:hidden" />
+            <img src={icons.dark} alt="" width={size} height={size} className="hidden dark:block" />
+        </>
+    );
+}
 
 /* ─── helpers ─── */
 
@@ -143,6 +196,7 @@ interface FormValues {
     rpmLimit: string;
     tpmLimit: string;
     allowedModels: string[];
+    systemPrompt: string;
 }
 
 /* ─── component ─── */
@@ -170,30 +224,22 @@ export function ApiKeysPage() {
         rpmLimit: "",
         tpmLimit: "",
         allowedModels: [],
+        systemPrompt: "",
     });
 
     /* ─── load models ─── */
 
-    const loadModels = useCallback(async (apiKeyEntries: ApiKeyEntry[]) => {
+    const loadModels = useCallback(async () => {
         try {
-            // Fetch directly from /v1/models (not via management API prefix)
-            const { apiBase } = useAuthStore.getState();
-            const serverBase = normalizeApiBase(apiBase);
-            if (!serverBase) return;
-
-            // Use an existing api-key for auth (management key is NOT a valid API key)
-            const apiKey = apiKeyEntries.find((e) => !e.disabled)?.key || apiKeyEntries[0]?.key;
-            if (!apiKey) return;
-
-            const resp = await fetch(`${serverBase}/v1/models`, {
-                headers: { Authorization: `Bearer ${apiKey}` },
-            }).catch(() => null);
-            if (!resp || !resp.ok) return;
-
-            const data = (await resp.json().catch(() => null)) as { data?: { id: string }[] } | null;
+            const data = await apiClient.get<{ data?: Array<{ id?: string }> }>("/models");
             if (data?.data) {
                 const opts: MultiSelectOption[] = data.data
-                    .map((m) => ({ value: m.id, label: m.id }))
+                    .filter((m) => m.id)
+                    .map((m) => ({
+                        value: m.id!,
+                        label: m.id!,
+                        icon: <VendorIcon modelId={m.id!} size={14} />,
+                    }))
                     .sort((a, b) => a.label.localeCompare(b.label));
                 setAvailableModels(opts);
             }
@@ -233,7 +279,7 @@ export function ApiKeysPage() {
             }
             setEntries(finalEntries);
             // Load models after entries are available (needs a valid API key)
-            void loadModels(finalEntries);
+            void loadModels();
         } catch (err: unknown) {
             notify({ type: "error", message: err instanceof Error ? err.message : "加载 API Keys 失败" });
         } finally {
@@ -290,6 +336,7 @@ export function ApiKeysPage() {
             rpmLimit: "",
             tpmLimit: "",
             allowedModels: [],
+            systemPrompt: "",
         });
         setShowCreate(true);
     };
@@ -314,6 +361,7 @@ export function ApiKeysPage() {
                 "rpm-limit": form.rpmLimit ? parseInt(form.rpmLimit, 10) || 0 : undefined,
                 "tpm-limit": form.tpmLimit ? parseInt(form.tpmLimit, 10) || 0 : undefined,
                 "allowed-models": form.allowedModels.length > 0 ? form.allowedModels : undefined,
+                "system-prompt": form.systemPrompt.trim() || undefined,
                 "created-at": new Date().toISOString(),
             };
             await apiKeyEntriesApi.replace([...entries, newEntry]);
@@ -340,6 +388,7 @@ export function ApiKeysPage() {
             rpmLimit: entry["rpm-limit"]?.toString() || "",
             tpmLimit: entry["tpm-limit"]?.toString() || "",
             allowedModels: entry["allowed-models"] || [],
+            systemPrompt: entry["system-prompt"] || "",
         });
         setEditIndex(index);
     };
@@ -362,6 +411,7 @@ export function ApiKeysPage() {
                     "rpm-limit": form.rpmLimit ? parseInt(form.rpmLimit, 10) || 0 : 0,
                     "tpm-limit": form.tpmLimit ? parseInt(form.tpmLimit, 10) || 0 : 0,
                     "allowed-models": form.allowedModels.length > 0 ? form.allowedModels : [],
+                    "system-prompt": form.systemPrompt.trim(),
                 },
             });
             notify({ type: "success", message: "更新成功" });
@@ -453,6 +503,7 @@ export function ApiKeysPage() {
         {
             key: "key",
             label: "Key",
+            width: "w-[220px]",
             cellClassName: "whitespace-nowrap",
             render: (row) => (
                 <code className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-neutral-800 dark:text-white/70">
@@ -535,16 +586,28 @@ export function ApiKeysPage() {
         {
             key: "allowedModels",
             label: "可用模型",
-            width: "w-[120px]",
-            cellClassName: "text-slate-700 dark:text-white/70",
+            width: "w-[110px]",
+            cellClassName: "text-slate-700 dark:text-white/70 overflow-hidden min-w-0",
             render: (row) =>
                 row["allowed-models"]?.length ? (
-                    <HoverTooltip content={row["allowed-models"].join(", ")} className="block min-w-0">
-                        <span className="inline-flex items-center gap-1.5 text-xs">
-                            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-md bg-indigo-50 px-1.5 font-semibold tabular-nums text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300">
+                    <HoverTooltip
+                        content={
+                            <div className="flex flex-wrap gap-1.5 max-w-xs">
+                                {row["allowed-models"].map((m) => (
+                                    <span key={m} className="inline-flex items-center gap-1 rounded-md border border-slate-200/60 bg-slate-50 px-2 py-0.5 font-mono text-[11px] text-slate-700 dark:border-neutral-700/40 dark:bg-neutral-800/60 dark:text-white/80">
+                                        <VendorIcon modelId={m} size={12} />
+                                        {m}
+                                    </span>
+                                ))}
+                            </div>
+                        }
+                        className="block min-w-0"
+                    >
+                        <span className="inline-flex items-center gap-1.5 text-xs min-w-0 w-full">
+                            <span className="inline-flex h-5 min-w-[20px] flex-shrink-0 items-center justify-center rounded-md bg-indigo-50 px-1.5 font-semibold tabular-nums text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300">
                                 {row["allowed-models"].length}
                             </span>
-                            <span className="max-w-[100px] truncate text-slate-500 dark:text-white/50">
+                            <span className="block min-w-0 flex-1 truncate text-slate-500 dark:text-white/50">
                                 {row["allowed-models"][0]}
                                 {row["allowed-models"].length > 1 ? " 等" : ""}
                             </span>
@@ -800,6 +863,22 @@ export function ApiKeysPage() {
                     placeholder="选择模型..."
                     emptyLabel="全部模型"
                 />
+            </div>
+
+            <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-white/80">
+                    系统提示词
+                </label>
+                <textarea
+                    value={form.systemPrompt}
+                    onChange={(e) => setForm((p) => ({ ...p, systemPrompt: e.target.value }))}
+                    placeholder="可选。设置后，使用此 API Key 的所有请求将自动在 messages 首位注入此系统提示词。"
+                    rows={3}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-indigo-500 resize-y"
+                />
+                <p className="mt-1 text-xs text-slate-400 dark:text-white/40">
+                    设置后，该 Key 的每次请求都会自动注入此系统提示词作为第一条 system 消息。
+                </p>
             </div>
         </div>
     );

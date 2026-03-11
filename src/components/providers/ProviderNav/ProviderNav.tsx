@@ -4,10 +4,8 @@ import { useLocation } from "react-router-dom";
 import { usePageTransitionLayer } from "@/components/common/PageTransitionLayer";
 import { useThemeStore } from "@/stores";
 import iconGemini from "@/assets/icons/gemini.svg";
-import iconOpenaiLight from "@/assets/icons/openai-light.svg";
-import iconOpenaiDark from "@/assets/icons/openai-dark.svg";
-import iconCodexLight from "@/assets/icons/codex_light.svg";
-import iconCodexDark from "@/assets/icons/codex_drak.svg";
+import iconOpenai from "@/assets/icons/openai.svg";
+import iconCodex from "@/assets/icons/codex.svg";
 import iconClaude from "@/assets/icons/claude.svg";
 import iconVertex from "@/assets/icons/vertex.svg";
 import iconAmp from "@/assets/icons/amp.svg";
@@ -23,19 +21,11 @@ interface ProviderNavItem {
 
 const PROVIDERS: ProviderNavItem[] = [
   { id: "gemini", label: "Gemini", getIcon: () => iconGemini },
-  {
-    id: "codex",
-    label: "Codex",
-    getIcon: (theme) => (theme === "dark" ? iconCodexDark : iconCodexLight),
-  },
+  { id: "codex", label: "Codex", getIcon: () => iconCodex },
   { id: "claude", label: "Claude", getIcon: () => iconClaude },
   { id: "vertex", label: "Vertex", getIcon: () => iconVertex },
   { id: "ampcode", label: "Ampcode", getIcon: () => iconAmp },
-  {
-    id: "openai",
-    label: "OpenAI",
-    getIcon: (theme) => (theme === "dark" ? iconOpenaiDark : iconOpenaiLight),
-  },
+  { id: "openai", label: "OpenAI", getIcon: () => iconOpenai },
 ];
 
 const HEADER_OFFSET = 24;
@@ -253,10 +243,10 @@ export function ProviderNav() {
           style={
             (indicatorRect
               ? ({
-                  transform: `translate3d(${indicatorRect.x}px, ${indicatorRect.y}px, 0)`,
-                  width: indicatorRect.width,
-                  height: indicatorRect.height,
-                } satisfies CSSProperties)
+                transform: `translate3d(${indicatorRect.x}px, ${indicatorRect.y}px, 0)`,
+                width: indicatorRect.width,
+                height: indicatorRect.height,
+              } satisfies CSSProperties)
               : undefined) as CSSProperties | undefined
           }
         />

@@ -1,7 +1,6 @@
 import { RefreshCw, ShieldAlert } from "lucide-react";
 import type { AuthFileItem } from "@/lib/http/types";
 import { Button } from "@/modules/ui/Button";
-import { EmptyState } from "@/modules/ui/EmptyState";
 import type { QuotaState } from "@/modules/quota/quota-helpers";
 import {
   clampPercent,
@@ -9,13 +8,45 @@ import {
   resolveAuthProvider,
 } from "@/modules/quota/quota-helpers";
 
+// Vendor SVG icons
+import iconClaude from "@/assets/icons/claude.svg";
+import iconGemini from "@/assets/icons/gemini.svg";
+import iconCodex from "@/assets/icons/codex.svg";
+import iconKiro from "@/assets/icons/kiro.svg";
+import iconAntigravity from "@/assets/icons/antigravity.svg";
+import iconOpenai from "@/assets/icons/openai.svg";
+
+/* ── Model label → icon lookup ── */
+const MODEL_ICONS: Record<string, { light: string; dark: string }> = {
+  claude: { light: iconClaude, dark: iconClaude },
+  gpt: { light: iconOpenai, dark: iconOpenai },
+  gemini: { light: iconGemini, dark: iconGemini },
+  codex: { light: iconCodex, dark: iconCodex },
+  kiro: { light: iconKiro, dark: iconKiro },
+};
+
+function ModelIcon({ label, size = 13 }: { label: string; size?: number }) {
+  const lower = label.toLowerCase();
+  for (const [prefix, icons] of Object.entries(MODEL_ICONS)) {
+    if (lower.includes(prefix)) {
+      return (
+        <>
+          <img src={icons.light} alt="" width={size} height={size} className="dark:hidden" />
+          <img src={icons.dark} alt="" width={size} height={size} className="hidden dark:block" />
+        </>
+      );
+    }
+  }
+  return null;
+}
+
+/* ── Progress bar ── */
 function QuotaBar({ percent }: { percent: number | null }) {
-  const segments = 20;
   const normalized = percent === null ? null : clampPercent(percent);
-  const filled = normalized === null ? 0 : Math.round((normalized / 100) * segments);
-  const tone =
+  const width = normalized ?? 0;
+  const color =
     normalized === null
-      ? "bg-slate-300/50 dark:bg-white/10"
+      ? "bg-slate-300/40 dark:bg-white/8"
       : normalized >= 60
         ? "bg-emerald-500"
         : normalized >= 20
@@ -23,20 +54,22 @@ function QuotaBar({ percent }: { percent: number | null }) {
           : "bg-rose-500";
 
   return (
-    <div className="flex gap-0.5">
-      {Array.from({ length: segments }).map((_, idx) => (
-        <span
-          key={idx}
-          className={[
-            "h-2 flex-1 rounded-full",
-            idx < filled ? tone : "bg-slate-200 dark:bg-neutral-800",
-          ].join(" ")}
-          aria-hidden="true"
-        />
-      ))}
+    <div className="h-1.5 w-full rounded-full bg-slate-200/70 dark:bg-neutral-800/80">
+      <div
+        className={`h-full rounded-full transition-all duration-300 ${color}`}
+        style={{ width: `${width}%` }}
+      />
     </div>
   );
 }
+
+/* ── Provider icon map for card header ── */
+const PROVIDER_ICON: Record<string, { light: string; dark: string }> = {
+  antigravity: { light: iconAntigravity, dark: iconAntigravity },
+  codex: { light: iconCodex, dark: iconCodex },
+  "gemini-cli": { light: iconGemini, dark: iconGemini },
+  kiro: { light: iconKiro, dark: iconKiro },
+};
 
 export function QuotaFileCard({
   file,
@@ -49,63 +82,83 @@ export function QuotaFileCard({
 }) {
   const provider = resolveAuthProvider(file);
   const disabled = isDisabledAuthFile(file);
+  const providerIcon = PROVIDER_ICON[provider];
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate font-mono text-xs text-slate-900 dark:text-white">{file.name}</p>
-          <p className="mt-1 text-xs text-slate-600 dark:text-white/65">
-            provider：{provider || "--"} · {disabled ? "已禁用" : "已启用"}
-            {state.updatedAt ? ` · 更新于 ${new Date(state.updatedAt).toLocaleTimeString()}` : ""}
+    <div className="rounded-xl border border-slate-200/80 bg-white px-3.5 py-3 shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-950/60">
+      {/* ── Header ── */}
+      <div className="flex items-center gap-2.5">
+        {providerIcon && (
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-50 dark:bg-neutral-800/60">
+            <img src={providerIcon.light} alt="" width={14} height={14} className="dark:hidden" />
+            <img src={providerIcon.dark} alt="" width={14} height={14} className="hidden dark:block" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-xs font-semibold text-slate-800 dark:text-white">
+            {file.name}
+          </p>
+          <p className="text-[10px] text-slate-400 dark:text-white/40">
+            {disabled ? "已禁用" : "已启用"}
+            {state.updatedAt
+              ? ` · ${new Date(state.updatedAt).toLocaleTimeString()}`
+              : ""}
           </p>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
+        <button
+          type="button"
           onClick={onRefresh}
           disabled={state.status === "loading"}
+          className="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40 dark:hover:bg-neutral-800 dark:hover:text-white"
         >
-          <RefreshCw size={14} className={state.status === "loading" ? "animate-spin" : ""} />
-          刷新
-        </Button>
+          <RefreshCw
+            size={12}
+            className={state.status === "loading" ? "animate-spin" : ""}
+          />
+        </button>
       </div>
 
-      <div className="mt-3 space-y-2">
+      {/* ── Content ── */}
+      <div className="mt-2.5">
         {state.status === "error" ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-400/25 dark:bg-rose-500/15 dark:text-rose-100">
-            <div className="flex items-start gap-2">
-              <ShieldAlert size={16} className="mt-0.5 shrink-0" />
-              <span>{state.error || "加载失败"}</span>
-            </div>
+          <div className="flex items-start gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1.5 text-[11px] text-rose-700 dark:bg-rose-500/10 dark:text-rose-200">
+            <ShieldAlert size={12} className="mt-0.5 shrink-0" />
+            <span className="line-clamp-2">{state.error || "加载失败"}</span>
           </div>
         ) : state.items.length === 0 ? (
-          <EmptyState
-            title="暂无额度数据"
-            description="该文件可能不支持额度查询，或接口返回为空。"
-          />
+          <p className="py-1 text-center text-[11px] text-slate-400 dark:text-white/35">
+            {state.status === "loading" ? "加载中…" : "点击刷新查询额度"}
+          </p>
         ) : (
-          state.items.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950/70"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.label}</p>
-                <p className="font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200">
-                  {item.percent === null ? "--" : `${Math.round(clampPercent(item.percent))}%`}{" "}
-                  <span className="text-slate-500 dark:text-white/55">
-                    {item.resetLabel ? `· ${item.resetLabel}` : ""}
-                  </span>
-                </p>
+          <div className="space-y-2">
+            {state.items.map((item) => (
+              <div key={item.label}>
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <ModelIcon label={item.label} size={12} />
+                    <span className="truncate text-[11px] font-medium text-slate-700 dark:text-white/80">
+                      {item.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0 text-[10px] tabular-nums">
+                    <span className="font-semibold text-slate-800 dark:text-white">
+                      {item.percent === null
+                        ? "--"
+                        : `${Math.round(clampPercent(item.percent))}%`}
+                    </span>
+                    {item.resetLabel && item.resetLabel !== "--" && (
+                      <span className="hidden text-slate-400 dark:text-white/30 sm:inline">
+                        {item.resetLabel}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-1">
+                  <QuotaBar percent={item.percent} />
+                </div>
               </div>
-              <div className="mt-2">
-                <QuotaBar percent={item.percent} />
-              </div>
-              {item.meta ? (
-                <p className="mt-2 text-xs text-slate-600 dark:text-white/65">{item.meta}</p>
-              ) : null}
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>

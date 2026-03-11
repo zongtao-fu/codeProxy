@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, X } from "lucide-react";
 
 export interface MultiSelectOption {
     value: string;
     label: string;
+    icon?: ReactNode;
 }
 
 interface MultiSelectProps {
@@ -210,7 +211,8 @@ export function MultiSelect({
                                 >
                                     {checked && <Check size={12} className="text-white dark:text-black" />}
                                 </div>
-                                <span className="font-mono text-xs">{opt.label}</span>
+                                {opt.icon && <span className="flex-shrink-0">{opt.icon}</span>}
+                                <span className="truncate font-mono text-xs">{opt.label}</span>
                             </button>
                         );
                     })
@@ -245,23 +247,27 @@ export function MultiSelect({
                             ✓ {emptyLabel}
                         </span>
                     ) : (
-                        value.slice(0, 5).map((v) => (
-                            <span
-                                key={v}
-                                className="inline-flex max-w-[160px] items-center gap-0.5 rounded-md bg-indigo-50 px-1.5 py-0.5 text-xs text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
-                            >
-                                <span className="truncate">{labelMap.get(v) || v}</span>
-                                {!disabled && (
-                                    <button
-                                        type="button"
-                                        onClick={(e) => removeTag(v, e)}
-                                        className="ml-0.5 flex-shrink-0 rounded-full p-0.5 hover:bg-indigo-200 dark:hover:bg-indigo-800"
-                                    >
-                                        <X size={10} />
-                                    </button>
-                                )}
-                            </span>
-                        ))
+                        value.slice(0, 5).map((v) => {
+                            const opt = options.find((o) => o.value === v);
+                            return (
+                                <span
+                                    key={v}
+                                    className="inline-flex max-w-[180px] items-center gap-1 rounded-md bg-indigo-50 px-1.5 py-0.5 text-xs text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+                                >
+                                    {opt?.icon && <span className="flex-shrink-0">{opt.icon}</span>}
+                                    <span className="truncate">{labelMap.get(v) || v}</span>
+                                    {!disabled && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => removeTag(v, e)}
+                                            className="ml-0.5 flex-shrink-0 rounded-full p-0.5 hover:bg-indigo-200 dark:hover:bg-indigo-800"
+                                        >
+                                            <X size={10} />
+                                        </button>
+                                    )}
+                                </span>
+                            );
+                        })
                     )}
                     {value.length > 5 && (
                         <span className="text-xs text-slate-400">+{value.length - 5}</span>

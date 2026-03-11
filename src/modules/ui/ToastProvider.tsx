@@ -6,7 +6,7 @@ import { useTheme } from "@/modules/ui/ThemeProvider";
 type ToastType = "success" | "error" | "info" | "warning";
 
 interface ToastContextState {
-  notify: (input: { type?: ToastType; message: string; duration?: number }) => void;
+  notify: (input: { type?: ToastType; title?: string; message: string; duration?: number }) => void;
 }
 
 const ToastContext = createContext<ToastContextState | null>(null);
@@ -17,25 +17,34 @@ export function ToastProvider({ children }: PropsWithChildren) {
   } = useTheme();
 
   const notify = useCallback(
-    (input: { type?: ToastType; message: string; duration?: number }) => {
+    (input: { type?: ToastType; title?: string; message: string; duration?: number }) => {
       const type = input.type ?? "info";
-      const options = input.duration
-        ? { timing: { displayDuration: input.duration } }
-        : {};
+
+      const defaultTitles: Record<ToastType, string> = {
+        success: "成功",
+        error: "错误",
+        warning: "警告",
+        info: "提示",
+      };
+      const title = input.title ?? defaultTitles[type];
+      const options: Record<string, unknown> = { description: input.message };
+      if (input.duration) {
+        options.timing = { displayDuration: input.duration };
+      }
 
       switch (type) {
         case "success":
-          goeyToast.success(input.message, options);
+          goeyToast.success(title, options);
           break;
         case "error":
-          goeyToast.error(input.message, options);
+          goeyToast.error(title, options);
           break;
         case "warning":
-          goeyToast.warning(input.message, options);
+          goeyToast.warning(title, options);
           break;
         case "info":
         default:
-          goeyToast.info(input.message, options);
+          goeyToast.info(title, options);
           break;
       }
     },
