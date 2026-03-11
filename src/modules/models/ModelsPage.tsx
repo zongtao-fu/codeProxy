@@ -5,16 +5,14 @@ import {
     DollarSign,
     Activity,
     Check,
-    Copy,
     Search,
 } from "lucide-react";
 import { useTheme } from "@/modules/ui/ThemeProvider";
-import { Card } from "@/modules/ui/Card";
 import { Button } from "@/modules/ui/Button";
-import { EmptyState } from "@/modules/ui/EmptyState";
 import { useToast } from "@/modules/ui/ToastProvider";
 import { OverflowTooltip } from "@/modules/ui/Tooltip";
 import { Modal } from "@/modules/ui/Modal";
+import { VirtualTable, type VirtualTableColumn } from "@/modules/ui/VirtualTable";
 import { apiClient } from "@/lib/http/client";
 
 // Vendor SVG icons
@@ -262,8 +260,81 @@ export function ModelsPage() {
         return `$${p.inputPricePerMillion} / $${p.outputPricePerMillion}`;
     };
 
+    const modelColumns = useMemo<VirtualTableColumn<ModelItem>[]>(() => [
+        {
+            key: "model",
+            label: "模型",
+            width: "w-80",
+            render: (row) => (
+                <div className="flex items-center gap-2 min-w-0">
+                    <VendorIcon modelId={row.id} size={16} />
+                    <OverflowTooltip content={row.id} className="block min-w-0">
+                        <span className="block min-w-0 truncate font-medium">{row.id}</span>
+                    </OverflowTooltip>
+                </div>
+            ),
+        },
+        {
+            key: "inputPrice",
+            label: "输入价格",
+            width: "w-36",
+            headerClassName: "text-right",
+            cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+            render: (row) => <span>{row.pricing.inputPricePerMillion > 0 ? `$${row.pricing.inputPricePerMillion}` : "$0"}</span>,
+        },
+        {
+            key: "outputPrice",
+            label: "输出价格",
+            width: "w-36",
+            headerClassName: "text-right",
+            cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+            render: (row) => <span>{row.pricing.outputPricePerMillion > 0 ? `$${row.pricing.outputPricePerMillion}` : "$0"}</span>,
+        },
+        {
+            key: "cachedPrice",
+            label: "缓存价格",
+            width: "w-36",
+            headerClassName: "text-right",
+            cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+            render: (row) => <span>{row.pricing.cachedPricePerMillion > 0 ? `$${row.pricing.cachedPricePerMillion}` : "$0"}</span>,
+        },
+        {
+            key: "status",
+            label: "状态",
+            width: "w-32",
+            headerClassName: "text-center",
+            cellClassName: "text-center",
+            render: (row) => {
+                const hasPricing = row.pricing.inputPricePerMillion > 0 || row.pricing.outputPricePerMillion > 0;
+                return hasPricing ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+                        <Check size={10} /> 已定价
+                    </span>
+                ) : (
+                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500 dark:bg-neutral-800 dark:text-white/40">
+                        未定价
+                    </span>
+                );
+            },
+        },
+        {
+            key: "actions",
+            label: "操作",
+            width: "w-20",
+            render: (row) => (
+                <button
+                    onClick={() => handleOpenPricing(row.id)}
+                    className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-indigo-600 dark:text-white/50 dark:hover:bg-neutral-800 dark:hover:text-indigo-400"
+                    title="设置定价"
+                >
+                    <DollarSign size={15} />
+                </button>
+            ),
+        },
+    ], [handleOpenPricing]);
+
     return (
-        <div className="space-y-6">
+        <section className="flex flex-1 flex-col gap-4">
             {/* KPI Row */}
             <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
@@ -294,10 +365,19 @@ export function ModelsPage() {
                 </div>
             </div>
 
-            <Card
-                title="模型定价管理"
-                description="管理所有可用模型的定价配置。定价数据持久化存储在数据库中，用于计算请求费用和执行消费限额。"
-                actions={
+            {/* 表格卡片 */}
+            <div className="flex flex-1 flex-col rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
+                {/* 标题栏 */}
+                <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-3">
+                    <div>
+                        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                            <Cpu size={18} className="text-slate-900 dark:text-white" />
+                            模型定价管理
+                        </h2>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-white/45">
+                            管理所有可用模型的定价配置。定价数据持久化存储在数据库中，用于计算请求费用和执行消费限额。
+                        </p>
+                    </div>
                     <div className="flex items-center gap-2">
                         <div className="relative">
                             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30 pointer-events-none" />
@@ -308,84 +388,40 @@ export function ModelsPage() {
                                 className="w-48 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-white dark:placeholder:text-white/30 dark:focus:border-indigo-600"
                             />
                         </div>
-                        <Button variant="secondary" size="sm" onClick={() => void loadModels()} disabled={loading}>
+                        <button
+                            type="button"
+                            onClick={() => void loadModels()}
+                            disabled={loading}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-900 text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-neutral-950 dark:hover:bg-slate-200"
+                            title="刷新"
+                        >
                             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                            刷新
-                        </Button>
+                        </button>
                     </div>
-                }
-                loading={loading}
-            >
-                {filteredModels.length === 0 ? (
-                    <EmptyState
-                        title="暂无模型数据"
-                        description={searchFilter ? "无匹配结果，请调整搜索条件。" : "尚未检测到可用模型。"}
-                        icon={<Cpu size={32} className="text-slate-400" />}
+                </div>
+
+                {/* 表格 */}
+                <div className="relative px-5 pb-5">
+                    <VirtualTable<ModelItem>
+                        rows={filteredModels}
+                        columns={modelColumns}
+                        rowKey={(row) => row.id}
+                        loading={loading}
+                        rowHeight={44}
+                        caption="模型定价管理表格"
+                        emptyText={searchFilter ? "无匹配结果" : "暂无模型数据"}
+                        minWidth="min-w-[800px]"
                     />
-                ) : (
-                    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-neutral-800">
-                        <table className="w-full min-w-[800px] table-fixed border-separate border-spacing-0 text-sm">
-                            <thead className="bg-white/95 backdrop-blur dark:bg-neutral-950/75">
-                                <tr className="h-11 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-white/55">
-                                    <th className="w-80 border-b border-slate-200 px-4 dark:border-neutral-800">模型</th>
-                                    <th className="w-36 border-b border-slate-200 px-4 text-right dark:border-neutral-800">输入价格</th>
-                                    <th className="w-36 border-b border-slate-200 px-4 text-right dark:border-neutral-800">输出价格</th>
-                                    <th className="w-36 border-b border-slate-200 px-4 text-right dark:border-neutral-800">缓存价格</th>
-                                    <th className="w-32 border-b border-slate-200 px-4 text-center dark:border-neutral-800">状态</th>
-                                    <th className="w-20 border-b border-slate-200 px-4 dark:border-neutral-800">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-slate-900 dark:text-white">
-                                {filteredModels.map((model) => {
-                                    const hasPricing = model.pricing.inputPricePerMillion > 0 || model.pricing.outputPricePerMillion > 0;
-                                    const vc = getVendorColor(model.id);
-                                    return (
-                                        <tr key={model.id} className="h-10 transition hover:bg-slate-50/70 dark:hover:bg-white/5">
-                                            <td className="border-b border-slate-100 px-4 align-middle dark:border-neutral-900">
-                                                <div className="flex items-center gap-2 min-w-0">
-                                                    <VendorIcon modelId={model.id} size={16} />
-                                                    <OverflowTooltip content={model.id} className="block min-w-0">
-                                                        <span className="block min-w-0 truncate font-medium">{model.id}</span>
-                                                    </OverflowTooltip>
-                                                </div>
-                                            </td>
-                                            <td className="border-b border-slate-100 px-4 text-right align-middle font-mono text-xs tabular-nums dark:border-neutral-900">
-                                                {model.pricing.inputPricePerMillion > 0 ? `$${model.pricing.inputPricePerMillion}` : "$0"}
-                                            </td>
-                                            <td className="border-b border-slate-100 px-4 text-right align-middle font-mono text-xs tabular-nums dark:border-neutral-900">
-                                                {model.pricing.outputPricePerMillion > 0 ? `$${model.pricing.outputPricePerMillion}` : "$0"}
-                                            </td>
-                                            <td className="border-b border-slate-100 px-4 text-right align-middle font-mono text-xs tabular-nums dark:border-neutral-900">
-                                                {model.pricing.cachedPricePerMillion > 0 ? `$${model.pricing.cachedPricePerMillion}` : "$0"}
-                                            </td>
-                                            <td className="border-b border-slate-100 px-4 text-center align-middle dark:border-neutral-900">
-                                                {hasPricing ? (
-                                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
-                                                        <Check size={10} /> 已定价
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500 dark:bg-neutral-800 dark:text-white/40">
-                                                        未定价
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="border-b border-slate-100 px-4 align-middle dark:border-neutral-900">
-                                                <button
-                                                    onClick={() => handleOpenPricing(model.id)}
-                                                    className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-indigo-600 dark:text-white/50 dark:hover:bg-neutral-800 dark:hover:text-indigo-400"
-                                                    title="设置定价"
-                                                >
-                                                    <DollarSign size={15} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </Card>
+                    {loading ? (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-2xl bg-white/70 backdrop-blur-sm dark:bg-neutral-950/55">
+                            <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-white/75">
+                                <span className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-slate-900 animate-spin dark:border-white/20 dark:border-t-white/80" />
+                                加载中…
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+            </div>
 
             {/* Pricing Modal */}
             <Modal
@@ -460,6 +496,6 @@ export function ModelsPage() {
                     </div>
                 </div>
             </Modal>
-        </div>
+        </section>
     );
 }
