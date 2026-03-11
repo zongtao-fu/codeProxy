@@ -644,7 +644,7 @@ export function ConfigPage() {
     (next: ConfigTab) => {
       if (next === tab) return;
 
-      if (tab === "visual") {
+      if (tab === "visual" && visualDirty) {
         const nextText = applyVisualChangesToYaml(yamlText);
         if (nextText !== yamlText) {
           setYamlText(nextText);
@@ -661,7 +661,7 @@ export function ConfigPage() {
 
       setTab(next);
     },
-    [applyVisualChangesToYaml, loadVisualValuesFromYaml, setTab, tab, yamlText],
+    [applyVisualChangesToYaml, loadVisualValuesFromYaml, setTab, tab, visualDirty, yamlText],
   );
 
   const requestReload = useCallback(() => {
@@ -722,20 +722,22 @@ export function ConfigPage() {
     >
       <div className={visualLayoutEnabled ? "flex min-h-0 flex-1 flex-col gap-4" : undefined}>
         <Tabs value={tab} onValueChange={(next) => handleTabChange(next as ConfigTab)}>
-          <TabsList>
-            <TabsTrigger value="visual">
-              <Eye size={14} />
-              可视化编辑
-            </TabsTrigger>
-            <TabsTrigger value="source">
-              <Code2 size={14} />
-              源代码编辑
-            </TabsTrigger>
-            <TabsTrigger value="runtime">
-              <Settings size={14} />
-              运行配置
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex">
+            <TabsList>
+              <TabsTrigger value="visual">
+                <Eye size={14} />
+                可视化编辑
+              </TabsTrigger>
+              <TabsTrigger value="source">
+                <Code2 size={14} />
+                源代码编辑
+              </TabsTrigger>
+              <TabsTrigger value="runtime">
+                <Settings size={14} />
+                运行配置
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <div className={visualLayoutEnabled ? "mt-4 min-h-0 flex-1" : "mt-4"}>
             <TabsContent value="visual" className="h-full">
