@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { RefreshCw } from "lucide-react";
 import { apiCallApi, authFilesApi, getApiCallErrorMessage } from "@/lib/http/apis";
 import type { ApiCallResult, AuthFileItem } from "@/lib/http/types";
-import { Card } from "@/modules/ui/Card";
 import { Button } from "@/modules/ui/Button";
 import { EmptyState } from "@/modules/ui/EmptyState";
 import { useToast } from "@/modules/ui/ToastProvider";
@@ -42,6 +41,34 @@ import {
   type QuotaState,
 } from "@/modules/quota/quota-helpers";
 
+/* ─── Provider icons (simple colored dot + label) ─── */
+const PROVIDER_META: Record<
+  string,
+  { label: string; dot: string; description: string }
+> = {
+  antigravity: {
+    label: "Antigravity",
+    dot: "bg-emerald-500",
+    description: "支持多个 API 端点回退。",
+  },
+  codex: {
+    label: "Codex",
+    dot: "bg-orange-500",
+    description: "展示 5 小时 / 周限额与代码审查窗口。",
+  },
+  "gemini-cli": {
+    label: "Gemini CLI",
+    dot: "bg-blue-500",
+    description: "按模型组聚合 bucket 并展示剩余额度。",
+  },
+  kiro: {
+    label: "Kiro",
+    dot: "bg-amber-500",
+    description: "查询 AWS CodeWhisperer / Kiro 使用额度与重置时间。",
+  },
+};
+
+/* ─── Resolve Antigravity project ID from file content ─── */
 const resolveAntigravityProjectId = async (file: AuthFileItem): Promise<string> => {
   try {
     const text = await authFilesApi.downloadText(file.name);
@@ -68,6 +95,7 @@ const resolveAntigravityProjectId = async (file: AuthFileItem): Promise<string> 
   return DEFAULT_ANTIGRAVITY_PROJECT_ID;
 };
 
+/* ─── Fetch quota for a single file ─── */
 const fetchQuota = async (
   type: "antigravity" | "codex" | "gemini-cli" | "kiro",
   file: AuthFileItem,
@@ -178,12 +206,12 @@ const fetchQuota = async (
         };
       })
       .filter(Boolean) as {
-      modelId: string;
-      tokenType: string | null;
-      remainingFraction: number | null;
-      remainingAmount: number | null;
-      resetTime?: string;
-    }[];
+        modelId: string;
+        tokenType: string | null;
+        remainingFraction: number | null;
+        remainingAmount: number | null;
+        resetTime?: string;
+      }[];
 
     const grouped = buildGeminiCliBuckets(parsed);
     return grouped.map((bucket) => {
@@ -223,6 +251,8 @@ const fetchQuota = async (
   return buildKiroItems(payload);
 };
 
+/* ═══════════════════════════════════════════════════════ */
+
 export function QuotaPage() {
   const { notify } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -234,6 +264,9 @@ export function QuotaPage() {
   const [codex, setCodex] = useState<Record<string, QuotaState>>({});
   const [geminiCli, setGeminiCli] = useState<Record<string, QuotaState>>({});
   const [kiro, setKiro] = useState<Record<string, QuotaState>>({});
+
+  /* Track whether we've auto-refreshed on mount */
+  const hasAutoRefreshed = useRef(false);
 
   const loadFiles = useCallback(async () => {
     setLoadingFiles(true);
@@ -313,92 +346,131 @@ export function QuotaPage() {
     }
 
     startTransition(() => {
-      void Promise.allSettled(tasks).then(() => {
-        notify({ type: "success", message: "额度刷新完成（部分失败请查看错误提示）" });
-      });
+      void Promise.allSettled(tasks);
     });
   }, [grouped, notify, refreshOne, startTransition]);
 
+  /* ── Auto-refresh quotas once files are loaded ── */
+  useEffect(() => {
+    if (loadingFiles) return;
+    if (hasAutoRefreshed.current) return;
+    const hasFiles =
+      grouped.ag.length > 0 ||
+      grouped.cx.length > 0 ||
+      grouped.gm.length > 0 ||
+      grouped.kr.length > 0;
+    if (!hasFiles) return;
+    hasAutoRefreshed.current = true;
+    void refreshAll();
+  }, [loadingFiles, grouped, refreshAll]);
+
+  /* ── Render a provider section ── */
   const renderSection = (
-    title: string,
-    description: string,
+    type: "antigravity" | "codex" | "gemini-cli" | "kiro",
     list: AuthFileItem[],
     stateMap: Record<string, QuotaState>,
-    type: "antigravity" | "codex" | "gemini-cli" | "kiro",
-  ) => (
-    <Card
-      title={title}
-      description={description}
-      actions={
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => void Promise.all(list.map((f) => refreshOne(type, f)))}
-        >
-          <RefreshCw size={14} />
-          刷新本组
-        </Button>
-      }
-      loading={loadingFiles}
-    >
-      {list.length === 0 ? (
-        <EmptyState
-          title="暂无对应认证文件"
-          description="请先在“认证文件”页面上传/生成对应 provider 的认证文件。"
-        />
-      ) : (
-        <div className="space-y-3">
-          {list.map((file) => (
-            <QuotaFileCard
-              key={file.name}
-              file={file}
-              state={stateMap[file.name] ?? { status: "idle", items: [] }}
-              onRefresh={() => void refreshOne(type, file)}
-            />
-          ))}
+  ) => {
+    const meta = PROVIDER_META[type];
+    return (
+      <section key={type}>
+        {/* Section header */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className={`inline-block h-2.5 w-2.5 rounded-full ${meta.dot}`} />
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+              {meta.label}
+            </h3>
+            {list.length > 0 && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium tabular-nums text-slate-600 dark:bg-neutral-800 dark:text-white/60">
+                {list.length}
+              </span>
+            )}
+          </div>
+          {list.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void Promise.all(list.map((f) => refreshOne(type, f)))}
+            >
+              <RefreshCw size={14} />
+              刷新
+            </Button>
+          )}
         </div>
-      )}
-    </Card>
-  );
+        <p className="mt-1 text-xs text-slate-500 dark:text-white/50">{meta.description}</p>
+
+        {/* Section content */}
+        <div className="mt-3">
+          {list.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center dark:border-neutral-800">
+              <p className="text-sm text-slate-400 dark:text-white/35">
+                暂无对应认证文件
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {list.map((file) => (
+                <QuotaFileCard
+                  key={file.name}
+                  file={file}
+                  state={stateMap[file.name] ?? { status: "idle", items: [] }}
+                  onRefresh={() => void refreshOne(type, file)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="primary"
-          onClick={() => void refreshAll()}
-          disabled={isPending || loadingFiles}
-        >
-          <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
-          一键刷新所有额度
-        </Button>
-        <Button variant="secondary" onClick={() => void loadFiles()} disabled={loadingFiles}>
-          <RefreshCw size={14} className={loadingFiles ? "animate-spin" : ""} />
-          刷新文件列表
-        </Button>
+    <div className="space-y-8">
+      {/* ── Page header ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+          配额管理
+        </h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => void refreshAll()}
+            disabled={isPending || loadingFiles}
+          >
+            <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
+            一键刷新所有额度
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void loadFiles()}
+            disabled={loadingFiles}
+          >
+            <RefreshCw size={14} className={loadingFiles ? "animate-spin" : ""} />
+            刷新文件列表
+          </Button>
+        </div>
       </div>
 
-      {renderSection(
-        "Antigravity",
-        "支持多个 API 端点回退。",
-        grouped.ag,
-        antigravity,
-        "antigravity",
+      {/* ── Loading state ── */}
+      {loadingFiles && (
+        <div className="flex items-center justify-center py-12">
+          <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/85 px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/80 dark:text-white/70">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent dark:border-white/50 dark:border-t-transparent" />
+            加载认证文件…
+          </div>
+        </div>
       )}
-      {renderSection("Codex", "展示 5 小时 / 周限额与代码审查窗口。", grouped.cx, codex, "codex")}
-      {renderSection(
-        "Gemini CLI",
-        "按模型组聚合 bucket 并展示剩余额度。",
-        grouped.gm,
-        geminiCli,
-        "gemini-cli",
-      )}
-      {renderSection(
-        "Kiro",
-        "查询 AWS CodeWhisperer / Kiro 使用额度与重置时间。",
-        grouped.kr,
-        kiro,
-        "kiro",
+
+      {/* ── Provider sections ── */}
+      {!loadingFiles && (
+        <>
+          {renderSection("antigravity", grouped.ag, antigravity)}
+          {renderSection("codex", grouped.cx, codex)}
+          {renderSection("gemini-cli", grouped.gm, geminiCli)}
+          {renderSection("kiro", grouped.kr, kiro)}
+        </>
       )}
     </div>
   );
