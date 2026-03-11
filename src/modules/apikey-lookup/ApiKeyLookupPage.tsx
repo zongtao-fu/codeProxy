@@ -172,12 +172,6 @@ function toLogRow(item: PublicLogItem): LogRow {
     };
 }
 
-function maskKey(key: string): string {
-    if (!key) return "";
-    return key.length > 12
-        ? `${key.slice(0, 6)}****${key.slice(-4)}`
-        : "****";
-}
 
 function formatLocalDateLabel(dateStr: string): string {
     const d = new Date(dateStr + "T00:00:00");
@@ -614,7 +608,7 @@ export function ApiKeyLookupPage() {
         [modelOptions],
     );
 
-    const maskedKey = queriedKey ? maskKey(queriedKey) : "";
+
 
     const lastUpdatedText = useMemo(() => {
         if (!lastUpdatedAt) return "";
@@ -719,11 +713,6 @@ export function ApiKeyLookupPage() {
                                 </button>
                             </div>
                         </div>
-
-                        {/* Key badge */}
-                        <p className="text-xs text-slate-500 dark:text-white/50">
-                            查询结果：<span className="font-mono">{maskedKey}</span>
-                        </p>
 
                         {/* ========== Usage Tab ========== */}
                         {activeTab === "usage" && (
