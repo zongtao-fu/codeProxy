@@ -114,6 +114,7 @@ export interface UsageLogItem {
   reasoning_tokens: number;
   cached_tokens: number;
   total_tokens: number;
+  cost: number;
   has_content: boolean;
 }
 

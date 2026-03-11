@@ -34,6 +34,7 @@ interface LogRow {
   cachedTokens: number;
   outputTokens: number;
   totalTokens: number;
+  cost: number;
   hasContent: boolean;
 }
 
@@ -256,6 +257,19 @@ function buildLogColumns(
         </OverflowTooltip>
       ),
     },
+    {
+      key: "cost",
+      label: "费用",
+      width: "w-24",
+      headerClassName: "text-right",
+      cellClassName:
+        "text-right font-mono text-xs tabular-nums text-emerald-700 dark:text-emerald-400",
+      render: (row) => (
+        <OverflowTooltip content={`$${row.cost.toFixed(6)}`} className="block min-w-0">
+          <span className="block min-w-0 truncate">${row.cost.toFixed(4)}</span>
+        </OverflowTooltip>
+      ),
+    },
   ];
 }
 
@@ -277,6 +291,7 @@ function toLogRow(item: UsageLogItem): LogRow {
     cachedTokens: item.cached_tokens,
     outputTokens: item.output_tokens,
     totalTokens: item.total_tokens,
+    cost: item.cost ?? 0,
     hasContent: item.has_content ?? false,
   };
 }
