@@ -17,8 +17,7 @@ import { apiClient } from "@/lib/http/client";
 
 // Vendor SVG icons
 import iconClaude from "@/assets/icons/claude.svg";
-import iconOpenaiLight from "@/assets/icons/openai-light.svg";
-import iconOpenaiDark from "@/assets/icons/openai-dark.svg";
+import iconOpenai from "@/assets/icons/openai.svg";
 import iconGemini from "@/assets/icons/gemini.svg";
 import iconDeepseek from "@/assets/icons/deepseek.svg";
 import iconQwen from "@/assets/icons/qwen.svg";
@@ -26,8 +25,7 @@ import iconMinimax from "@/assets/icons/minimax.svg";
 import iconGrok from "@/assets/icons/grok.svg";
 import iconKimiLight from "@/assets/icons/kimi-light.svg";
 import iconKimiDark from "@/assets/icons/kimi-dark.svg";
-import iconCodexLight from "@/assets/icons/codex_light.svg";
-import iconCodexDark from "@/assets/icons/codex_drak.svg";
+import iconCodex from "@/assets/icons/codex.svg";
 import iconGlm from "@/assets/icons/glm.svg";
 import iconKiro from "@/assets/icons/kiro.svg";
 import iconVertex from "@/assets/icons/vertex.svg";
@@ -51,17 +49,17 @@ interface ModelItem {
 
 const VENDOR_ICONS: Record<string, { light: string; dark: string }> = {
     claude: { light: iconClaude, dark: iconClaude },
-    gpt: { light: iconOpenaiLight, dark: iconOpenaiDark },
-    o1: { light: iconOpenaiLight, dark: iconOpenaiDark },
-    o3: { light: iconOpenaiLight, dark: iconOpenaiDark },
-    o4: { light: iconOpenaiLight, dark: iconOpenaiDark },
+    gpt: { light: iconOpenai, dark: iconOpenai },
+    o1: { light: iconOpenai, dark: iconOpenai },
+    o3: { light: iconOpenai, dark: iconOpenai },
+    o4: { light: iconOpenai, dark: iconOpenai },
     gemini: { light: iconGemini, dark: iconGemini },
     deepseek: { light: iconDeepseek, dark: iconDeepseek },
     qwen: { light: iconQwen, dark: iconQwen },
     minimax: { light: iconMinimax, dark: iconMinimax },
     grok: { light: iconGrok, dark: iconGrok },
     kimi: { light: iconKimiLight, dark: iconKimiDark },
-    codex: { light: iconCodexLight, dark: iconCodexDark },
+    codex: { light: iconCodex, dark: iconCodex },
     glm: { light: iconGlm, dark: iconGlm },
     kiro: { light: iconKiro, dark: iconKiro },
     vertex: { light: iconVertex, dark: iconVertex },
@@ -411,6 +409,7 @@ export function ModelsPage() {
                         caption="模型定价管理表格"
                         emptyText={searchFilter ? "无匹配结果" : "暂无模型数据"}
                         minWidth="min-w-[800px]"
+                        height="h-[calc(100vh-390px)]"
                     />
                     {loading ? (
                         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-2xl bg-white/70 backdrop-blur-sm dark:bg-neutral-950/55">

@@ -11,19 +11,17 @@ import {
 // Vendor SVG icons
 import iconClaude from "@/assets/icons/claude.svg";
 import iconGemini from "@/assets/icons/gemini.svg";
-import iconCodexLight from "@/assets/icons/codex_light.svg";
-import iconCodexDark from "@/assets/icons/codex_drak.svg";
+import iconCodex from "@/assets/icons/codex.svg";
 import iconKiro from "@/assets/icons/kiro.svg";
 import iconAntigravity from "@/assets/icons/antigravity.svg";
-import iconOpenaiLight from "@/assets/icons/openai-light.svg";
-import iconOpenaiDark from "@/assets/icons/openai-dark.svg";
+import iconOpenai from "@/assets/icons/openai.svg";
 
 /* ── Model label → icon lookup ── */
 const MODEL_ICONS: Record<string, { light: string; dark: string }> = {
   claude: { light: iconClaude, dark: iconClaude },
-  gpt: { light: iconOpenaiLight, dark: iconOpenaiDark },
+  gpt: { light: iconOpenai, dark: iconOpenai },
   gemini: { light: iconGemini, dark: iconGemini },
-  codex: { light: iconCodexLight, dark: iconCodexDark },
+  codex: { light: iconCodex, dark: iconCodex },
   kiro: { light: iconKiro, dark: iconKiro },
 };
 
@@ -68,7 +66,7 @@ function QuotaBar({ percent }: { percent: number | null }) {
 /* ── Provider icon map for card header ── */
 const PROVIDER_ICON: Record<string, { light: string; dark: string }> = {
   antigravity: { light: iconAntigravity, dark: iconAntigravity },
-  codex: { light: iconCodexLight, dark: iconCodexDark },
+  codex: { light: iconCodex, dark: iconCodex },
   "gemini-cli": { light: iconGemini, dark: iconGemini },
   kiro: { light: iconKiro, dark: iconKiro },
 };

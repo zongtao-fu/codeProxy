@@ -17,12 +17,10 @@ import {
 // Vendor SVG icons
 import iconGemini from "@/assets/icons/gemini.svg";
 import iconClaude from "@/assets/icons/claude.svg";
-import iconCodexLight from "@/assets/icons/codex_light.svg";
-import iconCodexDark from "@/assets/icons/codex_drak.svg";
+import iconCodex from "@/assets/icons/codex.svg";
 import iconVertex from "@/assets/icons/vertex.svg";
 import iconAmp from "@/assets/icons/amp.svg";
-import iconOpenaiLight from "@/assets/icons/openai-light.svg";
-import iconOpenaiDark from "@/assets/icons/openai-dark.svg";
+import iconOpenai from "@/assets/icons/openai.svg";
 import {
   ampcodeApi,
   apiCallApi,
@@ -832,8 +830,8 @@ export function ProvidersPage() {
             Claude
           </TabsTrigger>
           <TabsTrigger value="codex">
-            <img src={iconCodexLight} alt="" className="size-4 dark:hidden" />
-            <img src={iconCodexDark} alt="" className="hidden size-4 dark:block" />
+            <img src={iconCodex} alt="" className="size-4 dark:hidden" />
+            <img src={iconCodex} alt="" className="hidden size-4 dark:block" />
             Codex
           </TabsTrigger>
           <TabsTrigger value="vertex">
@@ -841,8 +839,8 @@ export function ProvidersPage() {
             Vertex
           </TabsTrigger>
           <TabsTrigger value="openai">
-            <img src={iconOpenaiLight} alt="" className="size-4 dark:hidden" />
-            <img src={iconOpenaiDark} alt="" className="hidden size-4 dark:block" />
+            <img src={iconOpenai} alt="" className="size-4 dark:hidden" />
+            <img src={iconOpenai} alt="" className="hidden size-4 dark:block" />
             OpenAI 兼容
           </TabsTrigger>
           <TabsTrigger value="ampcode">

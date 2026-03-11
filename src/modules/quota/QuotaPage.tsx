@@ -42,8 +42,7 @@ import {
 
 // Provider icons
 import iconAntigravity from "@/assets/icons/antigravity.svg";
-import iconCodexLight from "@/assets/icons/codex_light.svg";
-import iconCodexDark from "@/assets/icons/codex_drak.svg";
+import iconCodex from "@/assets/icons/codex.svg";
 import iconGemini from "@/assets/icons/gemini.svg";
 import iconKiro from "@/assets/icons/kiro.svg";
 
@@ -59,7 +58,7 @@ const PROVIDER_META: Record<
   },
   codex: {
     label: "Codex",
-    icon: { light: iconCodexLight, dark: iconCodexDark },
+    icon: { light: iconCodex, dark: iconCodex },
     description: "5 小时 / 周限额与代码审查",
   },
   "gemini-cli": {

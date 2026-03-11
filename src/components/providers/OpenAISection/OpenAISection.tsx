@@ -3,8 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { IconCheck, IconX } from "@/components/ui/icons";
-import iconOpenaiLight from "@/assets/icons/openai-light.svg";
-import iconOpenaiDark from "@/assets/icons/openai-dark.svg";
+import iconOpenai from "@/assets/icons/openai.svg";
 import type { OpenAIProviderConfig } from "@/types";
 import { maskApiKey } from "@/utils/format";
 import {
@@ -71,7 +70,7 @@ export function OpenAISection({
         title={
           <span className={styles.cardTitle}>
             <img
-              src={resolvedTheme === "dark" ? iconOpenaiDark : iconOpenaiLight}
+              src={iconOpenai}
               alt=""
               className={styles.cardTitleIcon}
             />
