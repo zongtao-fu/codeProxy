@@ -499,6 +499,7 @@ export function ApiKeysPage() {
         {
             key: "key",
             label: "Key",
+            width: "w-[180px]",
             cellClassName: "whitespace-nowrap",
             render: (row) => (
                 <code className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-700 dark:bg-neutral-800 dark:text-white/70">
@@ -581,8 +582,8 @@ export function ApiKeysPage() {
         {
             key: "allowedModels",
             label: "可用模型",
-            width: "w-[120px]",
-            cellClassName: "text-slate-700 dark:text-white/70",
+            width: "w-[110px]",
+            cellClassName: "text-slate-700 dark:text-white/70 overflow-hidden",
             render: (row) =>
                 row["allowed-models"]?.length ? (
                     <HoverTooltip
