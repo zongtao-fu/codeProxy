@@ -10,6 +10,7 @@ import {
     Infinity,
     BarChart3,
     Power,
+    Info,
 } from "lucide-react";
 import { apiKeyEntriesApi, apiKeysApi, type ApiKeyEntry } from "@/lib/http/apis/api-keys";
 import { usageApi } from "@/lib/http/apis";
@@ -139,6 +140,8 @@ interface FormValues {
     dailyLimit: string;
     totalQuota: string;
     concurrencyLimit: string;
+    rpmLimit: string;
+    tpmLimit: string;
     allowedModels: string[];
 }
 
@@ -164,6 +167,8 @@ export function ApiKeysPage() {
         dailyLimit: "",
         totalQuota: "",
         concurrencyLimit: "",
+        rpmLimit: "",
+        tpmLimit: "",
         allowedModels: [],
     });
 
@@ -282,6 +287,8 @@ export function ApiKeysPage() {
             dailyLimit: "",
             totalQuota: "",
             concurrencyLimit: "",
+            rpmLimit: "",
+            tpmLimit: "",
             allowedModels: [],
         });
         setShowCreate(true);
@@ -304,6 +311,8 @@ export function ApiKeysPage() {
                 "daily-limit": form.dailyLimit ? parseInt(form.dailyLimit, 10) || 0 : undefined,
                 "total-quota": form.totalQuota ? parseInt(form.totalQuota, 10) || 0 : undefined,
                 "concurrency-limit": form.concurrencyLimit ? parseInt(form.concurrencyLimit, 10) || 0 : undefined,
+                "rpm-limit": form.rpmLimit ? parseInt(form.rpmLimit, 10) || 0 : undefined,
+                "tpm-limit": form.tpmLimit ? parseInt(form.tpmLimit, 10) || 0 : undefined,
                 "allowed-models": form.allowedModels.length > 0 ? form.allowedModels : undefined,
                 "created-at": new Date().toISOString(),
             };
@@ -328,6 +337,8 @@ export function ApiKeysPage() {
             dailyLimit: entry["daily-limit"]?.toString() || "",
             totalQuota: entry["total-quota"]?.toString() || "",
             concurrencyLimit: entry["concurrency-limit"]?.toString() || "",
+            rpmLimit: entry["rpm-limit"]?.toString() || "",
+            tpmLimit: entry["tpm-limit"]?.toString() || "",
             allowedModels: entry["allowed-models"] || [],
         });
         setEditIndex(index);
@@ -348,6 +359,8 @@ export function ApiKeysPage() {
                     "daily-limit": form.dailyLimit ? parseInt(form.dailyLimit, 10) || 0 : 0,
                     "total-quota": form.totalQuota ? parseInt(form.totalQuota, 10) || 0 : 0,
                     "concurrency-limit": form.concurrencyLimit ? parseInt(form.concurrencyLimit, 10) || 0 : 0,
+                    "rpm-limit": form.rpmLimit ? parseInt(form.rpmLimit, 10) || 0 : 0,
+                    "tpm-limit": form.tpmLimit ? parseInt(form.tpmLimit, 10) || 0 : 0,
                     "allowed-models": form.allowedModels.length > 0 ? form.allowedModels : [],
                 },
             });
@@ -478,16 +491,43 @@ export function ApiKeysPage() {
             ),
         },
         {
-            key: "concurrencyLimit",
-            label: "并发限制",
-            width: "w-[90px]",
+            key: "rpmLimit",
+            label: "RPM",
+            width: "w-[80px]",
             cellClassName: "whitespace-nowrap text-slate-700 dark:text-white/70",
+            headerRender: () => (
+                <HoverTooltip content="Requests Per Minute，每分钟请求数" className="inline-flex items-center gap-1">
+                    <span>RPM</span>
+                    <Info size={12} className="text-slate-400 dark:text-white/40" />
+                </HoverTooltip>
+            ),
             render: (row) => (
                 <span className="inline-flex items-center gap-1">
-                    {!row["concurrency-limit"] ? (
+                    {!row["rpm-limit"] ? (
                         <><Infinity size={14} className="text-green-500" /> 无限制</>
                     ) : (
-                        formatLimit(row["concurrency-limit"])
+                        formatLimit(row["rpm-limit"])
+                    )}
+                </span>
+            ),
+        },
+        {
+            key: "tpmLimit",
+            label: "TPM",
+            width: "w-[80px]",
+            cellClassName: "whitespace-nowrap text-slate-700 dark:text-white/70",
+            headerRender: () => (
+                <HoverTooltip content="Tokens Per Minute，每分钟 Token 数" className="inline-flex items-center gap-1">
+                    <span>TPM</span>
+                    <Info size={12} className="text-slate-400 dark:text-white/40" />
+                </HoverTooltip>
+            ),
+            render: (row) => (
+                <span className="inline-flex items-center gap-1">
+                    {!row["tpm-limit"] ? (
+                        <><Infinity size={14} className="text-green-500" /> 无限制</>
+                    ) : (
+                        formatLimit(row["tpm-limit"])
                     )}
                 </span>
             ),
@@ -707,6 +747,41 @@ export function ApiKeysPage() {
                         type="number"
                         value={form.concurrencyLimit}
                         onChange={(e) => setForm((p) => ({ ...p, concurrencyLimit: e.target.value }))}
+                        placeholder="0 = 无限制"
+                        min={0}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-indigo-500"
+                    />
+                </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+                <div>
+                    <HoverTooltip content="Requests Per Minute，每分钟最大请求数。类似 OpenAI 的 RPM 限制。" className="mb-1 inline-flex items-center gap-1">
+                        <label className="text-sm font-medium text-slate-700 dark:text-white/80">
+                            RPM 限制
+                        </label>
+                        <Info size={14} className="text-slate-400 dark:text-white/40" />
+                    </HoverTooltip>
+                    <input
+                        type="number"
+                        value={form.rpmLimit}
+                        onChange={(e) => setForm((p) => ({ ...p, rpmLimit: e.target.value }))}
+                        placeholder="0 = 无限制"
+                        min={0}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-indigo-500"
+                    />
+                </div>
+                <div>
+                    <HoverTooltip content="Tokens Per Minute，每分钟最大 Token 消耗数。类似 OpenAI 的 TPM 限制。" className="mb-1 inline-flex items-center gap-1">
+                        <label className="text-sm font-medium text-slate-700 dark:text-white/80">
+                            TPM 限制
+                        </label>
+                        <Info size={14} className="text-slate-400 dark:text-white/40" />
+                    </HoverTooltip>
+                    <input
+                        type="number"
+                        value={form.tpmLimit}
+                        onChange={(e) => setForm((p) => ({ ...p, tpmLimit: e.target.value }))}
                         placeholder="0 = 无限制"
                         min={0}
                         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-indigo-500"

@@ -7,6 +7,8 @@ export interface ApiKeyEntry {
   "daily-limit"?: number;
   "total-quota"?: number;
   "concurrency-limit"?: number;
+  "rpm-limit"?: number;
+  "tpm-limit"?: number;
   "allowed-models"?: string[];
   "created-at"?: string;
 }

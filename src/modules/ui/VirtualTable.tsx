@@ -23,6 +23,8 @@ export interface VirtualTableColumn<T> {
     headerClassName?: string;
     /** Extra cell class */
     cellClassName?: string;
+    /** Custom header render function (overrides label) */
+    headerRender?: () => ReactNode;
     /** Render function for cell content */
     render: (row: T, index: number) => ReactNode;
 }
@@ -187,7 +189,7 @@ export function VirtualTable<T>({
                                         key={col.key}
                                         className={`whitespace-nowrap bg-slate-100 px-4 py-3 dark:bg-neutral-800 ${col.width ?? ""} ${col.headerClassName ?? ""} ${roundCls}`}
                                     >
-                                        {col.label}
+                                        {col.headerRender ? col.headerRender() : col.label}
                                     </th>
                                 );
                             })}
