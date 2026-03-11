@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { parse as parseYaml } from "yaml";
 import { configApi, configFileApi } from "@/lib/http/apis";
+import { FloatingSaveBar } from "@/modules/config/FloatingSaveBar";
 import { VisualConfigEditor } from "@/modules/config/visual/VisualConfigEditor";
 import { useVisualConfig } from "@/modules/config/visual/useVisualConfig";
 import { Button } from "@/modules/ui/Button";
@@ -621,24 +622,14 @@ export function ConfigPage() {
     return { query: q, positions: searchPositions, activeIndex: searchIndex };
   }, [lastSearchedQuery, searchIndex, searchPositions, searchQuery]);
 
-  const getStatusText = () => {
-    if (!online) return "离线";
-    if (loading) return "加载中…";
-    if (error) return "加载失败";
-    if (saving) return "保存中…";
-    if (isDirty) return "未保存";
-    return "已保存";
-  };
-
-  const statusTone = () => {
-    if (!online)
-      return "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-400/25 dark:bg-amber-500/15 dark:text-white";
-    if (error)
-      return "border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-400/25 dark:bg-rose-500/15 dark:text-white";
-    if (isDirty)
-      return "border-slate-200 bg-white text-slate-900 dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-white";
-    return "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-400/25 dark:bg-emerald-500/15 dark:text-white";
-  };
+  const saveBarStatus = (() => {
+    if (!online) return "offline" as const;
+    if (error) return "error" as const;
+    if (saving) return "saving" as const;
+    if (loading) return "loading" as const;
+    if (isDirty) return "dirty" as const;
+    return "saved" as const;
+  })();
 
   const handleTabChange = useCallback(
     (next: ConfigTab) => {
@@ -675,42 +666,7 @@ export function ConfigPage() {
   const visualLayoutEnabled = tab === "visual";
   const saveDisabled = disableControls || loading || saving || !isDirty;
   const reloadDisabled = loading || saving;
-
-  const saveBar = (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/60">
-      <div
-        className={[
-          "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
-          statusTone(),
-        ].join(" ")}
-        aria-label="保存状态"
-        title="保存状态"
-      >
-        <span className="tabular-nums">{getStatusText()}</span>
-        {isDirty ? (
-          <span
-            className="h-2 w-2 rounded-full bg-slate-900/70 dark:bg-white/70"
-            aria-hidden="true"
-          />
-        ) : null}
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="secondary" size="sm" onClick={requestReload} disabled={reloadDisabled}>
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          重载
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => void handleSave()}
-          disabled={saveDisabled}
-        >
-          <Save size={14} />
-          保存
-        </Button>
-      </div>
-    </div>
-  );
+  const showFloatingBar = tab !== "runtime";
 
   return (
     <div
@@ -742,7 +698,6 @@ export function ConfigPage() {
           <div className={visualLayoutEnabled ? "mt-4 min-h-0 flex-1" : "mt-4"}>
             <TabsContent value="visual" className="h-full">
               <div className="flex min-h-0 h-full flex-col gap-4">
-                {saveBar}
 
                 <Card
                   title="config.yaml（可视化）"
@@ -770,7 +725,6 @@ export function ConfigPage() {
 
             <TabsContent value="source">
               <div className="space-y-4">
-                {saveBar}
                 <Card
                   title="config.yaml（源代码）"
                   description="支持搜索、上一个/下一个匹配与键盘快捷键。"
@@ -887,6 +841,16 @@ export function ConfigPage() {
           </div>
         </Tabs>
       </div>
+
+      {showFloatingBar && (
+        <FloatingSaveBar
+          status={saveBarStatus}
+          onSave={() => void handleSave()}
+          onReload={requestReload}
+          saveDisabled={saveDisabled}
+          reloadDisabled={reloadDisabled}
+        />
+      )}
 
       <ConfirmModal
         open={confirmReloadOpen}
