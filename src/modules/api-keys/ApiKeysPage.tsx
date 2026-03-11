@@ -138,6 +138,7 @@ interface FormValues {
     key: string;
     dailyLimit: string;
     totalQuota: string;
+    concurrencyLimit: string;
     allowedModels: string[];
 }
 
@@ -162,6 +163,7 @@ export function ApiKeysPage() {
         key: "",
         dailyLimit: "",
         totalQuota: "",
+        concurrencyLimit: "",
         allowedModels: [],
     });
 
@@ -279,6 +281,7 @@ export function ApiKeysPage() {
             key: generateKey(),
             dailyLimit: "",
             totalQuota: "",
+            concurrencyLimit: "",
             allowedModels: [],
         });
         setShowCreate(true);
@@ -300,6 +303,7 @@ export function ApiKeysPage() {
                 name: form.name.trim(),
                 "daily-limit": form.dailyLimit ? parseInt(form.dailyLimit, 10) || 0 : undefined,
                 "total-quota": form.totalQuota ? parseInt(form.totalQuota, 10) || 0 : undefined,
+                "concurrency-limit": form.concurrencyLimit ? parseInt(form.concurrencyLimit, 10) || 0 : undefined,
                 "allowed-models": form.allowedModels.length > 0 ? form.allowedModels : undefined,
                 "created-at": new Date().toISOString(),
             };
@@ -323,6 +327,7 @@ export function ApiKeysPage() {
             key: entry.key,
             dailyLimit: entry["daily-limit"]?.toString() || "",
             totalQuota: entry["total-quota"]?.toString() || "",
+            concurrencyLimit: entry["concurrency-limit"]?.toString() || "",
             allowedModels: entry["allowed-models"] || [],
         });
         setEditIndex(index);
@@ -342,6 +347,7 @@ export function ApiKeysPage() {
                     name: form.name.trim(),
                     "daily-limit": form.dailyLimit ? parseInt(form.dailyLimit, 10) || 0 : 0,
                     "total-quota": form.totalQuota ? parseInt(form.totalQuota, 10) || 0 : 0,
+                    "concurrency-limit": form.concurrencyLimit ? parseInt(form.concurrencyLimit, 10) || 0 : 0,
                     "allowed-models": form.allowedModels.length > 0 ? form.allowedModels : [],
                 },
             });
@@ -410,8 +416,8 @@ export function ApiKeysPage() {
                     onClick={() => void handleToggleDisable(idx)}
                     title={row.disabled ? "点击启用" : "点击禁用"}
                     className={`inline-flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${row.disabled
-                            ? "text-slate-400 hover:bg-red-50 hover:text-red-500 dark:text-white/30 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                            : "text-emerald-500 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                        ? "text-slate-400 hover:bg-red-50 hover:text-red-500 dark:text-white/30 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                        : "text-emerald-500 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
                         }`}
                 >
                     <Power size={15} />
@@ -467,6 +473,21 @@ export function ApiKeysPage() {
                         <><Infinity size={14} className="text-green-500" /> 无限制</>
                     ) : (
                         formatLimit(row["total-quota"])
+                    )}
+                </span>
+            ),
+        },
+        {
+            key: "concurrencyLimit",
+            label: "并发限制",
+            width: "w-[90px]",
+            cellClassName: "whitespace-nowrap text-slate-700 dark:text-white/70",
+            render: (row) => (
+                <span className="inline-flex items-center gap-1">
+                    {!row["concurrency-limit"] ? (
+                        <><Infinity size={14} className="text-green-500" /> 无限制</>
+                    ) : (
+                        formatLimit(row["concurrency-limit"])
                     )}
                 </span>
             ),
@@ -651,7 +672,7 @@ export function ApiKeysPage() {
                 </div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-3">
                 <div>
                     <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-white/80">
                         每日请求限制
@@ -673,6 +694,19 @@ export function ApiKeysPage() {
                         type="number"
                         value={form.totalQuota}
                         onChange={(e) => setForm((p) => ({ ...p, totalQuota: e.target.value }))}
+                        placeholder="0 = 无限制"
+                        min={0}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-indigo-500"
+                    />
+                </div>
+                <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-white/80">
+                        并发请求限制
+                    </label>
+                    <input
+                        type="number"
+                        value={form.concurrencyLimit}
+                        onChange={(e) => setForm((p) => ({ ...p, concurrencyLimit: e.target.value }))}
                         placeholder="0 = 无限制"
                         min={0}
                         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-indigo-500"
