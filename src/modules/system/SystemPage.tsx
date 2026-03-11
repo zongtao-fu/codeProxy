@@ -3,7 +3,7 @@ import {
   Check, Copy, ExternalLink, Globe, GitBranch, CalendarClock,
   MonitorSmartphone, KeyRound, RefreshCw, Search, Server, Layers,
 } from "lucide-react";
-import { configApi } from "@/lib/http/apis";
+import { apiClient } from "@/lib/http/client";
 import { useAuth } from "@/modules/auth/AuthProvider";
 import { Button } from "@/modules/ui/Button";
 import { TextInput } from "@/modules/ui/Input";
@@ -30,17 +30,6 @@ import iconIflow from "@/assets/icons/iflow.svg";
 /* ═══════════════════════════════════════════════════════════
    Helpers
    ═══════════════════════════════════════════════════════════ */
-
-const buildV1ModelsUrl = (apiBase: string): string => {
-  const n = apiBase.trim().replace(/\/+$/g, "");
-  return n ? `${n}/v1/models` : "";
-};
-
-const normalizeApiKeys = (raw: unknown): string[] => {
-  if (!raw) return [];
-  const list = Array.isArray(raw) ? raw : [];
-  return Array.from(new Set(list.map((i) => String(i ?? "").trim()).filter(Boolean)));
-};
 
 type V1ModelsResponse =
   | { data?: Array<{ id?: string }> }
@@ -236,64 +225,29 @@ export function SystemPage() {
   const { notify } = useToast();
   const auth = useAuth();
 
-  const [loadingConfig, setLoadingConfig] = useState(true);
-  const [config, setConfig] = useState<Record<string, unknown> | null>(null);
-
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
   const [models, setModels] = useState<string[]>([]);
   const [modelFilter, setModelFilter] = useState("");
 
-  const configApiKeys = useMemo(() => {
-    const record = config ?? {};
-    const keys = (record["api-keys"] ?? record.apiKeys ?? record.keys) as unknown;
-    return normalizeApiKeys(keys);
-  }, [config]);
-
-  const primaryApiKey = configApiKeys[0] ?? "";
-  const modelsUrl = useMemo(() => buildV1ModelsUrl(auth.state.apiBase), [auth.state.apiBase]);
-
-  const loadConfig = useCallback(async () => {
-    setLoadingConfig(true);
-    try {
-      const data = await configApi.getConfig();
-      const record = data && typeof data === "object" && !Array.isArray(data) ? data : null;
-      setConfig(record);
-    } catch {
-      // silent
-    } finally {
-      setLoadingConfig(false);
-    }
-  }, []);
-
   const loadModels = useCallback(async () => {
     setModelsLoading(true);
     setModelsError(null);
     try {
-      if (!modelsUrl) throw new Error("API Base 为空，无法加载模型列表");
-      const headers: HeadersInit = {};
-      if (primaryApiKey) headers.Authorization = `Bearer ${primaryApiKey}`;
-      const response = await fetch(modelsUrl, { headers });
-      if (!response.ok) {
-        const text = await response.text().catch(() => "");
-        throw new Error(text.trim() || `请求失败（${response.status}）`);
-      }
-      const payload = (await response.json()) as V1ModelsResponse;
+      const payload = await apiClient.get<V1ModelsResponse>("/models");
       setModels(extractModelIds(payload));
     } catch (err: unknown) {
       setModelsError(err instanceof Error ? err.message : "加载模型失败");
     } finally {
       setModelsLoading(false);
     }
-  }, [modelsUrl, primaryApiKey]);
+  }, []);
 
-  useEffect(() => { void loadConfig(); }, [loadConfig]);
-  useEffect(() => { if (!loadingConfig && modelsUrl) void loadModels(); }, [loadingConfig, modelsUrl, loadModels]);
+  useEffect(() => { void loadModels(); }, [loadModels]);
   useEffect(() => {
-    if (!modelsUrl) return;
     const timer = setInterval(() => void loadModels(), AUTO_REFRESH_INTERVAL);
     return () => clearInterval(timer);
-  }, [modelsUrl, loadModels]);
+  }, [loadModels]);
 
   const filteredModels = useMemo(() => {
     const needle = modelFilter.trim().toLowerCase();
