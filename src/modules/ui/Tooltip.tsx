@@ -146,7 +146,13 @@ export function HoverTooltip({
       aria-describedby={id}
     >
       {children}
-      <FixedTooltipBubble id={id} open={open} content={content} anchorRef={ref} placement={placement} />
+      <FixedTooltipBubble
+        id={id}
+        open={open}
+        content={content}
+        anchorRef={ref}
+        placement={placement}
+      />
     </span>
   );
 }
@@ -188,8 +194,13 @@ export function OverflowTooltip({
       aria-describedby={id}
     >
       {children}
-      <FixedTooltipBubble id={id} open={open} content={content} anchorRef={ref} placement={placement} />
+      <FixedTooltipBubble
+        id={id}
+        open={open}
+        content={content}
+        anchorRef={ref}
+        placement={placement}
+      />
     </span>
   );
 }
-

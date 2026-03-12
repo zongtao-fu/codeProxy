@@ -7,7 +7,7 @@ interface ProviderColumnProps {
   collapsedProviders: Set<string>;
   getProviderColor: (provider: string) => string;
   providerGroupHeights?: Record<string, number>;
-  providerRefs: RefObject<Map<string, HTMLDivElement>>;
+  providerRefs: RefObject<Map<string, HTMLElement>>;
   onToggleCollapse: (provider: string) => void;
   onContextMenu: (e: ReactMouseEvent, type: "provider" | "background", data?: string) => void;
   label: string;
@@ -83,7 +83,7 @@ export function ProviderColumn({
 interface SourceColumnProps {
   providerNodes: ProviderNode[];
   collapsedProviders: Set<string>;
-  sourceRefs: RefObject<Map<string, HTMLDivElement>>;
+  sourceRefs: RefObject<Map<string, HTMLElement>>;
   getProviderColor: (provider: string) => string;
   selectedSourceId?: string | null;
   onSelectSource?: (source: SourceNode) => void;
@@ -130,7 +130,8 @@ export function SourceColumn({
       {providerNodes.flatMap(({ provider, sources }) => {
         if (collapsedProviders.has(provider)) return [];
         return sources.map((source) => (
-          <div
+          <button
+            type="button"
             key={source.id}
             ref={(el) => {
               if (el) sourceRefs.current?.set(source.id, el);
@@ -153,18 +154,20 @@ export function SourceColumn({
               e.stopPropagation();
               onContextMenu(e, "source", source.id);
             }}
+            aria-pressed={selectedSourceId === source.id}
+            title={source.name}
           >
             <span className={styles.itemName} title={source.name}>
               {source.name}
             </span>
-            <div
+            <span
               className={styles.dot}
               style={{
                 background: getProviderColor(source.provider),
                 opacity: source.aliases.length > 0 ? 1 : 0.3,
               }}
             />
-          </div>
+          </button>
         ));
       })}
     </div>
@@ -173,7 +176,7 @@ export function SourceColumn({
 
 interface AliasColumnProps {
   aliasNodes: AliasNode[];
-  aliasRefs: RefObject<Map<string, HTMLDivElement>>;
+  aliasRefs: RefObject<Map<string, HTMLElement>>;
   dropTargetAlias: string | null;
   draggedAlias: string | null;
   selectedAlias?: string | null;
@@ -215,7 +218,8 @@ export function AliasColumn({
     >
       <div className={styles.columnHeader}>{label}</div>
       {aliasNodes.map((node) => (
-        <div
+        <button
+          type="button"
           key={node.id}
           ref={(el) => {
             if (el) aliasRefs.current?.set(node.id, el);
@@ -238,13 +242,15 @@ export function AliasColumn({
             e.stopPropagation();
             onContextMenu(e, "alias", node.alias);
           }}
+          aria-pressed={selectedAlias === node.alias}
+          title={node.alias}
         >
-          <div className={`${styles.dot} ${styles.dotLeft}`} />
+          <span className={`${styles.dot} ${styles.dotLeft}`} />
           <span className={styles.itemName} title={node.alias}>
             {node.alias}
           </span>
           <span className={styles.itemCount}>{node.sources.length}</span>
-        </div>
+        </button>
       ))}
     </div>
   );

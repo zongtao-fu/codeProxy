@@ -69,11 +69,7 @@ export function OpenAISection({
       <Card
         title={
           <span className={styles.cardTitle}>
-            <img
-              src={iconOpenai}
-              alt=""
-              className={styles.cardTitleIcon}
-            />
+            <img src={iconOpenai} alt="" className={styles.cardTitleIcon} />
             {t("ai_providers.openai_title")}
           </span>
         }

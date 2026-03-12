@@ -83,8 +83,12 @@ const resolveAntigravityProjectId = async (file: AuthFileItem): Promise<string> 
     const parsed = JSON.parse(trimmed) as Record<string, unknown>;
     const top = normalizeStringValue(parsed.project_id ?? parsed.projectId);
     if (top) return top;
-    const installed = isRecord(parsed.installed) ? (parsed.installed as Record<string, unknown>) : null;
-    const installedId = installed ? normalizeStringValue(installed.project_id ?? installed.projectId) : null;
+    const installed = isRecord(parsed.installed)
+      ? (parsed.installed as Record<string, unknown>)
+      : null;
+    const installedId = installed
+      ? normalizeStringValue(installed.project_id ?? installed.projectId)
+      : null;
     if (installedId) return installedId;
     const web = isRecord(parsed.web) ? (parsed.web as Record<string, unknown>) : null;
     const webId = web ? normalizeStringValue(web.project_id ?? web.projectId) : null;
@@ -110,8 +114,11 @@ const fetchQuota = async (
     let last: ApiCallResult | null = null;
     for (const url of ANTIGRAVITY_QUOTA_URLS) {
       const result = await apiCallApi.request({
-        authIndex, method: "POST", url,
-        header: { ...ANTIGRAVITY_REQUEST_HEADERS }, data: requestBody,
+        authIndex,
+        method: "POST",
+        url,
+        header: { ...ANTIGRAVITY_REQUEST_HEADERS },
+        data: requestBody,
       });
       last = result;
       if (result.statusCode >= 200 && result.statusCode < 300) {
@@ -134,10 +141,13 @@ const fetchQuota = async (
     const accountId = resolveCodexChatgptAccountId(file);
     if (!accountId) throw new Error("missing_account_id");
     const result = await apiCallApi.request({
-      authIndex, method: "GET", url: CODEX_USAGE_URL,
+      authIndex,
+      method: "GET",
+      url: CODEX_USAGE_URL,
       header: { ...CODEX_REQUEST_HEADERS, "Chatgpt-Account-Id": accountId },
     });
-    if (result.statusCode < 200 || result.statusCode >= 300) throw new Error(getApiCallErrorMessage(result));
+    if (result.statusCode < 200 || result.statusCode >= 300)
+      throw new Error(getApiCallErrorMessage(result));
     const payload = parseCodexUsagePayload(result.body ?? result.bodyText);
     if (!payload) throw new Error("parse_codex_failed");
     return buildCodexItems(payload);
@@ -147,11 +157,14 @@ const fetchQuota = async (
     const projectId = resolveGeminiCliProjectId(file);
     if (!projectId) throw new Error("missing_project_id");
     const result = await apiCallApi.request({
-      authIndex, method: "POST", url: GEMINI_CLI_QUOTA_URL,
+      authIndex,
+      method: "POST",
+      url: GEMINI_CLI_QUOTA_URL,
       header: { ...GEMINI_CLI_REQUEST_HEADERS },
       data: JSON.stringify({ project: projectId }),
     });
-    if (result.statusCode < 200 || result.statusCode >= 300) throw new Error(getApiCallErrorMessage(result));
+    if (result.statusCode < 200 || result.statusCode >= 300)
+      throw new Error(getApiCallErrorMessage(result));
     const payload = parseGeminiCliQuotaPayload(result.body ?? result.bodyText);
     const buckets = Array.isArray(payload?.buckets) ? payload?.buckets : [];
     const parsed = buckets
@@ -159,31 +172,60 @@ const fetchQuota = async (
         const modelId = normalizeGeminiCliModelId(bucket.modelId ?? bucket.model_id);
         if (!modelId) return null;
         const tokenType = normalizeStringValue(bucket.tokenType ?? bucket.token_type);
-        const remainingFractionRaw = normalizeQuotaFraction(bucket.remainingFraction ?? bucket.remaining_fraction);
-        const remainingAmount = normalizeNumberValue(bucket.remainingAmount ?? bucket.remaining_amount);
+        const remainingFractionRaw = normalizeQuotaFraction(
+          bucket.remainingFraction ?? bucket.remaining_fraction,
+        );
+        const remainingAmount = normalizeNumberValue(
+          bucket.remainingAmount ?? bucket.remaining_amount,
+        );
         const resetTime = normalizeStringValue(bucket.resetTime ?? bucket.reset_time) ?? undefined;
         let fallbackFraction: number | null = null;
         if (remainingAmount !== null) fallbackFraction = remainingAmount <= 0 ? 0 : null;
         else if (resetTime) fallbackFraction = 0;
-        return { modelId, tokenType: tokenType ?? null, remainingFraction: remainingFractionRaw ?? fallbackFraction, remainingAmount, resetTime };
+        return {
+          modelId,
+          tokenType: tokenType ?? null,
+          remainingFraction: remainingFractionRaw ?? fallbackFraction,
+          remainingAmount,
+          resetTime,
+        };
       })
-      .filter(Boolean) as { modelId: string; tokenType: string | null; remainingFraction: number | null; remainingAmount: number | null; resetTime?: string }[];
+      .filter(Boolean) as {
+      modelId: string;
+      tokenType: string | null;
+      remainingFraction: number | null;
+      remainingAmount: number | null;
+      resetTime?: string;
+    }[];
     const grouped = buildGeminiCliBuckets(parsed);
     return grouped.map((b) => {
-      const percent = b.remainingFraction === null ? null : Math.round(clampPercent(b.remainingFraction * 100));
-      const amount = b.remainingAmount !== null ? `${Math.round(b.remainingAmount).toLocaleString()} tokens` : null;
+      const percent =
+        b.remainingFraction === null ? null : Math.round(clampPercent(b.remainingFraction * 100));
+      const amount =
+        b.remainingAmount !== null
+          ? `${Math.round(b.remainingAmount).toLocaleString()} tokens`
+          : null;
       const tokenType = b.tokenType ? `tokenType=${b.tokenType}` : null;
       const meta = [tokenType, amount].filter(Boolean).join(" · ");
-      return { label: b.label, percent, resetLabel: b.resetTime ? formatResetTime(b.resetTime) : "--", meta: meta || undefined };
+      return {
+        label: b.label,
+        percent,
+        resetLabel: b.resetTime ? formatResetTime(b.resetTime) : "--",
+        meta: meta || undefined,
+      };
     });
   }
 
   // kiro
   const result = await apiCallApi.request({
-    authIndex, method: "POST", url: KIRO_QUOTA_URL,
-    header: { ...KIRO_REQUEST_HEADERS }, data: KIRO_REQUEST_BODY,
+    authIndex,
+    method: "POST",
+    url: KIRO_QUOTA_URL,
+    header: { ...KIRO_REQUEST_HEADERS },
+    data: KIRO_REQUEST_BODY,
   });
-  if (result.statusCode < 200 || result.statusCode >= 300) throw new Error(getApiCallErrorMessage(result));
+  if (result.statusCode < 200 || result.statusCode >= 300)
+    throw new Error(getApiCallErrorMessage(result));
   const payload = parseKiroQuotaPayload(result.body ?? result.bodyText);
   if (!payload) throw new Error("parse_kiro_failed");
   return buildKiroItems(payload);
@@ -209,16 +251,24 @@ export function QuotaPage() {
       const data = await authFilesApi.list();
       setFiles(Array.isArray(data?.files) ? data.files : []);
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : t("m_quota.load_auth_failed") });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("m_quota.load_auth_failed"),
+      });
     } finally {
       setLoadingFiles(false);
     }
   }, [notify]);
 
-  useEffect(() => { void loadFiles(); }, [loadFiles]);
+  useEffect(() => {
+    void loadFiles();
+  }, [loadFiles]);
 
   const grouped = useMemo(() => {
-    const ag: AuthFileItem[] = [], cx: AuthFileItem[] = [], gm: AuthFileItem[] = [], kr: AuthFileItem[] = [];
+    const ag: AuthFileItem[] = [],
+      cx: AuthFileItem[] = [],
+      gm: AuthFileItem[] = [],
+      kr: AuthFileItem[] = [];
     files.forEach((f) => {
       const p = resolveAuthProvider(f);
       if (p === "antigravity") ag.push(f);
@@ -232,16 +282,33 @@ export function QuotaPage() {
   const refreshOne = useCallback(
     async (type: "antigravity" | "codex" | "gemini-cli" | "kiro", file: AuthFileItem) => {
       const name = file.name;
-      const setMap = type === "antigravity" ? setAntigravity : type === "codex" ? setCodex : type === "gemini-cli" ? setGeminiCli : setKiro;
-      setMap((prev) => ({ ...prev, [name]: { status: "loading", items: [], updatedAt: Date.now() } }));
+      const setMap =
+        type === "antigravity"
+          ? setAntigravity
+          : type === "codex"
+            ? setCodex
+            : type === "gemini-cli"
+              ? setGeminiCli
+              : setKiro;
+      setMap((prev) => ({
+        ...prev,
+        [name]: { status: "loading", items: [], updatedAt: Date.now() },
+      }));
       try {
         const items = await fetchQuota(type, file);
-        setMap((prev) => ({ ...prev, [name]: { status: "success", items, updatedAt: Date.now() } }));
+        setMap((prev) => ({
+          ...prev,
+          [name]: { status: "success", items, updatedAt: Date.now() },
+        }));
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : t("m_quota.quota_query_failed");
-        setMap((prev) => ({ ...prev, [name]: { status: "error", items: [], error: message, updatedAt: Date.now() } }));
+        setMap((prev) => ({
+          ...prev,
+          [name]: { status: "error", items: [], error: message, updatedAt: Date.now() },
+        }));
       }
-    }, [],
+    },
+    [],
   );
 
   const refreshAll = useCallback(async () => {
@@ -250,14 +317,20 @@ export function QuotaPage() {
     grouped.cx.forEach((f) => tasks.push(refreshOne("codex", f)));
     grouped.gm.forEach((f) => tasks.push(refreshOne("gemini-cli", f)));
     grouped.kr.forEach((f) => tasks.push(refreshOne("kiro", f)));
-    if (!tasks.length) { notify({ type: "info", message: t("m_quota.no_queryable_files") }); return; }
-    startTransition(() => { void Promise.allSettled(tasks); });
+    if (!tasks.length) {
+      notify({ type: "info", message: t("m_quota.no_queryable_files") });
+      return;
+    }
+    startTransition(() => {
+      void Promise.allSettled(tasks);
+    });
   }, [grouped, notify, refreshOne, startTransition]);
 
   /* Auto-refresh on mount */
   useEffect(() => {
     if (loadingFiles || hasAutoRefreshed.current) return;
-    const hasFiles = grouped.ag.length + grouped.cx.length + grouped.gm.length + grouped.kr.length > 0;
+    const hasFiles =
+      grouped.ag.length + grouped.cx.length + grouped.gm.length + grouped.kr.length > 0;
     if (!hasFiles) return;
     hasAutoRefreshed.current = true;
     void refreshAll();
@@ -276,7 +349,13 @@ export function QuotaPage() {
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-100 dark:bg-neutral-800/60">
               <img src={meta.icon.light} alt="" width={14} height={14} className="dark:hidden" />
-              <img src={meta.icon.dark} alt="" width={14} height={14} className="hidden dark:block" />
+              <img
+                src={meta.icon.dark}
+                alt=""
+                width={14}
+                height={14}
+                className="hidden dark:block"
+              />
             </div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{meta.label}</h3>
             {list.length > 0 && (
@@ -325,11 +404,21 @@ export function QuotaPage() {
           {t("m_quota.title")}
         </h2>
         <div className="flex items-center gap-2">
-          <Button variant="primary" size="sm" onClick={() => void refreshAll()} disabled={isPending || loadingFiles}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => void refreshAll()}
+            disabled={isPending || loadingFiles}
+          >
             <RefreshCw size={13} className={isPending ? "animate-spin" : ""} />
             {t("m_quota.refresh_all")}
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => void loadFiles()} disabled={loadingFiles}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void loadFiles()}
+            disabled={loadingFiles}
+          >
             <RefreshCw size={13} className={loadingFiles ? "animate-spin" : ""} />
             {t("m_quota.refresh_files")}
           </Button>

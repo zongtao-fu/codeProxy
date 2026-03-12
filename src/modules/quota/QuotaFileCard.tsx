@@ -87,8 +87,7 @@ export function QuotaFileCard({
   const providerIcon = PROVIDER_ICON[provider];
 
   /* Translate i18n-key labels returned by quota-helpers */
-  const tl = (text: string) =>
-    text.startsWith("m_quota.") ? t(text) : text;
+  const tl = (text: string) => (text.startsWith("m_quota.") ? t(text) : text);
 
   /* Translate resetLabel with embedded params (e.g. 'm_quota.minutes_later::5') */
   const trl = (text: string) => {
@@ -97,14 +96,23 @@ export function QuotaFileCard({
     const key = parts[0];
     if (key === "m_quota.minutes_later") return t(key, { minutes: parts[1] });
     if (key === "m_quota.hours_later") return t(key, { hours: parts[1] });
-    if (key === "m_quota.hours_minutes_later") return t(key, { hours: parts[1], minutes: parts[2] });
+    if (key === "m_quota.hours_minutes_later")
+      return t(key, { hours: parts[1], minutes: parts[2] });
     return t(key);
   };
 
   /* Translate error messages that may be i18n keys */
   const te = (text: string) =>
-    text.startsWith("m_quota.") || text === "missing_auth_index" || text === "no_model_quota" || text === "request_failed" || text === "missing_account_id" || text === "parse_codex_failed" || text === "missing_project_id" || text === "parse_kiro_failed"
-      ? t(`m_quota.${text.replace("m_quota.", "")}`) : text;
+    text.startsWith("m_quota.") ||
+    text === "missing_auth_index" ||
+    text === "no_model_quota" ||
+    text === "request_failed" ||
+    text === "missing_account_id" ||
+    text === "parse_codex_failed" ||
+    text === "missing_project_id" ||
+    text === "parse_kiro_failed"
+      ? t(`m_quota.${text.replace("m_quota.", "")}`)
+      : text;
 
   return (
     <div className="rounded-xl border border-slate-200/80 bg-white px-3.5 py-3 shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-950/60">
@@ -113,7 +121,13 @@ export function QuotaFileCard({
         {providerIcon && (
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-50 dark:bg-neutral-800/60">
             <img src={providerIcon.light} alt="" width={14} height={14} className="dark:hidden" />
-            <img src={providerIcon.dark} alt="" width={14} height={14} className="hidden dark:block" />
+            <img
+              src={providerIcon.dark}
+              alt=""
+              width={14}
+              height={14}
+              className="hidden dark:block"
+            />
           </div>
         )}
         <div className="min-w-0 flex-1">
@@ -122,9 +136,7 @@ export function QuotaFileCard({
           </p>
           <p className="text-[10px] text-slate-400 dark:text-white/40">
             {disabled ? t("m_quota.disabled") : t("m_quota.enabled")}
-            {state.updatedAt
-              ? ` · ${new Date(state.updatedAt).toLocaleTimeString()}`
-              : ""}
+            {state.updatedAt ? ` · ${new Date(state.updatedAt).toLocaleTimeString()}` : ""}
           </p>
         </div>
         <button
@@ -133,10 +145,7 @@ export function QuotaFileCard({
           disabled={state.status === "loading"}
           className="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40 dark:hover:bg-neutral-800 dark:hover:text-white"
         >
-          <RefreshCw
-            size={12}
-            className={state.status === "loading" ? "animate-spin" : ""}
-          />
+          <RefreshCw size={12} className={state.status === "loading" ? "animate-spin" : ""} />
         </button>
       </div>
 
@@ -149,7 +158,9 @@ export function QuotaFileCard({
           </div>
         ) : state.items.length === 0 ? (
           <p className="py-1 text-center text-[11px] text-slate-400 dark:text-white/35">
-            {state.status === "loading" ? t("m_quota.loading_quota") : t("m_quota.click_to_refresh")}
+            {state.status === "loading"
+              ? t("m_quota.loading_quota")
+              : t("m_quota.click_to_refresh")}
           </p>
         ) : (
           <div className="space-y-2">
@@ -164,9 +175,7 @@ export function QuotaFileCard({
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0 text-[10px] tabular-nums">
                     <span className="font-semibold text-slate-800 dark:text-white">
-                      {item.percent === null
-                        ? "--"
-                        : `${Math.round(clampPercent(item.percent))}%`}
+                      {item.percent === null ? "--" : `${Math.round(clampPercent(item.percent))}%`}
                     </span>
                     {item.resetLabel && item.resetLabel !== "--" && (
                       <span className="hidden text-slate-400 dark:text-white/30 sm:inline">

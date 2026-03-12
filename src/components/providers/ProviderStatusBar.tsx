@@ -97,7 +97,7 @@ export function ProviderStatusBar({ statusData, styles: stylesProp }: ProviderSt
     const timeRange = `${formatTime(detail.startTime)} – ${formatTime(detail.endTime)}`;
 
     return (
-      <div className={`${s.statusTooltip} ${posClass}`}>
+      <span className={`${s.statusTooltip} ${posClass}`}>
         <span className={s.tooltipTime}>{timeRange}</span>
         {total > 0 ? (
           <span className={s.tooltipStats}>
@@ -112,7 +112,7 @@ export function ProviderStatusBar({ statusData, styles: stylesProp }: ProviderSt
         ) : (
           <span className={s.tooltipStats}>{t("status_bar.no_requests")}</span>
         )}
-      </div>
+      </span>
     );
   };
 
@@ -123,21 +123,27 @@ export function ProviderStatusBar({ statusData, styles: stylesProp }: ProviderSt
           const isIdle = detail.rate === -1;
           const blockStyle = isIdle ? undefined : { backgroundColor: rateToColor(detail.rate) };
           const isActive = activeTooltip === idx;
+          const timeRange = `${formatTime(detail.startTime)} – ${formatTime(detail.endTime)}`;
 
           return (
-            <div
+            <button
+              type="button"
               key={idx}
               className={`${s.statusBlockWrapper} ${isActive ? s.statusBlockActive : ""}`}
               onPointerEnter={(e) => handlePointerEnter(e, idx)}
               onPointerLeave={handlePointerLeave}
               onPointerDown={(e) => handlePointerDown(e, idx)}
+              onFocus={() => setActiveTooltip(idx)}
+              onBlur={() => setActiveTooltip(null)}
+              aria-pressed={isActive}
+              title={timeRange}
             >
-              <div
+              <span
                 className={`${s.statusBlock} ${isIdle ? s.statusBlockIdle : ""}`}
                 style={blockStyle}
               />
               {isActive && renderTooltip(detail, idx)}
-            </div>
+            </button>
           );
         })}
       </div>

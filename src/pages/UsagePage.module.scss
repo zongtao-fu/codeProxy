@@ -998,13 +998,25 @@
 
 .healthBlockWrapper {
   position: relative;
+  display: block;
+  border: 0;
+  padding: 0;
+  background: none;
+  appearance: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   width: 10px;
   height: 10px;
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
 .healthBlock {
+  display: block;
   width: 100%;
   height: 100%;
   border-radius: 2px;
@@ -1024,6 +1036,7 @@
 }
 
 .healthTooltip {
+  display: block;
   position: absolute;
   bottom: calc(100% + 8px);
   left: 50%;

@@ -243,10 +243,10 @@ export function ProviderNav() {
           style={
             (indicatorRect
               ? ({
-                transform: `translate3d(${indicatorRect.x}px, ${indicatorRect.y}px, 0)`,
-                width: indicatorRect.width,
-                height: indicatorRect.height,
-              } satisfies CSSProperties)
+                  transform: `translate3d(${indicatorRect.x}px, ${indicatorRect.y}px, 0)`,
+                  width: indicatorRect.width,
+                  height: indicatorRect.height,
+                } satisfies CSSProperties)
               : undefined) as CSSProperties | undefined
           }
         />

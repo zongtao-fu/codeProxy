@@ -484,6 +484,7 @@ export function MainLayout() {
         <div className="left">
           <button
             className="sidebar-toggle-header"
+            type="button"
             onClick={() => setSidebarCollapsed((prev) => !prev)}
             title={
               sidebarCollapsed
@@ -494,14 +495,17 @@ export function MainLayout() {
             {sidebarCollapsed ? headerIcons.chevronRight : headerIcons.chevronLeft}
           </button>
           <img src={INLINE_LOGO_JPEG} alt="CPAMC logo" className="brand-logo" />
-          <div
+          <button
+            type="button"
             className={`brand-header ${brandExpanded ? "expanded" : "collapsed"}`}
             onClick={handleBrandClick}
             title={brandExpanded ? undefined : fullBrandName}
+            aria-label={fullBrandName}
+            aria-expanded={brandExpanded}
           >
             <span className="brand-full">{fullBrandName}</span>
             <span className="brand-abbr">{abbrBrandName}</span>
-          </div>
+          </button>
         </div>
 
         <div className="right">

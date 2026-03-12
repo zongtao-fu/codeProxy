@@ -55,12 +55,7 @@ export function ToastProvider({ children }: PropsWithChildren) {
 
   return (
     <ToastContext value={value}>
-      <GoeyToaster
-        position="top-right"
-        theme={mode}
-        preset="smooth"
-        showProgress
-      />
+      <GoeyToaster position="top-right" theme={mode} preset="smooth" showProgress />
       {children}
     </ToastContext>
   );

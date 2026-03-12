@@ -28,20 +28,22 @@ export function ConfirmModal({
   const isDanger = variant === "danger";
 
   return (
-    <Modal open={open} title={title} onClose={onClose} maxWidth="max-w-md" footer={
-      <>
-        <Button variant="secondary" onClick={onClose} disabled={busy}>
-          {cancelText}
-        </Button>
-        <Button
-          variant={isDanger ? "danger" : "primary"}
-          onClick={onConfirm}
-          disabled={busy}
-        >
-          {confirmText}
-        </Button>
-      </>
-    }>
+    <Modal
+      open={open}
+      title={title}
+      onClose={onClose}
+      maxWidth="max-w-md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={busy}>
+            {cancelText}
+          </Button>
+          <Button variant={isDanger ? "danger" : "primary"} onClick={onConfirm} disabled={busy}>
+            {confirmText}
+          </Button>
+        </>
+      }
+    >
       <div className="flex items-start gap-3">
         <div
           className={[

@@ -106,7 +106,11 @@
     display: flex;
     align-items: center;
     gap: $spacing-xs;
+    padding: 0;
+    border: 0;
+    background: none;
     font-weight: 800;
+    font-family: inherit;
     font-size: 18px;
     color: var(--text-primary);
     margin-right: $spacing-md;
@@ -114,6 +118,7 @@
     overflow: hidden;
     white-space: nowrap;
     flex-shrink: 0;
+    text-align: left;
 
     .brand-full {
       display: inline-block;
@@ -152,6 +157,12 @@
 
     &:hover {
       color: var(--primary-color);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 4px;
+      border-radius: 8px;
     }
 
     // 移动端：禁用动画，只显示缩写
