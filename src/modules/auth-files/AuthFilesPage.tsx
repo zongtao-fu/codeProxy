@@ -915,7 +915,7 @@ export function AuthFilesPage() {
         notify({
           type: "error",
           message:
-            "Server does not support OAuth excluded models API (/oauth-excluded-models). Please upgrade.",
+            t("auth_files.server_no_excluded_api"),
         });
         return;
       }
@@ -926,10 +926,10 @@ export function AuthFilesPage() {
         .filter(Boolean);
       try {
         await authFilesApi.saveOauthExcludedModels(key, models);
-        notify({ type: "success", message: "Saved" });
+        notify({ type: "success", message: t("auth_files.saved") });
         startTransition(() => void refreshExcluded());
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : "Save failed" });
+        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.save_failed") });
       }
     },
     [excludedUnsupported, notify, refreshExcluded, startTransition],
@@ -948,7 +948,7 @@ export function AuthFilesPage() {
       const key = normalizeProviderKey(provider);
       try {
         await authFilesApi.deleteOauthExcludedEntry(key);
-        notify({ type: "success", message: "Deleted" });
+        notify({ type: "success", message: t("auth_files.deleted") });
         startTransition(() => void refreshExcluded());
       } catch (err: unknown) {
         notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.delete_failed") });
@@ -960,7 +960,7 @@ export function AuthFilesPage() {
   const addExcludedProvider = useCallback(() => {
     const key = normalizeProviderKey(excludedNewProvider);
     if (!key) {
-      notify({ type: "info", message: "Please enter provider" });
+      notify({ type: "info", message: t("auth_files.please_enter_provider") });
       return;
     }
     setExcluded((prev) => (prev[key] ? prev : { ...prev, [key]: [] }));
@@ -971,7 +971,7 @@ export function AuthFilesPage() {
   const addAliasChannel = useCallback(() => {
     const key = normalizeProviderKey(aliasNewChannel);
     if (!key) {
-      notify({ type: "info", message: "Please enter channel" });
+      notify({ type: "info", message: t("auth_files.please_enter_channel") });
       return;
     }
     setAliasMap((prev) => (prev[key] ? prev : { ...prev, [key]: [] }));
@@ -984,7 +984,7 @@ export function AuthFilesPage() {
       if (aliasUnsupported) {
         notify({
           type: "error",
-          message: "Server does not support OAuth model alias API (/oauth-model-alias). Please upgrade.",
+          message: t("auth_files.server_no_alias_api"),
         });
         return;
       }
@@ -1000,7 +1000,7 @@ export function AuthFilesPage() {
 
       try {
         await authFilesApi.saveOauthModelAlias(key, next);
-        notify({ type: "success", message: "Saved" });
+        notify({ type: "success", message: t("auth_files.saved") });
         startTransition(() => void refreshAlias());
       } catch (err: unknown) {
         notify({ type: "error", message: err instanceof Error ? err.message : "Save failed" });
@@ -1021,7 +1021,7 @@ export function AuthFilesPage() {
       const key = normalizeProviderKey(channel);
       try {
         await authFilesApi.deleteOauthModelAlias(key);
-        notify({ type: "success", message: "Deleted" });
+        notify({ type: "success", message: t("auth_files.deleted") });
         startTransition(() => void refreshAlias());
       } catch (err: unknown) {
         notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.delete_failed") });
@@ -1049,7 +1049,7 @@ export function AuthFilesPage() {
         setImportModels(list);
         setImportSelected(new Set(list.map((m) => m.id)));
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : "Failed to get model definitions" });
+        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.failed_get_models") });
         setImportOpen(false);
       } finally {
         setImportLoading(false);
@@ -1065,7 +1065,7 @@ export function AuthFilesPage() {
     const selected = new Set(importSelected);
     const picked = importModels.filter((m) => selected.has(m.id));
     if (picked.length === 0) {
-      notify({ type: "info", message: "No models selected" });
+      notify({ type: "info", message: t("auth_files.no_models_selected") });
       return;
     }
 
@@ -1091,7 +1091,7 @@ export function AuthFilesPage() {
     });
 
     setImportOpen(false);
-    notify({ type: "success", message: "Imported (default alias=same name)" });
+    notify({ type: "success", message: t("auth_files.imported_default") });
   }, [importChannel, importModels, importSelected, notify]);
 
   const filterChips = useMemo(() => ["all", ...providerOptions], [providerOptions]);
@@ -1117,7 +1117,7 @@ export function AuthFilesPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="sm" onClick={() => navigate("/quota")}>
               <ShieldCheck size={14} />
-              Quota
+              {t("auth_files.quota")}
             </Button>
             {tab === "files" ? (
               <>
@@ -1136,7 +1136,7 @@ export function AuthFilesPage() {
                   disabled={loading || usageLoading}
                 >
                   <RefreshCw size={14} className={loading || usageLoading ? "animate-spin" : ""} />
-                  Refresh
+                  {t("auth_files.refresh")}
                 </Button>
                 <Button
                   variant="primary"
@@ -1145,7 +1145,7 @@ export function AuthFilesPage() {
                   disabled={uploading}
                 >
                   <Upload size={14} />
-                  Upload
+                  {t("auth_files.upload")}
                 </Button>
                 <Button
                   variant="danger"
@@ -1154,7 +1154,7 @@ export function AuthFilesPage() {
                   disabled={deletingAll || loading || uploading}
                 >
                   <Trash2 size={14} />
-                  {filter === "all" ? "Delete All" : `Delete ${filter}`}
+                  {filter === "all" ? t("auth_files.delete_all") : t("auth_files.delete_type", { type: filter })}
                 </Button>
               </>
             ) : null}
@@ -1175,7 +1175,7 @@ export function AuthFilesPage() {
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <p className="text-[11px] font-semibold text-slate-600 dark:text-white/65">
-                      Type Filter
+                      {t("auth_files.type_filter")}
                     </p>
                     <HoverTooltip content={t("auth_files.count_hint")} placement="top">
                       <span
@@ -1194,7 +1194,7 @@ export function AuthFilesPage() {
                         key === "all"
                           ? filterCounts.total
                           : (filterCounts.counts[normalizedKey] ?? 0);
-                      const label = key === "all" ? "All" : key;
+                      const label = key === "all" ? t("auth_files.all") : key;
                       const countClass = active
                         ? "bg-white/20 text-white dark:bg-neutral-950/10 dark:text-neutral-950"
                         : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/70";
@@ -1226,7 +1226,7 @@ export function AuthFilesPage() {
 
                 <div className="flex min-w-[240px] flex-1 flex-col gap-1">
                   <p className="text-[11px] font-semibold text-slate-600 dark:text-white/65">
-                    Search
+                    {t("auth_files.search")}
                   </p>
                   <TextInput
                     value={search}
@@ -1238,7 +1238,7 @@ export function AuthFilesPage() {
 
                 <div className="flex shrink-0 flex-col gap-1">
                   <p className="text-[11px] font-semibold text-slate-600 dark:text-white/65">
-                    Per page
+                    {t("auth_files.per_page")}
                   </p>
                   <div className="flex items-center gap-2">
                     <TextInput
@@ -1264,7 +1264,7 @@ export function AuthFilesPage() {
                         else setPageSizeInput(String(pageSize));
                       }}
                     >
-                      Apply
+                      {t("auth_files.apply")}
                     </Button>
                   </div>
                 </div>
@@ -1316,7 +1316,7 @@ export function AuthFilesPage() {
                               </span>
                               {runtimeOnly ? (
                                 <span className="inline-flex rounded-lg bg-slate-900 px-2 py-1 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950">
-                                  Virtual auth file
+                                  {t("auth_files.virtual_auth_file")}
                                 </span>
                               ) : null}
                               {authIndexKey ? (
@@ -1326,11 +1326,11 @@ export function AuthFilesPage() {
                               ) : null}
                               {runtimeOnly ? null : disabled ? (
                                 <span className="inline-flex rounded-lg bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
-                                  Disabled
+                                  {t("auth_files.disabled")}
                                 </span>
                               ) : (
                                 <span className="inline-flex rounded-lg bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
-                                  Enabled
+                                  {t("auth_files.enabled")}
                                 </span>
                               )}
                             </div>
@@ -1339,10 +1339,10 @@ export function AuthFilesPage() {
                             </p>
                             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs tabular-nums">
                               <span className="rounded-full bg-emerald-600/10 px-2 py-0.5 font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
-                                Success {stats.success}
+                                {t("auth_files.success_count", { count: stats.success })}
                               </span>
                               <span className="rounded-full bg-rose-600/10 px-2 py-0.5 font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
-                                Failed {stats.failure}
+                                {t("auth_files.failed_count", { count: stats.failure })}
                               </span>
                             </div>
                           </div>
@@ -1351,7 +1351,7 @@ export function AuthFilesPage() {
                             {runtimeOnly ? null : (
                               <div className="inline-flex items-center gap-2">
                                 <span className="text-sm font-semibold leading-none text-slate-900 dark:text-white">
-                                  Enable
+                                  {t("auth_files.enable")}
                                 </span>
                                 <ToggleSwitch
                                   ariaLabel={t("auth_files.enable_disable")}
@@ -1374,13 +1374,13 @@ export function AuthFilesPage() {
                               onClick={() => void openModels(file)}
                             >
                               <ShieldCheck size={14} />
-                              Models
+                              {t("auth_files.models")}
                             </Button>
                           ) : null}
 
                           {runtimeOnly ? (
                             <p className="text-xs text-slate-600 dark:text-white/55">
-                              Virtual auth files are for runtime injection only: cannot View/Download/Edit/Delete.
+                              {t("auth_files.virtual_hint")}
                             </p>
                           ) : (
                             <>
@@ -1390,7 +1390,7 @@ export function AuthFilesPage() {
                                 onClick={() => void openDetail(file)}
                               >
                                 <Eye size={14} />
-                                View
+                                {t("auth_files.view")}
                               </Button>
                               <Button
                                 variant="secondary"
@@ -1398,7 +1398,7 @@ export function AuthFilesPage() {
                                 onClick={() => void openPrefixProxyEditor(file)}
                               >
                                 <Settings2 size={14} />
-                                Prefix/Proxy
+                                {t("auth_files.prefix_proxy")}
                               </Button>
                               <Button
                                 variant="secondary"
@@ -1410,13 +1410,13 @@ export function AuthFilesPage() {
                                   } catch (err: unknown) {
                                     notify({
                                       type: "error",
-                                      message: err instanceof Error ? err.message : "DownloadFailed",
+                                      message: err instanceof Error ? err.message : t("auth_files.download_failed"),
                                     });
                                   }
                                 }}
                               >
                                 <Download size={14} />
-                                Download
+                                {t("auth_files.download")}
                               </Button>
                               <Button
                                 variant="danger"
@@ -1424,7 +1424,7 @@ export function AuthFilesPage() {
                                 onClick={() => setConfirm({ type: "deleteFile", name: file.name })}
                               >
                                 <Trash2 size={14} />
-                                Delete
+                                {t("common.delete")}
                               </Button>
                             </>
                           )}
@@ -1437,7 +1437,7 @@ export function AuthFilesPage() {
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-slate-600 dark:text-white/65 tabular-nums">
-                  Total {filteredFiles.length} · Page {safePage} / {totalPages}
+                  {t("auth_files.total_page", { total: filteredFiles.length, page: safePage, pages: totalPages })}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -1446,7 +1446,7 @@ export function AuthFilesPage() {
                     onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                     disabled={safePage <= 1}
                   >
-                    Prev
+                    {t("auth_files.prev")}
                   </Button>
                   <Button
                     variant="secondary"
@@ -1454,14 +1454,14 @@ export function AuthFilesPage() {
                     onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                     disabled={safePage >= totalPages}
                   >
-                    Next
+                    {t("auth_files.next")}
                   </Button>
                 </div>
               </div>
 
               {usageData ? null : (
                 <p className="text-xs text-slate-500 dark:text-white/55">
-                  Usage stats loading failed: File management is not affected, but success/failed stats will show 0.
+                  {t("auth_files.usage_stats_warning")}
                 </p>
               )}
             </div>
@@ -1480,7 +1480,7 @@ export function AuthFilesPage() {
                     disabled={excludedLoading || isPending}
                   >
                     <RefreshCw size={14} className={excludedLoading ? "animate-spin" : ""} />
-                    Refresh
+                    {t("auth_files.refresh")}
                   </Button>
                 </div>
               }
@@ -1509,7 +1509,7 @@ export function AuthFilesPage() {
                   disabled={isPending || excludedUnsupported}
                 >
                   <Plus size={14} />
-                  Add
+                  {t("auth_files.add")}
                 </Button>
               </div>
 
@@ -1556,7 +1556,7 @@ export function AuthFilesPage() {
                                 }
                                 disabled={isPending || excludedUnsupported}
                               >
-                                Save
+                                {t("auth_files.save")}
                               </Button>
                               <Button
                                 variant="danger"
@@ -1564,7 +1564,7 @@ export function AuthFilesPage() {
                                 onClick={() => void deleteExcludedProvider(provider)}
                                 disabled={isPending || excludedUnsupported}
                               >
-                                Delete
+                                {t("common.delete")}
                               </Button>
                             </div>
                           </div>
@@ -1575,7 +1575,7 @@ export function AuthFilesPage() {
                               setExcludedDraft((prev) => ({ ...prev, [provider]: nextText }));
                             }}
                             placeholder={t("auth_files.one_model_per_line")}
-                            aria-label={`${provider} Excluded Models`}
+                            aria-label={`${provider} ${t("auth_files_page.excluded_tab")}`}
                             disabled={excludedUnsupported}
                             className="mt-3 min-h-[120px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400/35 dark:border-neutral-800 dark:bg-neutral-950 dark:text-slate-100 dark:placeholder:text-neutral-500 dark:focus-visible:ring-white/15"
                           />
@@ -1600,7 +1600,7 @@ export function AuthFilesPage() {
                     disabled={aliasLoading || isPending}
                   >
                     <RefreshCw size={14} className={aliasLoading ? "animate-spin" : ""} />
-                    Refresh
+                    {t("auth_files.refresh")}
                   </Button>
                 </div>
               }
@@ -1628,7 +1628,7 @@ export function AuthFilesPage() {
                   disabled={isPending || aliasUnsupported}
                 >
                   <Plus size={14} />
-                  Add
+                  {t("auth_files.add")}
                 </Button>
               </div>
 
@@ -1655,7 +1655,7 @@ export function AuthFilesPage() {
                                 {channel}
                               </p>
                               <p className="mt-1 text-xs text-slate-500 dark:text-white/55">
-                                Valid mappings: {mappingCount}
+                                {t("auth_files.valid_mappings", { count: mappingCount })}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -1666,7 +1666,7 @@ export function AuthFilesPage() {
                                 disabled={aliasUnsupported}
                               >
                                 <ShieldCheck size={14} />
-                                导入Models
+                                {t("auth_files.import_models")}
                               </Button>
                               <Button
                                 variant="secondary"
@@ -1674,7 +1674,7 @@ export function AuthFilesPage() {
                                 onClick={() => void saveAliasChannel(channel)}
                                 disabled={isPending || aliasUnsupported}
                               >
-                                Save
+                                {t("auth_files.save")}
                               </Button>
                               <Button
                                 variant="danger"
@@ -1682,7 +1682,7 @@ export function AuthFilesPage() {
                                 onClick={() => void deleteAliasChannel(channel)}
                                 disabled={isPending || aliasUnsupported}
                               >
-                                Delete
+                                {t("common.delete")}
                               </Button>
                             </div>
                           </div>
@@ -1702,7 +1702,7 @@ export function AuthFilesPage() {
                                         ),
                                       }));
                                     }}
-                                    placeholder="name"
+                                    placeholder={t("auth_files.name_placeholder", "name")}
                                   />
                                 </div>
                                 <div className="lg:col-span-5">
@@ -1717,12 +1717,12 @@ export function AuthFilesPage() {
                                         ),
                                       }));
                                     }}
-                                    placeholder="alias"
+                                    placeholder={t("auth_files.alias_placeholder", "alias")}
                                   />
                                 </div>
                                 <div className="lg:col-span-1 flex items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
                                   <span className="text-xs text-slate-600 dark:text-white/65">
-                                    fork
+                                    {t("auth_files.fork")}
                                   </span>
                                   <input
                                     type="checkbox"
@@ -1775,7 +1775,7 @@ export function AuthFilesPage() {
                                 }}
                               >
                                 <Plus size={14} />
-                                Add一行
+                                {t("auth_files.add_row")}
                               </Button>
                             </div>
                           </div>
@@ -1791,7 +1791,7 @@ export function AuthFilesPage() {
 
       <Modal
         open={detailOpen}
-        title={detailFile ? `View：${detailFile.name}` : t("auth_files.view_auth_file", "View Auth File")}
+        title={detailFile ? t("auth_files.view_file_title", { name: detailFile.name }) : t("auth_files.view_auth_file", "View Auth File")}
         onClose={() => setDetailOpen(false)}
         footer={
           <div className="flex items-center gap-2">
@@ -1805,10 +1805,10 @@ export function AuthFilesPage() {
               disabled={!detailFile || detailLoading}
             >
               <Download size={14} />
-              Download
+              {t("auth_files.download")}
             </Button>
             <Button variant="secondary" onClick={() => setDetailOpen(false)}>
-              Close
+              {t("auth_files.close")}
             </Button>
           </div>
         }
@@ -1824,11 +1824,11 @@ export function AuthFilesPage() {
 
       <Modal
         open={modelsOpen}
-        title={`Models List: ${modelsFileName || "--"}${modelsFileType ? ` (${modelsFileType})` : ""}`}
+        title={t("auth_files.models_list_title", { name: modelsFileName || "--", type: modelsFileType || "" })}
         onClose={() => setModelsOpen(false)}
         footer={
           <Button variant="secondary" onClick={() => setModelsOpen(false)}>
-            Close
+            {t("auth_files.close")}
           </Button>
         }
       >
@@ -1836,7 +1836,7 @@ export function AuthFilesPage() {
           <div className="text-sm text-slate-600 dark:text-white/65">Loading…</div>
         ) : modelsError === "unsupported" ? (
           <EmptyState
-            title="API Not Supported"
+            title={t("auth_files.api_not_supported")}
             description={t("auth_files.no_models_api")}
           />
         ) : modelsList.length === 0 ? (
@@ -1862,7 +1862,7 @@ export function AuthFilesPage() {
                     if (!hit) return null;
                     return (
                       <span className="inline-flex rounded-lg bg-rose-600/10 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
-                        OAuth Excluded
+                        {t("auth_files.oauth_excluded")}
                       </span>
                     );
                   })()}
@@ -1879,7 +1879,7 @@ export function AuthFilesPage() {
 
       <Modal
         open={prefixProxyEditor.open}
-        title={`Edit: ${prefixProxyEditor.fileName || "--"}`}
+        title={t("auth_files.edit_title", { name: prefixProxyEditor.fileName || "--" })}
         description={t("auth_files.prefix_proxy_desc")}
         onClose={() =>
           setPrefixProxyEditor({
@@ -1915,7 +1915,7 @@ export function AuthFilesPage() {
                 })
               }
             >
-              Cancel
+              {t("auth_files.cancel")}
             </Button>
             <Button
               variant="primary"
@@ -1928,7 +1928,7 @@ export function AuthFilesPage() {
               }
             >
               <ShieldCheck size={14} />
-              Save
+              {t("auth_files.save")}
             </Button>
           </div>
         }
@@ -1938,7 +1938,7 @@ export function AuthFilesPage() {
         ) : prefixProxyEditor.json ? (
           <div className="space-y-4">
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">prefix (optional)</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("auth_files.prefix_label")}</p>
               <div className="mt-2">
                 <TextInput
                   value={prefixProxyEditor.prefix}
@@ -1949,13 +1949,13 @@ export function AuthFilesPage() {
                 />
               </div>
               <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
-                Leave empty to remove prefix.
+                {t("auth_files.leave_empty_prefix")}
               </p>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                proxy_url (optional)
+                {t("auth_files.proxy_url_label")}
               </p>
               <div className="mt-2">
                 <TextInput
@@ -1967,37 +1967,36 @@ export function AuthFilesPage() {
                 />
               </div>
               <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
-                Leave empty to remove proxy_url.
+                {t("auth_files.leave_empty_proxy")}
               </p>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                Preview (After Save)
+                {t("auth_files.preview_after_save")}
               </p>
               <pre className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-white p-3 font-mono text-xs text-slate-900 dark:border-neutral-800 dark:bg-neutral-950 dark:text-slate-100">
                 {prefixProxyUpdatedText}
               </pre>
               <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
-                Note: Saving will re-upload the file; recommended max size is{" "}
-                {formatFileSize(MAX_AUTH_FILE_SIZE)}。
+                {t("auth_files.save_note", { size: formatFileSize(MAX_AUTH_FILE_SIZE) })}
               </p>
             </div>
           </div>
         ) : (
-          <EmptyState title={t("auth_files_page.cannot_edit")} description={prefixProxyEditor.error || "Unknown error"} />
+          <EmptyState title={t("auth_files_page.cannot_edit")} description={prefixProxyEditor.error || t("auth_files.unknown_error")} />
         )}
       </Modal>
 
       <Modal
         open={importOpen}
-        title={`Import Models: ${importChannel || "--"}`}
+        title={t("auth_files.import_title", { name: importChannel || "--" })}
         description={t("auth_files.fetch_models_desc")}
         onClose={() => setImportOpen(false)}
         footer={
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={() => setImportOpen(false)}>
-              Cancel
+              {t("auth_files.cancel")}
             </Button>
             <Button
               variant="primary"
@@ -2005,7 +2004,7 @@ export function AuthFilesPage() {
               disabled={importLoading || !importModels.length}
             >
               <ShieldCheck size={14} />
-              Import Selected
+              {t("auth_files.import_selected")}
             </Button>
           </div>
         }
@@ -2028,7 +2027,7 @@ export function AuthFilesPage() {
 
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
               <p className="text-xs text-slate-600 dark:text-white/65 tabular-nums">
-                {importFilteredModels.length} models · {importSelected.size} selected
+                {t("auth_files.models_selected", { models: importFilteredModels.length, selected: importSelected.size })}
               </p>
               <div className="mt-2 max-h-72 overflow-y-auto space-y-1">
                 {importFilteredModels.map((model) => {
@@ -2071,15 +2070,15 @@ export function AuthFilesPage() {
           confirm?.type === "deleteAll"
             ? filter === "all"
               ? t("auth_files.delete_all_auth_files", "Delete All Auth Files")
-              : `Delete ${filter} Auth files`
+              : t("auth_files.delete_filter_title", { filter })
             : t("auth_files.delete_auth_file", "Delete Auth File")
         }
         description={
           confirm?.type === "deleteAll"
             ? filter === "all"
               ? t("auth_files.confirm_delete_all", "Are you sure you want to delete all auth files? This operation is irreversible.")
-              : `Are you sure you want to delete auth files under current filter (${filter})? This operation is irreversible.`
-            : `Are you sure you want to delete ${confirm?.type === "deleteFile" ? confirm.name : ""}? This operation is irreversible.`
+              : t("auth_files.confirm_delete_filter", { filter })
+            : t("auth_files.confirm_delete_file", { name: confirm?.type === "deleteFile" ? confirm.name : "" })
         }
         confirmText={t("common.delete")}
         busy={deletingAll}
