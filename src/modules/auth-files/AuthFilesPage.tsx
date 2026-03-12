@@ -1169,11 +1169,16 @@ export function AuthFilesPage() {
 
   return (
     <div className="space-y-6">
-      <Card
-        title={t("auth_files_page.title")}
-        description={t("auth_files_page.description")}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+            {t("auth_files_page.title")}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-neutral-400">
+            {t("auth_files_page.description")}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="sm" onClick={() => navigate("/quota")}>
               <ShieldCheck size={14} />
               {t("auth_files.quota")}
@@ -1219,10 +1224,14 @@ export function AuthFilesPage() {
                 </Button>
               </>
             ) : null}
-          </div>
-        }
-        loading={loading}
-      >
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex h-32 items-center justify-center text-sm text-slate-500">
+          {t("common.loading_ellipsis")}
+        </div>
+      ) : (
         <Tabs value={tab} onValueChange={(next) => setTab(next as typeof tab)}>
           <TabsList>
             <TabsTrigger value="files">{t("auth_files_page.files_tab")}</TabsTrigger>
@@ -1535,26 +1544,36 @@ export function AuthFilesPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="excluded" className="mt-4">
-            <Card
-              title={t("auth_files_page.excluded_title")}
-              description={t("auth_files_page.excluded_desc")}
-              actions={
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => void refreshExcluded()}
-                    disabled={excludedLoading || isPending}
-                  >
-                    <RefreshCw size={14} className={excludedLoading ? "animate-spin" : ""} />
-                    {t("auth_files.refresh")}
-                  </Button>
-                </div>
-              }
-              loading={excludedLoading}
-            >
-              {excludedUnsupported ? (
+          <TabsContent value="excluded" className="mt-4 space-y-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {t("auth_files_page.excluded_title")}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-neutral-400">
+                  {t("auth_files_page.excluded_desc")}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void refreshExcluded()}
+                  disabled={excludedLoading || isPending}
+                >
+                  <RefreshCw size={14} className={excludedLoading ? "animate-spin" : ""} />
+                  {t("auth_files.refresh")}
+                </Button>
+              </div>
+            </div>
+
+            {excludedLoading ? (
+              <div className="flex h-32 items-center justify-center text-sm text-slate-500">
+                {t("common.loading_ellipsis")}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {excludedUnsupported ? (
                 <div className="mb-4">
                   <EmptyState
                     title={t("auth_files_page.api_not_supported")}
@@ -1652,29 +1671,40 @@ export function AuthFilesPage() {
                     })
                 )}
               </div>
-            </Card>
+            </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="alias" className="mt-4">
-            <Card
-              title={t("auth_files_page.alias_title")}
-              description={t("auth_files.model_alias_desc")}
-              actions={
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => void refreshAlias()}
-                    disabled={aliasLoading || isPending}
-                  >
-                    <RefreshCw size={14} className={aliasLoading ? "animate-spin" : ""} />
-                    {t("auth_files.refresh")}
-                  </Button>
-                </div>
-              }
-              loading={aliasLoading}
-            >
-              {aliasUnsupported ? (
+          <TabsContent value="alias" className="mt-4 space-y-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {t("auth_files_page.alias_title")}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-neutral-400">
+                  {t("auth_files.model_alias_desc")}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void refreshAlias()}
+                  disabled={aliasLoading || isPending}
+                >
+                  <RefreshCw size={14} className={aliasLoading ? "animate-spin" : ""} />
+                  {t("auth_files.refresh")}
+                </Button>
+              </div>
+            </div>
+
+            {aliasLoading ? (
+              <div className="flex h-32 items-center justify-center text-sm text-slate-500">
+                {t("common.loading_ellipsis")}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {aliasUnsupported ? (
                 <div className="mb-4">
                   <EmptyState
                     title={t("auth_files.api_not_supported")}
@@ -1855,10 +1885,11 @@ export function AuthFilesPage() {
                     })
                 )}
               </div>
-            </Card>
+            </div>
+            )}
           </TabsContent>
         </Tabs>
-      </Card>
+      )}
 
       <Modal
         open={detailOpen}
