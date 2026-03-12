@@ -52,7 +52,7 @@ export function ModelInputList({
           disabled={disabled}
         >
           <Plus size={14} />
-          新增
+          {t("common.add")}
         </Button>
       </div>
 
@@ -133,7 +133,8 @@ export function ModelInputList({
       )}
 
       <p className="text-xs text-slate-500 dark:text-white/55">
-        Hint: One model per line; alias is used to rewrite downstream model name. Higher priority number takes precedence.
+        Hint: One model per line; alias is used to rewrite downstream model name. Higher priority
+        number takes precedence.
       </p>
     </section>
   );

@@ -203,7 +203,9 @@ function ApiKeysEditor({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-sm font-semibold text-slate-900 dark:text-white">{t("visual_config.api_keys")}</div>
+        <div className="text-sm font-semibold text-slate-900 dark:text-white">
+          {t("visual_config.api_keys")}
+        </div>
         <Button size="sm" onClick={openAddModal} disabled={disabled}>
           <Plus size={14} />
           {t("visual_config.btn_add")}
@@ -274,7 +276,11 @@ function ApiKeysEditor({
       <Modal
         open={modalOpen}
         onClose={closeModal}
-        title={editingIndex !== null ? t("visual_config.edit_api_key_title") : t("visual_config.add_api_key_title")}
+        title={
+          editingIndex !== null
+            ? t("visual_config.edit_api_key_title")
+            : t("visual_config.add_api_key_title")
+        }
         footer={
           <>
             <Button variant="secondary" onClick={closeModal} disabled={disabled}>
@@ -291,7 +297,7 @@ function ApiKeysEditor({
           <TextInput
             value={inputValue}
             onChange={(e) => setInputValue(e.currentTarget.value)}
-            placeholder="sk-..."
+            placeholder={t("visual_config.api_key_placeholder")}
             disabled={disabled}
           />
           {formError ? (
@@ -303,7 +309,10 @@ function ApiKeysEditor({
       <ConfirmModal
         open={deleteIndex !== null}
         title={t("visual_config.delete_api_key")}
-        description={t("common.confirm_delete_api_key", "Are you sure you want to delete this API Key? This operation is irreversible.")}
+        description={t(
+          "common.confirm_delete_api_key",
+          "Are you sure you want to delete this API Key? This operation is irreversible.",
+        )}
         confirmText={t("visual_config.btn_delete")}
         variant="danger"
         onClose={() => setDeleteIndex(null)}
@@ -995,7 +1004,10 @@ export function VisualConfigEditor({
           </div>
         </Card>
 
-        <Card title={t("visual_config.proxy_retry")} description={t("visual_config.proxy_retry_card_desc")}>
+        <Card
+          title={t("visual_config.proxy_retry")}
+          description={t("visual_config.proxy_retry_card_desc")}
+        >
           <div className="space-y-4">
             <Field label="proxy-url" hint={t("visual_config.empty_no_proxy")}>
               <TextInput
@@ -1044,7 +1056,10 @@ export function VisualConfigEditor({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title={t("visual_config.log_limits")} description={t("visual_config.log_limits_desc")}>
+        <Card
+          title={t("visual_config.log_limits")}
+          description={t("visual_config.log_limits_desc")}
+        >
           <div className="space-y-4">
             <Field label="logs-max-total-size-mb" hint={t("visual_config.log_max")}>
               <TextInput
@@ -1096,13 +1111,13 @@ export function VisualConfigEditor({
           </div>
         </Card>
 
-        <Card
-          title={t("visual_config.streaming")}
-          description={t("visual_config.streaming_desc")}
-        >
+        <Card title={t("visual_config.streaming")} description={t("visual_config.streaming_desc")}>
           <div className="space-y-4">
             <div className="grid gap-3 lg:grid-cols-2">
-              <Field label="streaming.keepalive-seconds" hint={t("visual_config.non_negative_int_sec")}>
+              <Field
+                label="streaming.keepalive-seconds"
+                hint={t("visual_config.non_negative_int_sec")}
+              >
                 <TextInput
                   value={values.streaming.keepaliveSeconds}
                   onChange={(e) =>
@@ -1129,7 +1144,10 @@ export function VisualConfigEditor({
                 />
               </Field>
             </div>
-            <Field label="nonstream-keepalive-interval" hint={t("visual_config.non_negative_int_sec")}>
+            <Field
+              label="nonstream-keepalive-interval"
+              hint={t("visual_config.non_negative_int_sec")}
+            >
               <TextInput
                 value={values.streaming.nonstreamKeepaliveInterval}
                 onChange={(e) =>

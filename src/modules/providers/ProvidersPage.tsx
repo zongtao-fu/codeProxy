@@ -183,7 +183,10 @@ export function ProvidersPage() {
           }
         }
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : t("providers.load_failed") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("providers.load_failed"),
+        });
       } finally {
         setLoading(false);
       }
@@ -339,7 +342,10 @@ export function ProvidersPage() {
       closeKeyEditor();
       startTransition(() => void refreshAll());
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : t("providers.save_failed") });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("providers.save_failed"),
+      });
     }
   }, [
     claudeKeys,
@@ -384,7 +390,10 @@ export function ProvidersPage() {
         }
         notify({ type: "success", message: t("providers.deleted") });
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : t("providers.delete_failed") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("providers.delete_failed"),
+        });
       }
     },
     [claudeKeys, codexKeys, geminiKeys, notify, vertexKeys],
@@ -415,13 +424,19 @@ export function ProvidersPage() {
           setCodexKeys(nextList);
           await providersApi.saveCodexConfigs(nextList);
         }
-        notify({ type: "success", message: enabled ? t("providers.toggle_enabled") : t("providers.toggle_disabled") });
+        notify({
+          type: "success",
+          message: enabled ? t("providers.toggle_enabled") : t("providers.toggle_disabled"),
+        });
         startTransition(() => void refreshAll());
       } catch (err: unknown) {
         if (type === "gemini") setGeminiKeys(prev);
         else if (type === "claude") setClaudeKeys(prev);
         else setCodexKeys(prev);
-        notify({ type: "error", message: err instanceof Error ? err.message : t("providers.update_failed") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("providers.update_failed"),
+        });
       }
     },
     [claudeKeys, codexKeys, geminiKeys, notify, refreshAll, startTransition],
@@ -562,7 +577,10 @@ export function ProvidersPage() {
       closeOpenAIEditor();
       startTransition(() => void refreshAll());
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : t("providers.save_failed") });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("providers.save_failed"),
+      });
     }
   }, [
     closeOpenAIEditor,
@@ -583,7 +601,10 @@ export function ProvidersPage() {
         setOpenaiProviders((prev) => prev.filter((_, i) => i !== index));
         notify({ type: "success", message: t("providers.deleted") });
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : t("providers.delete_failed") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("providers.delete_failed"),
+        });
       }
     },
     [notify, openaiProviders],
@@ -628,7 +649,10 @@ export function ProvidersPage() {
       setDiscoveredModels(list);
       setDiscoverSelected(new Set(list.map((m) => m.id)));
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : t("providers.fetch_models_failed") });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("providers.fetch_models_failed"),
+      });
     } finally {
       setDiscovering(false);
     }
@@ -682,7 +706,10 @@ export function ProvidersPage() {
       startTransition(() => void refreshAll());
       setAmpUpstreamApiKey("");
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : t("providers.save_failed") });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("providers.save_failed"),
+      });
     }
   }, [
     ampForceMappings,
@@ -800,7 +827,9 @@ export function ProvidersPage() {
       {/* 标题头：描述 + 刷新 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-0.5">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t("providers.config_overview")}</h2>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+            {t("providers.config_overview")}
+          </h2>
           <p className="text-xs text-slate-500 dark:text-white/55">
             {t("providers.config_overview_desc")}
           </p>
@@ -812,16 +841,19 @@ export function ProvidersPage() {
           disabled={loading}
         >
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          刷新
+          {t("providers.refresh")}
         </Button>
       </div>
 
       {/* Tabs 导航 */}
-      <Tabs value={tab} onValueChange={(next) => {
-        const nextTab = next as typeof tab;
-        setTab(nextTab);
-        void refreshTab(nextTab);
-      }}>
+      <Tabs
+        value={tab}
+        onValueChange={(next) => {
+          const nextTab = next as typeof tab;
+          setTab(nextTab);
+          void refreshTab(nextTab);
+        }}
+      >
         <TabsList>
           <TabsTrigger value="gemini">
             <img src={iconGemini} alt="" className="size-4" />
@@ -912,15 +944,20 @@ export function ProvidersPage() {
 
         <TabsContent value="openai" className="mt-6">
           <Card
-            title={t("providers.openai_compatible", "OpenAI Compatible Providers")}
+            title={t("providers.openai_compatible")}
             description={t("providers.claude_desc")}
             actions={
               <Button variant="primary" size="sm" onClick={() => openOpenAIEditor(null)}>
-                <Plus size={14} />{t("providers.add_provider")}</Button>
+                <Plus size={14} />
+                {t("providers.add_provider")}
+              </Button>
             }
           >
             {openaiProviders.length === 0 ? (
-              <EmptyState title={t("providers.no_openai_providers", "No OpenAI Providers")} description={t("providers.no_openai_desc")} />
+              <EmptyState
+                title={t("providers.no_openai_providers")}
+                description={t("providers.no_openai_desc")}
+              />
             ) : (
               <div className="space-y-3">
                 {openaiProviders.map((provider, idx) => {
@@ -992,10 +1029,14 @@ export function ProvidersPage() {
                                       </div>
                                       <div className="flex items-center gap-2 tabular-nums">
                                         <span className="rounded-full bg-emerald-600/10 px-2 py-0.5 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
-                                          {t("providers.success_stats", { count: entryStats.success })}
+                                          {t("providers.success_stats", {
+                                            count: entryStats.success,
+                                          })}
                                         </span>
                                         <span className="rounded-full bg-rose-600/10 px-2 py-0.5 text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
-                                          {t("providers.failed_stats", { count: entryStats.failure })}
+                                          {t("providers.failed_stats", {
+                                            count: entryStats.failure,
+                                          })}
                                         </span>
                                       </div>
                                     </div>
@@ -1006,7 +1047,9 @@ export function ProvidersPage() {
                           ) : null}
 
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-white/65 tabular-nums">
-                            <span>{t("providers.models_label")}: {provider.models?.length ?? 0}</span>
+                            <span>
+                              {t("providers.models_label")}: {provider.models?.length ?? 0}
+                            </span>
                             <span>·</span>
                             <span>{t("providers.success_stats", { count: stats.success })}</span>
                             <span>·</span>
@@ -1106,13 +1149,20 @@ export function ProvidersPage() {
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
                   <p className="text-xs text-slate-600 dark:text-white/65">
-                    {t("providers.current_status", { status: ampcode ? t("providers.status_loaded") : t("providers.status_not_loaded"), count: ampMappings.length })}
+                    {t("providers.current_status", {
+                      status: ampcode
+                        ? t("providers.status_loaded")
+                        : t("providers.status_not_loaded"),
+                      count: ampMappings.length,
+                    })}
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("providers.model_mappings")}</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.model_mappings")}
+                </p>
                 {ampMappings.map((entry, idx) => (
                   <div key={entry.id} className="grid gap-2 md:grid-cols-12">
                     <div className="md:col-span-5">
@@ -1124,7 +1174,7 @@ export function ProvidersPage() {
                             prev.map((it, i) => (i === idx ? { ...it, from: value } : it)),
                           );
                         }}
-                        placeholder="from"
+                        placeholder={t("providers.mapping_from_placeholder")}
                       />
                     </div>
                     <div className="md:col-span-5">
@@ -1136,7 +1186,7 @@ export function ProvidersPage() {
                             prev.map((it, i) => (i === idx ? { ...it, to: value } : it)),
                           );
                         }}
-                        placeholder="to"
+                        placeholder={t("providers.mapping_to_placeholder")}
                       />
                     </div>
                     <div className="md:col-span-2 flex items-center justify-end">
@@ -1170,9 +1220,7 @@ export function ProvidersPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() =>
-                      setAmpMappings([{ id: `map-${Date.now()}`, from: "", to: "" }])
-                    }
+                    onClick={() => setAmpMappings([{ id: `map-${Date.now()}`, from: "", to: "" }])}
                   >
                     {t("providers.clear")}
                   </Button>
@@ -1185,7 +1233,11 @@ export function ProvidersPage() {
 
       <Modal
         open={editKeyOpen}
-        title={editKeyIndex === null ? t("providers.add_config", { type: editKeyTitle }) : t("providers.edit_config", { type: editKeyTitle })}
+        title={
+          editKeyIndex === null
+            ? t("providers.add_config", { type: editKeyTitle })
+            : t("providers.edit_config", { type: editKeyTitle })
+        }
         description={
           editKeyType === "vertex"
             ? t("providers.vertex_config_desc")
@@ -1199,10 +1251,12 @@ export function ProvidersPage() {
                 {keyDraftError}
               </span>
             ) : null}
-            <Button variant="secondary" onClick={closeKeyEditor}>{t("providers.cancel")}</Button>
+            <Button variant="secondary" onClick={closeKeyEditor}>
+              {t("providers.cancel")}
+            </Button>
             <Button variant="primary" onClick={() => void saveKeyDraft()}>
               <Check size={14} />
-              Save
+              {t("providers.save")}
             </Button>
           </div>
         }
@@ -1219,13 +1273,16 @@ export function ProvidersPage() {
               {editKeyEnabled ? t("providers.enabled") : t("providers.disabled")}
             </span>
             <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-white/75">
-              {t("providers.headers_optional")}: <span className="font-semibold tabular-nums">{editKeyHeaderCount}</span>
+              {t("providers.headers_optional")}:{" "}
+              <span className="font-semibold tabular-nums">{editKeyHeaderCount}</span>
             </span>
             <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-white/75">
-              {t("providers.models_label")}: <span className="font-semibold tabular-nums">{editKeyModelCount}</span>
+              {t("providers.models_label")}:{" "}
+              <span className="font-semibold tabular-nums">{editKeyModelCount}</span>
             </span>
             <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 dark:border-neutral-800 dark:bg-neutral-950/60 dark:text-white/75">
-              {t("providers.excluded_models_label")}: <span className="font-semibold tabular-nums">{editKeyExcludedCount}</span>
+              {t("providers.excluded_models_label")}:{" "}
+              <span className="font-semibold tabular-nums">{editKeyExcludedCount}</span>
             </span>
             {editKeyType === "vertex" ? (
               <span className="rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950">
@@ -1256,7 +1313,11 @@ export function ProvidersPage() {
           <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
             <ToggleSwitch
               label={t("providers.enable")}
-              description={editKeyEnabled ? t("providers.enable_toggle_desc_on") : t("providers.enable_toggle_desc_off")}
+              description={
+                editKeyEnabled
+                  ? t("providers.enable_toggle_desc_on")
+                  : t("providers.enable_toggle_desc_off")
+              }
               checked={editKeyEnabled}
               onCheckedChange={editKeyEnabledToggle}
             />
@@ -1267,7 +1328,9 @@ export function ProvidersPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("providers.api_key")}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                {t("providers.api_key")}
+              </p>
               <span className="text-xs text-slate-500 dark:text-white/55">
                 {t("providers.show_masked_key", { key: maskApiKey(keyDraft.apiKey) })}
               </span>
@@ -1310,7 +1373,7 @@ export function ProvidersPage() {
                   const val = e.currentTarget.value;
                   setKeyDraft((prev) => ({ ...prev, prefix: val }));
                 }}
-                placeholder="e.g. team-a"
+                placeholder={t("providers.prefix_placeholder")}
               />
             </div>
             <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
@@ -1324,7 +1387,9 @@ export function ProvidersPage() {
             </p>
             <div className="mt-3 grid gap-3">
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-slate-700 dark:text-white/75">{t("providers.base_url")}</p>
+                <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
+                  {t("providers.base_url")}
+                </p>
                 <TextInput
                   value={keyDraft.baseUrl}
                   onChange={(e) => {
@@ -1332,19 +1397,23 @@ export function ProvidersPage() {
                     setKeyDraft((prev) => ({ ...prev, baseUrl: val }));
                   }}
                   placeholder={
-                    editKeyType === "claude" ? "e.g. https://api.anthropic.com" : "baseUrl"
+                    editKeyType === "claude"
+                      ? t("providers.claude_base_url_placeholder")
+                      : t("providers.base_url_placeholder")
                   }
                 />
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-slate-700 dark:text-white/75">{t("providers.proxy_url")}</p>
+                <p className="text-xs font-semibold text-slate-700 dark:text-white/75">
+                  {t("providers.proxy_url")}
+                </p>
                 <TextInput
                   value={keyDraft.proxyUrl}
                   onChange={(e) => {
                     const val = e.currentTarget.value;
                     setKeyDraft((prev) => ({ ...prev, proxyUrl: val }));
                   }}
-                  placeholder="proxyUrl"
+                  placeholder={t("providers.proxy_url_placeholder")}
                 />
               </div>
             </div>
@@ -1398,7 +1467,9 @@ export function ProvidersPage() {
                 <Button variant="secondary" size="sm" onClick={() => editKeyEnabledToggle(false)}>
                   {t("providers.add_disable_all")}
                 </Button>
-                <Button variant="secondary" size="sm" onClick={() => editKeyEnabledToggle(true)}>{t("providers.remove_disable_all")}</Button>
+                <Button variant="secondary" size="sm" onClick={() => editKeyEnabledToggle(true)}>
+                  {t("providers.remove_disable_all")}
+                </Button>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -1429,7 +1500,11 @@ export function ProvidersPage() {
 
       <Modal
         open={editOpenAIOpen}
-        title={editOpenAIIndex === null ? t("providers.add_openai_provider") : t("providers.edit_openai_provider")}
+        title={
+          editOpenAIIndex === null
+            ? t("providers.add_openai_provider")
+            : t("providers.edit_openai_provider")
+        }
         description={t("providers.openai_config_desc")}
         onClose={closeOpenAIEditor}
         footer={
@@ -1439,10 +1514,12 @@ export function ProvidersPage() {
                 {openaiDraftError}
               </span>
             ) : null}
-            <Button variant="secondary" onClick={closeOpenAIEditor}>{t("providers.cancel")}</Button>
+            <Button variant="secondary" onClick={closeOpenAIEditor}>
+              {t("providers.cancel")}
+            </Button>
             <Button variant="primary" onClick={() => void saveOpenAIDraft()}>
               <Check size={14} />
-              Save
+              {t("providers.save")}
             </Button>
           </div>
         }
@@ -1450,17 +1527,21 @@ export function ProvidersPage() {
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("providers.name")}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                {t("providers.name")}
+              </p>
               <TextInput
                 value={openaiDraft.name}
                 onChange={(e) =>
                   setOpenaiDraft((prev) => ({ ...prev, name: e.currentTarget.value }))
                 }
-                placeholder="name"
+                placeholder={t("providers.name_placeholder")}
               />
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("providers.base_url")}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                {t("providers.base_url")}
+              </p>
               <TextInput
                 value={openaiDraft.baseUrl}
                 onChange={(e) =>
@@ -1469,7 +1550,7 @@ export function ProvidersPage() {
                     baseUrl: e.currentTarget.value,
                   }))
                 }
-                placeholder="baseUrl"
+                placeholder={t("providers.base_url_placeholder")}
               />
               <p className="text-xs text-slate-500 dark:text-white/55">
                 {t("providers.models_fetch_url")}
@@ -1480,13 +1561,15 @@ export function ProvidersPage() {
 
           <div className="grid gap-3 md:grid-cols-3">
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("providers.prefix_optional")}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                {t("providers.prefix_optional")}
+              </p>
               <TextInput
                 value={openaiDraft.prefix}
                 onChange={(e) =>
                   setOpenaiDraft((prev) => ({ ...prev, prefix: e.currentTarget.value }))
                 }
-                placeholder="prefix"
+                placeholder={t("providers.prefix_placeholder")}
               />
             </div>
             <div className="space-y-2">
@@ -1498,7 +1581,7 @@ export function ProvidersPage() {
                 onChange={(e) =>
                   setOpenaiDraft((prev) => ({ ...prev, priorityText: e.currentTarget.value }))
                 }
-                placeholder="Number"
+                placeholder={t("providers.priority_placeholder")}
                 inputMode="numeric"
               />
             </div>
@@ -1511,7 +1594,7 @@ export function ProvidersPage() {
                 onChange={(e) =>
                   setOpenaiDraft((prev) => ({ ...prev, testModel: e.currentTarget.value }))
                 }
-                placeholder="testModel"
+                placeholder={t("providers.test_model_placeholder")}
               />
             </div>
           </div>
@@ -1587,10 +1670,12 @@ export function ProvidersPage() {
                             ),
                           }));
                         }}
-                        placeholder="apiKey"
+                        placeholder={t("providers.api_key_placeholder")}
                       />
                       <div className="flex items-center justify-between text-xs text-slate-500 dark:text-white/55">
-                        <span>{t("providers.show_masked_key", { key: maskApiKey(entry.apiKey) })}</span>
+                        <span>
+                          {t("providers.show_masked_key", { key: maskApiKey(entry.apiKey) })}
+                        </span>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1617,7 +1702,7 @@ export function ProvidersPage() {
                             ),
                           }));
                         }}
-                        placeholder="proxyUrl"
+                        placeholder={t("providers.proxy_url_placeholder")}
                       />
                     </div>
                   </div>
@@ -1643,7 +1728,9 @@ export function ProvidersPage() {
 
           <section className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("providers.models_label")}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                {t("providers.models_label")}
+              </p>
               <div className="flex items-center gap-2">
                 <Button
                   variant="secondary"
@@ -1721,7 +1808,9 @@ export function ProvidersPage() {
         title={t("providers.confirm_delete")}
         description={
           confirm?.type === "deleteOpenAI"
-            ? t("providers.confirm_delete_openai", { name: openaiProviders[confirm.index]?.name ?? "" })
+            ? t("providers.confirm_delete_openai", {
+                name: openaiProviders[confirm.index]?.name ?? "",
+              })
             : confirm?.type === "deleteKey"
               ? t("providers.confirm_delete_config")
               : t("providers.confirm_delete_generic")
@@ -1739,6 +1828,6 @@ export function ProvidersPage() {
           void deleteKey(action.keyType, action.index);
         }}
       />
-    </div >
+    </div>
   );
 }

@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useTransition,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import {
   Activity,
   ChartSpline,
@@ -50,37 +44,47 @@ import {
   createModelDistributionOption,
 } from "@/modules/monitor/monitor-chart-options";
 import { Tabs, TabsList, TabsTrigger } from "@/modules/ui/Tabs";
-import { useToast } from "@/modules/ui/ToastProvider";
 import { useTranslation } from "react-i18next";
 
 const createEmptyUsage = (): UsageData => ({ apis: {} });
+const DAILY_LEGEND_KEYS = {
+  input: "daily_input",
+  output: "daily_output",
+  requests: "daily_requests",
+} as const;
+const HOURLY_MODEL_OTHER_KEY = "__other__";
+const HOURLY_MODEL_TOTAL_KEY = "__total_requests__";
+const HOURLY_TOKEN_KEYS = {
+  input: "hourly_input",
+  output: "hourly_output",
+  reasoning: "hourly_reasoning",
+  cached: "hourly_cached",
+  total: "__total_token__",
+} as const;
 
 export function MonitorPage() {
   const { t } = useTranslation();
-  const { notify } = useToast();
   const {
     state: { mode },
   } = useTheme();
   const isDark = mode === "dark";
 
-
-
   const [dailyLegendSelected, setDailyLegendSelected] = useState<Record<string, boolean>>({
-    "Input Token": true,
-    "Output Token": true,
-    Requests: true,
+    [DAILY_LEGEND_KEYS.input]: true,
+    [DAILY_LEGEND_KEYS.output]: true,
+    [DAILY_LEGEND_KEYS.requests]: true,
   });
 
   const [hourlyModelSelected, setHourlyModelSelected] = useState<Record<string, boolean>>({
-    "Total Requests": true,
+    [HOURLY_MODEL_TOTAL_KEY]: true,
   });
 
   const [hourlyTokenSelected, setHourlyTokenSelected] = useState<Record<string, boolean>>({
-    Input: true,
-    Output: true,
-    Reasoning: true,
-    Cached: true,
-    "Total Token": true,
+    [HOURLY_TOKEN_KEYS.input]: true,
+    [HOURLY_TOKEN_KEYS.output]: true,
+    [HOURLY_TOKEN_KEYS.reasoning]: true,
+    [HOURLY_TOKEN_KEYS.cached]: true,
+    [HOURLY_TOKEN_KEYS.total]: true,
   });
 
   const [rawUsage, setRawUsage] = useState<UsageData>(createEmptyUsage);
@@ -103,12 +107,13 @@ export function MonitorPage() {
         setRawUsage(usageData);
       });
     } catch (requestError) {
-      const message = requestError instanceof Error ? requestError.message : t("monitor.failed_fetch");
+      const message =
+        requestError instanceof Error ? requestError.message : t("monitor.failed_fetch");
       setError(message);
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   const filteredUsage = useMemo(() => {
     return filterUsageByDays(rawUsage, timeRange, apiFilter);
@@ -123,7 +128,13 @@ export function MonitorPage() {
   }, [apiFilterInput]);
 
   const toggleDailyLegend = useCallback((key: string) => {
-    if (key !== "Input Token" && key !== "Output Token" && key !== "Requests") return;
+    if (
+      !Object.values(DAILY_LEGEND_KEYS).includes(
+        key as (typeof DAILY_LEGEND_KEYS)[keyof typeof DAILY_LEGEND_KEYS],
+      )
+    ) {
+      return;
+    }
     setDailyLegendSelected((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
   }, []);
 
@@ -137,19 +148,6 @@ export function MonitorPage() {
 
   const hasData = metrics.requestCount > 0;
   const isLoading = isRefreshing || isPending;
-
-  const downloadJson = (content: unknown, filename: string) => {
-    const text = JSON.stringify(content, null, 2);
-    const blob = new Blob([text], { type: "application/json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 800);
-  };
-
-
 
   useEffect(() => {
     void refreshData();
@@ -199,10 +197,10 @@ export function MonitorPage() {
     }));
 
     if (otherValue > 0) {
-      data.push({ name: "Other", value: otherValue });
+      data.push({ name: t("common.other"), value: otherValue });
     }
     return data;
-  }, [modelMetric, sortedModelsByMetric]);
+  }, [modelMetric, sortedModelsByMetric, t]);
 
   const dailySeries = useMemo(() => {
     const byDay = new Map<
@@ -273,12 +271,12 @@ export function MonitorPage() {
       });
     });
 
-    const modelKeys = [...topModelKeys, "Other"];
+    const modelKeys = [...topModelKeys, HOURLY_MODEL_OTHER_KEY];
 
     const modelPoints = hourLabels.map(({ hour, label }) => {
       const map = modelBuckets.get(hour) ?? new Map<string, number>();
       const stacks = modelKeys.map((key) => {
-        if (key === "Other") {
+        if (key === HOURLY_MODEL_OTHER_KEY) {
           const sum = [...map.entries()].reduce((acc, [model, value]) => {
             return topModelKeys.includes(model) ? acc : acc + value;
           }, 0);
@@ -289,15 +287,20 @@ export function MonitorPage() {
       return { label, stacks };
     });
 
-    const tokenKeys = ["Input", "Output", "Reasoning", "Cached"] as const;
+    const tokenKeys = [
+      HOURLY_TOKEN_KEYS.input,
+      HOURLY_TOKEN_KEYS.output,
+      HOURLY_TOKEN_KEYS.reasoning,
+      HOURLY_TOKEN_KEYS.cached,
+    ] as const;
 
     const tokenPoints = hourLabels.map(({ hour, label }) => {
       const totals = tokenBuckets.get(hour) ?? { input: 0, output: 0, reasoning: 0, cached: 0 };
       const stacks = [
-        { key: "Input", value: totals.input },
-        { key: "Output", value: totals.output },
-        { key: "Reasoning", value: totals.reasoning },
-        { key: "Cached", value: totals.cached },
+        { key: HOURLY_TOKEN_KEYS.input, value: totals.input },
+        { key: HOURLY_TOKEN_KEYS.output, value: totals.output },
+        { key: HOURLY_TOKEN_KEYS.reasoning, value: totals.reasoning },
+        { key: HOURLY_TOKEN_KEYS.cached, value: totals.cached },
       ];
       return { label, stacks };
     });
@@ -317,7 +320,7 @@ export function MonitorPage() {
     const classByKey: Record<string, string> = {};
 
     hourlySeries.modelKeys.forEach((key, index) => {
-      if (key === "Other") {
+      if (key === HOURLY_MODEL_OTHER_KEY) {
         colorByKey[key] = "rgba(148,163,184,0.58)";
         classByKey[key] = "bg-slate-400";
         return;
@@ -326,8 +329,8 @@ export function MonitorPage() {
       classByKey[key] = palette[index % palette.length] ?? "bg-slate-400";
     });
 
-    colorByKey["Total Requests"] = "#3b82f6";
-    classByKey["Total Requests"] = "bg-blue-500";
+    colorByKey[HOURLY_MODEL_TOTAL_KEY] = "#3b82f6";
+    classByKey[HOURLY_MODEL_TOTAL_KEY] = "bg-blue-500";
 
     return { colorByKey, classByKey };
   }, [hourlySeries.modelKeys]);
@@ -335,18 +338,18 @@ export function MonitorPage() {
   const hourlyTokenPalette = useMemo(() => {
     return {
       colorByKey: {
-        Input: "rgba(110,231,183,0.88)",
-        Output: "rgba(196,181,253,0.88)",
-        Reasoning: "rgba(252,211,77,0.88)",
-        Cached: "rgba(94,234,212,0.88)",
-        "Total Token": "#3b82f6",
+        [HOURLY_TOKEN_KEYS.input]: "rgba(110,231,183,0.88)",
+        [HOURLY_TOKEN_KEYS.output]: "rgba(196,181,253,0.88)",
+        [HOURLY_TOKEN_KEYS.reasoning]: "rgba(252,211,77,0.88)",
+        [HOURLY_TOKEN_KEYS.cached]: "rgba(94,234,212,0.88)",
+        [HOURLY_TOKEN_KEYS.total]: "#3b82f6",
       } as Record<string, string>,
       classByKey: {
-        Input: "bg-emerald-400",
-        Output: "bg-violet-400",
-        Reasoning: "bg-amber-400",
-        Cached: "bg-teal-400",
-        "Total Token": "bg-blue-500",
+        [HOURLY_TOKEN_KEYS.input]: "bg-emerald-400",
+        [HOURLY_TOKEN_KEYS.output]: "bg-violet-400",
+        [HOURLY_TOKEN_KEYS.reasoning]: "bg-amber-400",
+        [HOURLY_TOKEN_KEYS.cached]: "bg-teal-400",
+        [HOURLY_TOKEN_KEYS.total]: "bg-blue-500",
       } as Record<string, string>,
     };
   }, []);
@@ -357,7 +360,7 @@ export function MonitorPage() {
       for (const key of hourlySeries.modelKeys) {
         if (!(key in next)) next[key] = true;
       }
-      if (!("Total Requests" in next)) next["Total Requests"] = true;
+      if (!(HOURLY_MODEL_TOTAL_KEY in next)) next[HOURLY_MODEL_TOTAL_KEY] = true;
       return next;
     });
   }, [hourlySeries.modelKeys]);
@@ -368,7 +371,7 @@ export function MonitorPage() {
       for (const key of hourlySeries.tokenKeys) {
         if (!(key in next)) next[key] = true;
       }
-      if (!("Total Token" in next)) next["Total Token"] = true;
+      if (!(HOURLY_TOKEN_KEYS.total in next)) next[HOURLY_TOKEN_KEYS.total] = true;
       return next;
     });
   }, [hourlySeries.tokenKeys]);
@@ -416,8 +419,41 @@ export function MonitorPage() {
   }, [modelDistributionData]);
 
   const dailyTrendOption = useMemo(
-    () => createDailyTrendOption({ dailySeries, dailyLegendSelected, isDark }),
-    [dailyLegendSelected, dailySeries, isDark, timeRange],
+    () =>
+      createDailyTrendOption({
+        dailySeries,
+        dailyLegendSelected,
+        legendKeys: DAILY_LEGEND_KEYS,
+        labels: {
+          input: t("monitor.input_token"),
+          output: t("monitor.output_token_legend"),
+          requests: t("monitor.requests"),
+          tokenAxis: t("monitor.token"),
+          requestAxis: t("monitor.requests"),
+        },
+        isDark,
+      }),
+    [dailyLegendSelected, dailySeries, isDark, t],
+  );
+
+  const getHourlyModelSeriesLabel = useCallback(
+    (key: string) => {
+      if (key === HOURLY_MODEL_OTHER_KEY) return t("common.other");
+      if (key === HOURLY_MODEL_TOTAL_KEY) return t("monitor.total_requests");
+      return key;
+    },
+    [t],
+  );
+
+  const hourlyTokenLabels = useMemo(
+    () => ({
+      [HOURLY_TOKEN_KEYS.input]: t("monitor.hourly_token.input"),
+      [HOURLY_TOKEN_KEYS.output]: t("monitor.hourly_token.output"),
+      [HOURLY_TOKEN_KEYS.reasoning]: t("monitor.hourly_token.reasoning"),
+      [HOURLY_TOKEN_KEYS.cached]: t("monitor.hourly_token.cached"),
+      [HOURLY_TOKEN_KEYS.total]: t("monitor.hourly_token.total"),
+    }),
+    [t],
   );
 
   const hourlyModelOption = useMemo(
@@ -427,9 +463,12 @@ export function MonitorPage() {
         modelHourWindow,
         hourlyModelSelected,
         paletteColorByKey: hourlyModelPalette.colorByKey,
+        totalLineKey: HOURLY_MODEL_TOTAL_KEY,
+        getSeriesLabel: getHourlyModelSeriesLabel,
         isDark,
       }),
     [
+      getHourlyModelSeriesLabel,
       hourlyModelPalette.colorByKey,
       hourlyModelSelected,
       hourlySeries.modelKeys,
@@ -446,11 +485,14 @@ export function MonitorPage() {
         tokenHourWindow,
         hourlyTokenSelected,
         paletteColorByKey: hourlyTokenPalette.colorByKey,
+        labelsByKey: hourlyTokenLabels,
+        totalLineKey: HOURLY_TOKEN_KEYS.total,
         isDark,
       }),
     [
       hourlySeries.tokenKeys,
       hourlySeries.tokenPoints,
+      hourlyTokenLabels,
       hourlyTokenPalette.colorByKey,
       hourlyTokenSelected,
       isDark,
@@ -459,7 +501,10 @@ export function MonitorPage() {
   );
 
   const modelActions = (
-    <Tabs value={modelMetric} onValueChange={(next) => setModelMetric(next as "requests" | "tokens")}>
+    <Tabs
+      value={modelMetric}
+      onValueChange={(next) => setModelMetric(next as "requests" | "tokens")}
+    >
       <TabsList>
         <TabsTrigger value="requests">{t("monitor.requests")}</TabsTrigger>
         <TabsTrigger value="tokens">{t("monitor.token")}</TabsTrigger>
@@ -513,7 +558,7 @@ export function MonitorPage() {
                       : "col-start-1 row-start-1 opacity-100"
                   }
                 >
-                  Refresh
+                  {t("monitor.refresh")}
                 </span>
                 <span
                   className={
@@ -522,7 +567,7 @@ export function MonitorPage() {
                       : "col-start-1 row-start-1 opacity-0"
                   }
                 >
-                  Refreshing
+                  {t("monitor.refreshing")}
                 </span>
               </span>
             </button>
@@ -536,7 +581,6 @@ export function MonitorPage() {
         ) : null}
       </section>
 
-
       <Reveal>
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
@@ -548,7 +592,10 @@ export function MonitorPage() {
           <KpiCard
             title={t("monitor.success_rate")}
             value={<AnimatedNumber value={metrics.successRate} format={formatRate} />}
-            hint={t("monitor.success_count", { success: formatNumber(metrics.successCount), failed: formatNumber(metrics.failedCount) })}
+            hint={t("monitor.success_count", {
+              success: formatNumber(metrics.successCount),
+              failed: formatNumber(metrics.failedCount),
+            })}
             icon={ShieldCheck}
           />
           <KpiCard
@@ -560,7 +607,9 @@ export function MonitorPage() {
           <KpiCard
             title={t("monitor.output_token")}
             value={<AnimatedNumber value={metrics.outputTokens} format={formatNumber} />}
-            hint={t("monitor.input_tokens_hint", { count: formatNumber(metrics.inputTokens) } as Record<string, unknown>)}
+            hint={t("monitor.input_tokens_hint", {
+              count: formatNumber(metrics.inputTokens),
+            } as Record<string, unknown>)}
             icon={Coins}
           />
         </section>
@@ -573,7 +622,9 @@ export function MonitorPage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900/5 text-slate-700 dark:bg-white/10 dark:text-white/70">
                 <ChartSpline size={20} />
               </div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("monitor.no_data")}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                {t("monitor.no_data")}
+              </p>
               <p className="text-sm text-slate-600 dark:text-white/65">
                 {t("monitor.no_data_hint")}
               </p>
@@ -594,7 +645,10 @@ export function MonitorPage() {
             <section className="grid gap-4 lg:grid-cols-[minmax(0,560px)_minmax(0,1fr)]">
               <Card
                 title={t("monitor.model_distribution")}
-                description={t("monitor.last_days_desc", { days: timeRange, metric: modelMetric === "requests" ? t("monitor.requests") : t("monitor.token") })}
+                description={t("monitor.last_days_desc", {
+                  days: timeRange,
+                  metric: modelMetric === "requests" ? t("monitor.requests") : t("monitor.token"),
+                })}
                 actions={modelActions}
                 loading={isRefreshing}
               >
@@ -642,36 +696,36 @@ export function MonitorPage() {
                     items={[
                       ...(dailyLegendAvailability.hasInput
                         ? [
-                          {
-                            key: "Input Token",
-                            label: "Input Token",
-                            colorClass: "bg-violet-400",
-                            enabled: dailyLegendSelected["Input Token"] ?? true,
-                            onToggle: toggleDailyLegend,
-                          },
-                        ]
+                            {
+                              key: DAILY_LEGEND_KEYS.input,
+                              label: t("monitor.input_token"),
+                              colorClass: "bg-violet-400",
+                              enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.input] ?? true,
+                              onToggle: toggleDailyLegend,
+                            },
+                          ]
                         : []),
                       ...(dailyLegendAvailability.hasOutput
                         ? [
-                          {
-                            key: "Output Token",
-                            label: "Output Token",
-                            colorClass: "bg-emerald-400",
-                            enabled: dailyLegendSelected["Output Token"] ?? true,
-                            onToggle: toggleDailyLegend,
-                          },
-                        ]
+                            {
+                              key: DAILY_LEGEND_KEYS.output,
+                              label: t("monitor.output_token_legend"),
+                              colorClass: "bg-emerald-400",
+                              enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.output] ?? true,
+                              onToggle: toggleDailyLegend,
+                            },
+                          ]
                         : []),
                       ...(dailyLegendAvailability.hasRequests
                         ? [
-                          {
-                            key: "Requests",
-                            label: "Requests",
-                            colorClass: "bg-blue-500",
-                            enabled: dailyLegendSelected["Requests"] ?? true,
-                            onToggle: toggleDailyLegend,
-                          },
-                        ]
+                            {
+                              key: DAILY_LEGEND_KEYS.requests,
+                              label: t("monitor.requests"),
+                              colorClass: "bg-blue-500",
+                              enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.requests] ?? true,
+                              onToggle: toggleDailyLegend,
+                            },
+                          ]
                         : []),
                     ]}
                   />
@@ -698,16 +752,17 @@ export function MonitorPage() {
                   items={[
                     ...hourlySeries.modelKeys.map((key) => ({
                       key,
-                      label: key,
+                      label: getHourlyModelSeriesLabel(key),
                       colorClass: hourlyModelPalette.classByKey[key] ?? "bg-slate-400",
                       enabled: hourlyModelSelected[key] ?? true,
                       onToggle: toggleHourlyModelLegend,
                     })),
                     {
-                      key: "Total Requests",
-                      label: "Total Requests",
-                      colorClass: hourlyModelPalette.classByKey["Total Requests"] ?? "bg-blue-500",
-                      enabled: hourlyModelSelected["Total Requests"] ?? true,
+                      key: HOURLY_MODEL_TOTAL_KEY,
+                      label: getHourlyModelSeriesLabel(HOURLY_MODEL_TOTAL_KEY),
+                      colorClass:
+                        hourlyModelPalette.classByKey[HOURLY_MODEL_TOTAL_KEY] ?? "bg-blue-500",
+                      enabled: hourlyModelSelected[HOURLY_MODEL_TOTAL_KEY] ?? true,
                       onToggle: toggleHourlyModelLegend,
                     },
                   ]}
@@ -734,16 +789,17 @@ export function MonitorPage() {
                   items={[
                     ...hourlySeries.tokenKeys.map((key) => ({
                       key,
-                      label: key,
+                      label: hourlyTokenLabels[key] ?? key,
                       colorClass: hourlyTokenPalette.classByKey[key] ?? "bg-slate-400",
                       enabled: hourlyTokenSelected[key] ?? true,
                       onToggle: toggleHourlyTokenLegend,
                     })),
                     {
-                      key: "Total Token",
-                      label: "Total Token",
-                      colorClass: hourlyTokenPalette.classByKey["Total Token"] ?? "bg-blue-500",
-                      enabled: hourlyTokenSelected["Total Token"] ?? true,
+                      key: HOURLY_TOKEN_KEYS.total,
+                      label: hourlyTokenLabels[HOURLY_TOKEN_KEYS.total],
+                      colorClass:
+                        hourlyTokenPalette.classByKey[HOURLY_TOKEN_KEYS.total] ?? "bg-blue-500",
+                      enabled: hourlyTokenSelected[HOURLY_TOKEN_KEYS.total] ?? true,
                       onToggle: toggleHourlyTokenLegend,
                     },
                   ]}

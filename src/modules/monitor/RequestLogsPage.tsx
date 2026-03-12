@@ -1,11 +1,5 @@
 import { useTranslation } from "react-i18next";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Filter, RefreshCw, ScrollText } from "lucide-react";
 import { usageApi } from "@/lib/http/apis";
 import type { UsageLogItem, UsageLogsResponse } from "@/lib/http/apis/usage";
@@ -78,7 +72,8 @@ const TimeRangeSelector = ({
     <Tabs value={String(value)} onValueChange={(next) => onChange(Number(next) as TimeRange)}>
       <TabsList>
         {TIME_RANGES.map((range) => {
-          const label = range === 1 ? t("request_logs.today") : t("request_logs.n_days", { count: range });
+          const label =
+            range === 1 ? t("request_logs.today") : t("request_logs.n_days", { count: range });
           return (
             <TabsTrigger key={range} value={String(range)}>
               {label}
@@ -102,8 +97,7 @@ function buildLogColumns(
       key: "timestamp",
       label: t("request_logs.col_time"),
       width: "w-52",
-      cellClassName:
-        "font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      cellClassName: "font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
       render: (row) => (
         <OverflowTooltip content={formatTimestamp(row.timestamp)} className="block min-w-0">
           <span className="block min-w-0 truncate">{formatTimestamp(row.timestamp)}</span>
@@ -173,8 +167,7 @@ function buildLogColumns(
       label: t("request_logs.col_duration"),
       width: "w-24",
       headerClassName: "text-right",
-      cellClassName:
-        "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
       render: (row) => (
         <OverflowTooltip content={row.latencyText} className="block min-w-0">
           <span className="block min-w-0 truncate">{row.latencyText}</span>
@@ -186,8 +179,7 @@ function buildLogColumns(
       label: t("request_logs.col_input"),
       width: "w-24",
       headerClassName: "text-right",
-      cellClassName:
-        "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
       render: (row) =>
         row.hasContent && onContentClick ? (
           <button
@@ -227,8 +219,7 @@ function buildLogColumns(
       label: t("request_logs.col_output"),
       width: "w-24",
       headerClassName: "text-right",
-      cellClassName:
-        "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
       render: (row) =>
         row.hasContent && onContentClick ? (
           <button
@@ -252,8 +243,7 @@ function buildLogColumns(
       label: t("request_logs.col_total_token"),
       width: "w-28",
       headerClassName: "text-right",
-      cellClassName:
-        "text-right font-mono text-xs tabular-nums text-slate-900 dark:text-white",
+      cellClassName: "text-right font-mono text-xs tabular-nums text-slate-900 dark:text-white",
       render: (row) => (
         <OverflowTooltip content={row.totalTokens.toLocaleString()} className="block min-w-0">
           <span className="block min-w-0 truncate">{row.totalTokens.toLocaleString()}</span>
@@ -275,7 +265,6 @@ function buildLogColumns(
     },
   ];
 }
-
 
 /** Convert a backend log item to a UI-friendly LogRow */
 function toLogRow(item: UsageLogItem): LogRow {
@@ -326,7 +315,10 @@ export function RequestLogsPage() {
   }, []);
 
   // Build columns with content click handler
-  const logColumns = useMemo(() => buildLogColumns(t, handleContentClick, handleErrorClick), [t, handleContentClick, handleErrorClick]);
+  const logColumns = useMemo(
+    () => buildLogColumns(t, handleContentClick, handleErrorClick),
+    [t, handleContentClick, handleErrorClick],
+  );
 
   // Accumulated raw items from all loaded pages (name resolution done by backend)
   const [rawItems, setRawItems] = useState<UsageLogItem[]>([]);
@@ -406,10 +398,7 @@ export function RequestLogsPage() {
   );
 
   // Derive display rows from raw items (names already resolved by backend)
-  const rows = useMemo<LogRow[]>(
-    () => rawItems.map((item) => toLogRow(item)),
-    [rawItems],
-  );
+  const rows = useMemo<LogRow[]>(() => rawItems.map((item) => toLogRow(item)), [rawItems]);
 
   const hasMore = rawItems.length < totalCount;
 
@@ -518,11 +507,23 @@ export function RequestLogsPage() {
           {/* 统计摘要 */}
           <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-white/55">
             <Filter size={12} aria-hidden="true" />
-            {t("request_logs.records_count", { total: stats.total.toLocaleString() } as Record<string, string>)}
-            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>{t("common.success_rate")}<span className="font-mono tabular-nums">{stats.success_rate.toFixed(1)}%</span>
-            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>
-            {t("request_logs.col_total_token")} <span className="font-mono tabular-nums">{stats.total_tokens.toLocaleString()}</span>
-            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>
+            {t("request_logs.records_count", { total: stats.total.toLocaleString() } as Record<
+              string,
+              string
+            >)}
+            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">
+              ·
+            </span>
+            {t("common.success_rate")}
+            <span className="font-mono tabular-nums">{stats.success_rate.toFixed(1)}%</span>
+            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">
+              ·
+            </span>
+            {t("request_logs.col_total_token")}{" "}
+            <span className="font-mono tabular-nums">{stats.total_tokens.toLocaleString()}</span>
+            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">
+              ·
+            </span>
             <span className="text-slate-400 dark:text-white/40">{lastUpdatedText}</span>
           </span>
         </div>
@@ -548,7 +549,7 @@ export function RequestLogsPage() {
                   className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-slate-900 motion-reduce:animate-none motion-safe:animate-spin dark:border-white/20 dark:border-t-white/80"
                   aria-hidden="true"
                 />
-                <span role="status">{t("common.loading", "Loading...")}</span>
+                <span role="status">{t("common.loading_ellipsis")}</span>
               </div>
             </div>
           ) : null}

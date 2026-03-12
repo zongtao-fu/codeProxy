@@ -174,7 +174,10 @@ function RuntimeConfigPanel() {
         routingStrategy: typeof strategy === "string" ? strategy : "round-robin",
       });
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : t("config_page.toast_load_failed") });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("config_page.toast_load_failed"),
+      });
     } finally {
       setLoading(false);
     }
@@ -197,7 +200,10 @@ function RuntimeConfigPanel() {
         if (key === "forceModelPrefix") await configApi.updateForceModelPrefix(next);
         notify({ type: "success", message: t("config_page.toast_updated") });
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : t("config_page.toast_update_failed") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("config_page.toast_update_failed"),
+        });
         throw err;
       }
     },
@@ -253,7 +259,10 @@ function RuntimeConfigPanel() {
       notify({ type: "success", message: t("config_page.toast_updated") });
       startTransition(() => void loadRuntimeConfig());
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : t("config_page.toast_save_failed") });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("config_page.toast_save_failed"),
+      });
       startTransition(() => void loadRuntimeConfig());
     }
   }, [
@@ -390,7 +399,10 @@ function RuntimeConfigPanel() {
             />
           </div>
 
-          <Card title={t("config_page.proxy_retry")} description={t("config_page.proxy_retry_desc")}>
+          <Card
+            title={t("config_page.proxy_retry")}
+            description={t("config_page.proxy_retry_desc")}
+          >
             <div className="space-y-3">
               <TextInput
                 value={proxyUrl}
@@ -411,7 +423,10 @@ function RuntimeConfigPanel() {
             </div>
           </Card>
 
-          <Card title={t("config_page.logs_routing")} description={t("config_page.logs_routing_desc")}>
+          <Card
+            title={t("config_page.logs_routing")}
+            description={t("config_page.logs_routing_desc")}
+          >
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <TextInput
@@ -429,7 +444,11 @@ function RuntimeConfigPanel() {
                 />
               </div>
               <p className="text-xs text-slate-600 dark:text-white/65">
-                {t("config_page.config_preview", { status: rawConfig ? t("config_page.config_loaded") : t("config_page.config_not_loaded") })}
+                {t("config_page.config_preview", {
+                  status: rawConfig
+                    ? t("config_page.config_loaded")
+                    : t("config_page.config_not_loaded"),
+                })}
               </p>
             </div>
           </Card>
@@ -523,11 +542,14 @@ export function ConfigPage() {
         notify({ type: "info", message: t("config_page.toast_commercial_changed") });
       }
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : "Save failed" });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("config_page.toast_save_failed"),
+      });
     } finally {
       setSaving(false);
     }
-  }, [applyVisualChangesToYaml, loadVisualValuesFromYaml, notify, tab, yamlText]);
+  }, [applyVisualChangesToYaml, loadVisualValuesFromYaml, notify, t, tab, yamlText]);
 
   const buildSearchPositions = useCallback(
     (query: string) => {
@@ -701,7 +723,6 @@ export function ConfigPage() {
           <div className={visualLayoutEnabled ? "mt-4 min-h-0 flex-1" : "mt-4"}>
             <TabsContent value="visual" className="h-full">
               <div className="flex min-h-0 h-full flex-col gap-4">
-
                 <Card
                   title={t("config_page.visual_title")}
                   description={t("config_page.visual_desc")}
@@ -766,7 +787,10 @@ export function ConfigPage() {
                             }}
                             disabled={disableControls || loading}
                             endAdornment={
-                              <HoverTooltip content={t("config_page.search_hint")} placement="bottom">
+                              <HoverTooltip
+                                content={t("config_page.search_hint")}
+                                placement="bottom"
+                              >
                                 <span className="inline-flex h-6 w-6 items-center justify-center text-slate-400 dark:text-white/45">
                                   <Search size={16} aria-hidden="true" />
                                 </span>
@@ -774,7 +798,7 @@ export function ConfigPage() {
                             }
                           />
                           <p className="text-[11px] text-slate-500 dark:text-white/55">
-                            Enter: next · Shift+Enter: prev · Results: 
+                            Enter: next · Shift+Enter: prev · Results:
                             <span className="ml-1 font-mono tabular-nums">
                               {!lastSearchedQuery.trim()
                                 ? t("config_page.not_searched")

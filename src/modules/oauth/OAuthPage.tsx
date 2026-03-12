@@ -32,25 +32,25 @@ type ProviderState = {
   callbackError?: string;
 };
 
-const PROVIDERS: { id: OAuthProvider; title: string; hint: string }[] = [
-  { id: "codex", title: "Codex OAuth", hint: "Start authorization workflow, server saves auth file automatically." },
+const PROVIDERS: { id: OAuthProvider; titleKey: string; hintKey: string }[] = [
+  { id: "codex", titleKey: "oauth.providers.codex.title", hintKey: "oauth.providers.codex.hint" },
   {
     id: "anthropic",
-    title: "Anthropic OAuth",
-    hint: "For Claude/Anthropic OAuth Login.",
+    titleKey: "oauth.providers.anthropic.title",
+    hintKey: "oauth.providers.anthropic.hint",
   },
   {
     id: "antigravity",
-    title: "Antigravity OAuth",
-    hint: "For Antigravity Quota/Capabilities OAuth Login.",
+    titleKey: "oauth.providers.antigravity.title",
+    hintKey: "oauth.providers.antigravity.hint",
   },
   {
     id: "gemini-cli",
-    title: "Gemini CLI OAuth",
-    hint: "Supports optional Project ID; auto-selected by server if empty.",
+    titleKey: "oauth.providers.gemini_cli.title",
+    hintKey: "oauth.providers.gemini_cli.hint",
   },
-  { id: "kimi", title: "Kimi OAuth", hint: "If server supports, auth file is auto-saved." },
-  { id: "qwen", title: "Qwen OAuth", hint: "If server supports, auth file is auto-saved." },
+  { id: "kimi", titleKey: "oauth.providers.kimi.title", hintKey: "oauth.providers.kimi.hint" },
+  { id: "qwen", titleKey: "oauth.providers.qwen.title", hintKey: "oauth.providers.qwen.hint" },
 ];
 
 const getErrorMessage = (err: unknown): string => {
@@ -94,6 +94,22 @@ export function OAuthPage() {
     timers.current = {};
   }, []);
 
+  const getProviderTitle = useCallback(
+    (provider: OAuthProvider) =>
+      t(PROVIDERS.find((item) => item.id === provider)?.titleKey ?? "oauth.provider_fallback"),
+    [t],
+  );
+
+  const getStatusLabel = useCallback(
+    (status: ProviderStatus, polling: boolean) => {
+      if (polling) return t("oauth.status_polling");
+      if (status === "success") return t("oauth.status_success");
+      if (status === "error") return t("oauth.status_failed");
+      return t("oauth.status_waiting");
+    },
+    [t],
+  );
+
   useEffect(() => {
     return () => {
       clearTimers();
@@ -120,12 +136,21 @@ export function OAuthPage() {
           const res = await oauthApi.getAuthStatus(state);
           if (res.status === "ok") {
             updateProviderState(provider, { status: "success", polling: false });
-            notify({ type: "success", message: `${provider} Authorization successful` });
+            notify({
+              type: "success",
+              message: t("oauth.authorization_success", { provider: getProviderTitle(provider) }),
+            });
             window.clearInterval(timer);
             delete timers.current[provider];
           } else if (res.status === "error") {
             updateProviderState(provider, { status: "error", error: res.error, polling: false });
-            notify({ type: "error", message: `${provider} Authorization failed：${res.error || ""}`.trim() });
+            notify({
+              type: "error",
+              message: t("oauth.authorization_failed", {
+                provider: getProviderTitle(provider),
+                error: res.error || "",
+              }).trim(),
+            });
             window.clearInterval(timer);
             delete timers.current[provider];
           }
@@ -141,7 +166,7 @@ export function OAuthPage() {
       }, 3000);
       timers.current[provider] = timer;
     },
-    [notify, updateProviderState],
+    [getProviderTitle, notify, t, updateProviderState],
   );
 
   const startAuth = useCallback(
@@ -172,12 +197,18 @@ export function OAuthPage() {
           startPolling(provider, res.state);
         }
       } catch (err: unknown) {
-        const message = getErrorMessage(err) || "Failed to start authorization";
+        const message = getErrorMessage(err) || t("oauth.start_auth_failed_short");
         updateProviderState(provider, { status: "error", error: message, polling: false });
-        notify({ type: "error", message: `${provider} Failed to start auth: ${message}` });
+        notify({
+          type: "error",
+          message: t("oauth.start_auth_failed", {
+            provider: getProviderTitle(provider),
+            error: message,
+          }),
+        });
       }
     },
-    [notify, startPolling, states, updateProviderState],
+    [getProviderTitle, notify, startPolling, states, t, updateProviderState],
   );
 
   const copyLink = useCallback(
@@ -186,12 +217,12 @@ export function OAuthPage() {
       if (!link) return;
       try {
         await navigator.clipboard.writeText(link);
-        notify({ type: "success", message: "Link copied" });
+        notify({ type: "success", message: t("oauth.link_copied") });
       } catch {
-        notify({ type: "error", message: "Copy failed" });
+        notify({ type: "error", message: t("oauth.copy_failed") });
       }
     },
-    [notify],
+    [notify, t],
   );
 
   const openLink = useCallback((url?: string) => {
@@ -204,7 +235,7 @@ export function OAuthPage() {
     async (provider: OAuthProvider) => {
       const redirectUrl = (states[provider]?.callbackUrl || "").trim();
       if (!redirectUrl) {
-        notify({ type: "info", message: "Please enter callback URL" });
+        notify({ type: "info", message: t("oauth.enter_callback_url") });
         return;
       }
       updateProviderState(provider, {
@@ -215,9 +246,9 @@ export function OAuthPage() {
       try {
         await oauthApi.submitCallback(provider, redirectUrl);
         updateProviderState(provider, { callbackSubmitting: false, callbackStatus: "success" });
-        notify({ type: "success", message: "Callback submitted successfully" });
+        notify({ type: "success", message: t("oauth.callback_submit_success") });
       } catch (err: unknown) {
-        const message = getErrorMessage(err) || "Callback submission failed";
+        const message = getErrorMessage(err) || t("oauth.callback_submit_failed");
         updateProviderState(provider, {
           callbackSubmitting: false,
           callbackStatus: "error",
@@ -226,19 +257,21 @@ export function OAuthPage() {
         notify({ type: "error", message });
       }
     },
-    [notify, states, updateProviderState],
+    [notify, states, t, updateProviderState],
   );
 
   const iflowHint = useMemo(() => {
-    if (!iflowResult) return "Use iFlow Cookie for one-time auth import.";
-    if (iflowResult.status === "ok") return `Import successful：${iflowResult.saved_path || ""}`.trim();
-    return `Import failed：${iflowResult.error || ""}`.trim();
-  }, [iflowResult]);
+    if (!iflowResult) return t("oauth.iflow_hint_default");
+    if (iflowResult.status === "ok") {
+      return t("oauth.iflow_hint_success", { path: iflowResult.saved_path || "" }).trim();
+    }
+    return t("oauth.iflow_hint_failed", { error: iflowResult.error || "" }).trim();
+  }, [iflowResult, t]);
 
   const submitIflow = useCallback(async () => {
     const cookie = iflowCookie.trim();
     if (!cookie) {
-      notify({ type: "info", message: "Please enter Cookie" });
+      notify({ type: "info", message: t("oauth.enter_cookie") });
       return;
     }
     setIflowLoading(true);
@@ -248,14 +281,14 @@ export function OAuthPage() {
       setIflowResult(res);
       notify({
         type: res.status === "ok" ? "success" : "error",
-        message: res.status === "ok" ? "Import successful" : res.error || "Import failed",
+        message: res.status === "ok" ? t("oauth.import_success") : res.error || t("oauth.import_failed"),
       });
     } catch (err: unknown) {
-      notify({ type: "error", message: getErrorMessage(err) || "Import failed" });
+      notify({ type: "error", message: getErrorMessage(err) || t("oauth.import_failed") });
     } finally {
       setIflowLoading(false);
     }
-  }, [iflowCookie, notify]);
+  }, [iflowCookie, notify, t]);
 
   const onVertexFileChange = useCallback(
     async (file: File | null) => {
@@ -272,14 +305,14 @@ export function OAuthPage() {
           location: (res as any).location,
           authFile: typeof authFile === "string" ? authFile : undefined,
         });
-        notify({ type: "success", message: "Vertex Import successful" });
+        notify({ type: "success", message: t("oauth.vertex_import_success") });
       } catch (err: unknown) {
-        notify({ type: "error", message: getErrorMessage(err) || "Vertex Import failed" });
+        notify({ type: "error", message: getErrorMessage(err) || t("oauth.vertex_import_failed") });
       } finally {
         setVertexLoading(false);
       }
     },
-    [notify, vertexLocation],
+    [notify, t, vertexLocation],
   );
 
   return (
@@ -295,8 +328,8 @@ export function OAuthPage() {
           return (
             <Card
               key={provider.id}
-              title={provider.title}
-              description={provider.hint}
+              title={t(provider.titleKey)}
+              description={t(provider.hintKey)}
               actions={
                 <Button
                   variant="primary"
@@ -309,7 +342,7 @@ export function OAuthPage() {
                   ) : (
                     <Sparkles size={14} />
                   )}
-                  开始授权
+                  {t("oauth.start_authorization")}
                 </Button>
               }
             >
@@ -329,7 +362,7 @@ export function OAuthPage() {
                 <div className="grid min-w-0 gap-2 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-white/55">
-                      授权链接
+                      {t("oauth.auth_link")}
                     </p>
                     <div className="flex items-center gap-2">
                       <Button
@@ -339,7 +372,7 @@ export function OAuthPage() {
                         disabled={!url}
                       >
                         <Copy size={14} />
-                        复制
+                        {t("oauth.copy_link")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -348,7 +381,7 @@ export function OAuthPage() {
                         disabled={!url}
                       >
                         <ExternalLink size={14} />
-                        打开
+                        {t("oauth.open_link")}
                       </Button>
                     </div>
                   </div>
@@ -356,21 +389,15 @@ export function OAuthPage() {
                     {url ? url : "--"}
                   </div>
                   <div className="text-xs text-slate-600 dark:text-white/65">
-                    状态：
-                    {polling
-                      ? "Polling..."
-                      : status === "success"
-                        ? "Success"
-                        : status === "error"
-                          ? "Failed"
-                          : "Waiting"}
+                    {t("oauth.status_label")}
+                    {getStatusLabel(status, polling)}
                     {state.error ? ` · ${state.error}` : ""}
                   </div>
                 </div>
 
                 <div className="grid gap-2 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-white/55">
-                    远程回调提交
+                    {t("oauth.remote_callback")}
                   </p>
                   <TextInput
                     value={state.callbackUrl ?? ""}
@@ -387,7 +414,7 @@ export function OAuthPage() {
                       disabled={Boolean(state.callbackSubmitting)}
                     >
                       <Send size={14} />
-                      {state.callbackSubmitting ? "Submitting..." : "Submit Callback"}
+                      {state.callbackSubmitting ? t("oauth.callback_submitting") : t("oauth.submit_callback")}
                     </Button>
                     {state.callbackStatus ? (
                       <span
@@ -398,8 +425,8 @@ export function OAuthPage() {
                         }
                       >
                         {state.callbackStatus === "success"
-                          ? "Submitted"
-                          : state.callbackError || "Submit Failed"}
+                          ? t("oauth.callback_submitted")
+                          : state.callbackError || t("oauth.callback_submit_failed")}
                       </span>
                     ) : null}
                   </div>
@@ -422,7 +449,7 @@ export function OAuthPage() {
               disabled={iflowLoading}
             >
               <ShieldCheck size={14} />
-              {iflowLoading ? "Importing..." : "Import"}
+              {iflowLoading ? t("oauth.importing") : t("oauth.import")}
             </Button>
           }
           loading={false}
@@ -450,7 +477,7 @@ export function OAuthPage() {
               <span className="inline-flex">
                 <Button variant="secondary" size="sm" disabled={vertexLoading}>
                   <Upload size={14} />
-                  {vertexLoading ? "Importing..." : "Select File"}
+                  {vertexLoading ? t("oauth.importing") : t("oauth.select_file")}
                 </Button>
               </span>
             </label>
@@ -460,22 +487,22 @@ export function OAuthPage() {
             <TextInput
               value={vertexLocation}
               onChange={(e) => setVertexLocation(e.currentTarget.value)}
-              placeholder="location(Optional)"
+              placeholder={t("oauth.location_placeholder")}
               endAdornment={<KeyRound size={16} className="text-slate-400" />}
             />
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-white/55">
-                最近导入
+                {t("oauth.recent_import")}
               </p>
               <p className="mt-2 font-mono text-xs text-slate-900 dark:text-white">
-                File: {vertexFileName || "--"}
+                {t("oauth.file_label")}: {vertexFileName || "--"}
               </p>
               {vertexResult ? (
                 <div className="mt-2 space-y-1 font-mono text-xs text-slate-700 dark:text-slate-200">
-                  <div>project_id：{vertexResult.projectId || "--"}</div>
-                  <div>email：{vertexResult.email || "--"}</div>
-                  <div>location：{vertexResult.location || "--"}</div>
-                  <div>auth_file：{vertexResult.authFile || "--"}</div>
+                  <div>{t("oauth.project_id_label")}: {vertexResult.projectId || "--"}</div>
+                  <div>{t("oauth.email_label")}: {vertexResult.email || "--"}</div>
+                  <div>{t("oauth.location_label")}: {vertexResult.location || "--"}</div>
+                  <div>{t("oauth.auth_file_label")}: {vertexResult.authFile || "--"}</div>
                 </div>
               ) : (
                 <p className="mt-2 text-sm text-slate-600 dark:text-white/65">{t("oauth.not_imported")}</p>

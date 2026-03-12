@@ -60,7 +60,7 @@ export function KeyValueInputList({
           disabled={disabled}
         >
           <Plus size={14} />
-          新增
+          {t("common.add")}
         </Button>
       </div>
 

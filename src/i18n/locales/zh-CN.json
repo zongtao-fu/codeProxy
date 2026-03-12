@@ -63,7 +63,11 @@
     "all_models": "全部模型",
     "clear_action": "清空",
     "chart_legend": "图表图例",
-    "loading_ellipsis": "加载中…"
+    "loading_ellipsis": "加载中…",
+    "restoring_session": "正在恢复会话...",
+    "loading_more": "正在加载更多…",
+    "all_records_loaded": "已加载全部 {{count}} 条记录",
+    "other": "其他"
   },
   "title": {
     "main": "CLI Proxy API Management Center",
@@ -104,10 +108,19 @@
     "error_server": "服务器内部错误，请稍后重试",
     "error_cors": "跨域请求被阻止，请检查服务器配置",
     "error_ssl": "SSL/TLS 证书验证失败",
-    "show_key": "显示密钥",
-    "hide_key": "隐藏密钥",
+    "show_key": "显示管理密钥",
+    "hide_key": "隐藏管理密钥",
     "sign_in": "登录",
-    "placeholder": "输入管理密钥"
+    "placeholder": "输入管理密钥",
+    "hero_title_line1": "面向 Agent 的",
+    "hero_title_line2": "统一代理平台",
+    "hero_description": "登录管理控制台，查看网关状态、调用监控和关键运行指标。",
+    "trusted_by": "TRUSTED BY",
+    "continue_with_key": "使用管理密钥继续",
+    "endpoint_label": "管理端点",
+    "error_management_key_required": "请输入管理密钥",
+    "login_success": "登录成功",
+    "signing_in": "登录中..."
   },
   "header": {
     "check_connection": "检查连接",
@@ -618,7 +631,13 @@
     "confirm_delete_file": "确认删除 {{name}}？此操作不可逆。",
     "virtual_hint": "虚拟认证文件仅用于运行时注入，无法查看/下载/编辑/删除。",
     "name_placeholder": "名称",
-    "alias_placeholder": "别名"
+    "alias_placeholder": "别名",
+    "load_failed": "加载认证文件失败",
+    "status_update_failed": "更新状态失败",
+    "load_excluded_failed": "加载 OAuth 排除模型失败",
+    "load_alias_failed": "加载 OAuth 模型别名失败",
+    "count_items": "共 {{count}} 条",
+    "file_too_large_detail": "文件过大（{{size}}）：{{name}}（最大 {{maxSize}}）"
   },
   "antigravity_quota": {
     "title": "Antigravity 额度",
@@ -2033,7 +2052,17 @@
     "confirm_delete_config": "删除此配置？此操作不可撤销。",
     "confirm_delete_generic": "确定要删除吗？",
     "success_stats": "成功 {{count}}",
-    "failed_stats": "失败 {{count}}"
+    "failed_stats": "失败 {{count}}",
+    "mapping_from_placeholder": "来源模型",
+    "mapping_to_placeholder": "目标模型",
+    "prefix_placeholder": "例如 team-a",
+    "claude_base_url_placeholder": "例如 https://api.anthropic.com",
+    "base_url_placeholder": "例如 https://api.openai.com",
+    "proxy_url_placeholder": "例如 http://127.0.0.1:7890",
+    "name_placeholder": "名称",
+    "priority_placeholder": "例如 10",
+    "test_model_placeholder": "例如 gpt-4.1",
+    "api_key_placeholder": "粘贴 API 密钥"
   },
   "request_logs": {
     "title": "请求日志",
@@ -2135,6 +2164,7 @@
     "form_name_label": "名称",
     "form_name_placeholder": "例如 Team-A（必填）",
     "form_key_label": "API 密钥",
+    "form_key_placeholder": "输入 API 密钥",
     "form_regenerate": "重新生成",
     "form_daily_limit": "每日请求限额",
     "form_total_quota": "总请求配额",
@@ -2147,7 +2177,7 @@
     "form_system_prompt": "系统提示词",
     "form_system_prompt_desc": "使用此 API 密钥的请求将自动注入此系统提示词。",
     "usage_title": "用量 — {{name}}",
-    "usage_desc": "密钥：{{key}}  ·  {{count}} 条记录",
+    "usage_desc": "密钥：{{key}} · {{count}} 条记录",
     "col_time": "时间",
     "col_model": "模型",
     "col_duration": "耗时",
@@ -2159,7 +2189,8 @@
     "table_caption": "API 密钥列表",
     "no_api_keys": "暂无 API 密钥",
     "usage_table_caption": "使用记录",
-    "no_usage_records": "暂无使用记录"
+    "no_usage_records": "暂无使用记录",
+    "more_suffix": " 等更多"
   },
   "apikey_lookup": {
     "available_models": "可用模型",
@@ -2179,7 +2210,21 @@
     "requests": "请求数",
     "token": "Token",
     "model_filter": "模型过滤",
-    "status_filter": "状态过滤"
+    "status_filter": "状态过滤",
+    "title": "API 密钥用量查询",
+    "api_key_label": "API 密钥",
+    "query": "查询",
+    "query_failed": "查询失败",
+    "load_models_failed": "加载模型列表失败",
+    "last_n_days": "最近 {{days}} 天",
+    "model_distribution_desc_requests": "模型请求占比",
+    "model_distribution_desc_tokens": "模型 Token 占比",
+    "daily_usage_desc": "最近 {{days}} 天 · 请求与 Token 趋势",
+    "no_data": "暂无数据",
+    "input_token": "输入 Token",
+    "output_token": "输出 Token",
+    "empty_title": "查询 API 密钥用量",
+    "empty_desc": "输入上方 API 密钥后，可查看详细用量统计和请求日志。"
   },
   "config_page": {
     "runtime_switches": "运行时开关",
@@ -2301,7 +2346,9 @@
     "input_token_price": "输入 Token 价格 ($/M tokens)",
     "output_token_price": "输出 Token 价格 ($/M tokens)",
     "cache_token_price": "缓存 Token 价格 ($/M tokens)",
-    "table_caption": "模型定价表"
+    "table_caption": "模型定价表",
+    "input_price_placeholder": "例如 3.00",
+    "output_price_placeholder": "例如 15.00"
   },
   "providers_page": {
     "openai_title": "OpenAI 兼容提供商",
@@ -2410,7 +2457,74 @@
     "callback_placeholder": "粘贴浏览器中的完整回调 URL",
     "project_placeholder": "项目 ID（可选）",
     "vertex_title": "Vertex 凭证导入",
-    "iflow_title": "iFlow Cookie 认证"
+    "iflow_title": "iFlow Cookie 认证",
+    "provider_fallback": "OAuth",
+    "status_polling": "轮询中",
+    "status_success": "已成功",
+    "status_failed": "失败",
+    "status_waiting": "等待中",
+    "authorization_success": "{{provider}} 授权成功",
+    "authorization_failed": "{{provider}} 授权失败：{{error}}",
+    "start_auth_failed_short": "启动授权失败",
+    "start_auth_failed": "{{provider}} 启���授权失败：{{error}}",
+    "link_copied": "授权链接已复制",
+    "copy_failed": "复制失败",
+    "enter_callback_url": "请输入回调 URL",
+    "callback_submit_success": "回调已提交",
+    "callback_submit_failed": "提交回调失败",
+    "iflow_hint_default": "使用 iFlow Cookie 执行一次性认证导入。",
+    "iflow_hint_success": "导入成功：{{path}}",
+    "iflow_hint_failed": "导入失败：{{error}}",
+    "enter_cookie": "请输入 Cookie",
+    "import_success": "导入成功",
+    "import_failed": "导入失败",
+    "vertex_import_success": "Vertex 凭证导入成功",
+    "vertex_import_failed": "Vertex 凭证导入失败",
+    "start_authorization": "开始授权",
+    "auth_link": "授权链接",
+    "copy_link": "复制",
+    "open_link": "打开",
+    "status_label": "状态：",
+    "remote_callback": "远程回调提交",
+    "callback_submitting": "提交中...",
+    "submit_callback": "提交回调",
+    "callback_submitted": "已提交",
+    "importing": "导入中...",
+    "import": "导入",
+    "select_file": "选择文件",
+    "location_placeholder": "location（可选）",
+    "recent_import": "最近导入",
+    "file_label": "文件",
+    "project_id_label": "project_id",
+    "email_label": "email",
+    "location_label": "location",
+    "auth_file_label": "auth_file",
+    "providers": {
+      "codex": {
+        "title": "Codex OAuth",
+        "hint": "启动授权流程后，服务端会自动保存认证文件。"
+      },
+      "anthropic": {
+        "title": "Anthropic OAuth",
+        "hint": "用于 Claude / Anthropic OAuth 登录。"
+      },
+      "antigravity": {
+        "title": "Antigravity OAuth",
+        "hint": "用于 Antigravity 配额 / 能力 OAuth 登录。"
+      },
+      "gemini_cli": {
+        "title": "Gemini CLI OAuth",
+        "hint": "支持可选 Project ID；留空时由服务端自动选择。"
+      },
+      "kimi": {
+        "title": "Kimi OAuth",
+        "hint": "如果服务端支持，会自动保存认证文件。"
+      },
+      "qwen": {
+        "title": "Qwen OAuth",
+        "hint": "如果服务端支持，会自动保存认证文件。"
+      }
+    }
   },
   "log_content": {
     "copy": "复制",
@@ -2419,12 +2533,28 @@
     "title": "请求/响应报文详情",
     "download": "下载",
     "raw_data": "原始数据",
-    "rendered": "渲染视图"
+    "rendered": "渲染视图",
+    "input_messages": "输入消息",
+    "output": "输出",
+    "message_content": "消息内容",
+    "role_system": "系统提示词",
+    "role_developer": "开发者指令",
+    "role_instructions": "指令",
+    "role_user": "用户消息",
+    "role_assistant": "模型响应",
+    "role_tool": "工具结果",
+    "role_function_call": "函数调用",
+    "role_function_return": "函数返回",
+    "role_thinking": "思考",
+    "role_tool_use": "工具调用",
+    "role_message": "消息"
   },
   "error_detail": {
     "upstream_error": "上游 API 错误响应",
     "full_response": "完整响应",
-    "no_content": "无错误内容记录"
+    "no_content": "无错误内容记录",
+    "load_failed": "加载失败",
+    "request_failed": "请求失败"
   },
   "system_page": {
     "title": "系统信息",
@@ -2440,6 +2570,7 @@
     "click_copy": "点击复制",
     "copy": "复制",
     "copied": "已复制",
+    "load_failed": "加载模型失败",
     "refresh": "刷新",
     "loading_models": "加载模型列表…",
     "no_models": "暂无模型数据",
@@ -2532,6 +2663,7 @@
     "api_keys_hint": "对应 config.yaml 中的 api-keys（每行一个）。",
     "api_key_empty_err": "API 密钥不能为空",
     "api_key_charset_err": "API 密钥仅允许可见 ASCII 字符",
+    "api_key_placeholder": "输入 API 密钥",
     "edit_api_key_title": "编辑 API 密钥",
     "add_api_key_title": "添加 API 密钥",
     "copied": "已复制",

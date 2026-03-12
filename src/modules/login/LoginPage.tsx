@@ -51,7 +51,7 @@ export function LoginPage() {
       event.preventDefault();
 
       if (!managementKey.trim()) {
-        notify({ type: "error", message: "Enter management key" });
+        notify({ type: "error", message: t("login.error_management_key_required") });
         return;
       }
 
@@ -62,18 +62,18 @@ export function LoginPage() {
           managementKey,
           rememberPassword,
         });
-        notify({ type: "success", message: "Login successful" });
+        notify({ type: "success", message: t("login.login_success") });
         const redirect = (location.state as RedirectState | null)?.from?.pathname ?? "/monitor";
         navigate(redirect, { replace: true, viewTransition: true });
       } catch (submitError) {
         const message =
-          submitError instanceof Error ? submitError.message : "Login failed, check address and key";
+          submitError instanceof Error ? submitError.message : t("login.error_invalid");
         notify({ type: "error", message });
       } finally {
         setLoading(false);
       }
     },
-    [apiBase, login, location.state, managementKey, navigate, notify, rememberPassword],
+    [apiBase, login, location.state, managementKey, navigate, notify, rememberPassword, t],
   );
 
   if (isRestoring) {
@@ -106,18 +106,18 @@ export function LoginPage() {
 
               <div className="space-y-6">
                 <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight text-slate-900 sm:text-6xl dark:text-white">
-                  Agent-oriented
+                  {t("login.hero_title_line1")}
                   <br />
-                  Unified Proxy Platform
+                  {t("login.hero_title_line2")}
                 </h1>
                 <p className="max-w-xl text-sm leading-7 text-slate-600 dark:text-white/70">
-                  Sign in to the management console to view gateway status and call monitoring data.
+                  {t("login.hero_description")}
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="text-xs font-semibold tracking-[0.26em] text-slate-500 dark:text-white/50">
-                  TRUSTED BY
+                  {t("login.trusted_by")}
                 </div>
                 <div className="flex flex-wrap gap-3 text-sm text-slate-700 dark:text-white/80">
                   <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 ring-1 ring-slate-200 backdrop-blur dark:bg-neutral-950/50 dark:ring-white/10">
@@ -148,7 +148,7 @@ export function LoginPage() {
                   <div className="flex items-center gap-4">
                     <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
                     <div className="text-xs text-slate-500 dark:text-white/50">
-                      Continue with management key
+                      {t("login.continue_with_key")}
                     </div>
                     <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
                   </div>
@@ -156,23 +156,23 @@ export function LoginPage() {
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <label className="block space-y-2">
                       <span className="text-xs font-medium text-slate-600 dark:text-white/60">
-                        API Address
+                        {t("login.connection_title")}
                       </span>
                       <TextInput
                         value={apiBase}
                         onChange={(event) => setApiBase(event.target.value)}
-                        placeholder="e.g. http://localhost:8317"
+                        placeholder={t("login.custom_connection_placeholder")}
                         autoComplete="url"
                         className="rounded-full px-5 py-3"
                       />
                       <p className="text-[11px] leading-5 text-slate-500 dark:text-white/50">
-                        Endpoint: {managementEndpoint}
+                        {t("login.endpoint_label")}: {managementEndpoint}
                       </p>
                     </label>
 
                     <label className="block space-y-2">
                       <span className="text-xs font-medium text-slate-600 dark:text-white/60">
-                        Management Key
+                        {t("login.management_key_label")}
                       </span>
                       <TextInput
                         value={managementKey}
@@ -186,7 +186,7 @@ export function LoginPage() {
                             type="button"
                             onClick={() => setShowKey((value) => !value)}
                             className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
-                            aria-label={showKey ? "Hide Management Key" : "Show Management Key"}
+                            aria-label={showKey ? t("login.hide_key") : t("login.show_key")}
                           >
                             {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
                           </button>
@@ -201,7 +201,7 @@ export function LoginPage() {
                         onChange={(event) => setRememberPassword(event.target.checked)}
                         className="h-4 w-4 rounded border-slate-300 dark:border-white/20 dark:bg-neutral-900"
                       />
-                      Remember this login
+                      {t("login.remember_password_label")}
                     </label>
 
                     <button
@@ -209,7 +209,7 @@ export function LoginPage() {
                       disabled={loading}
                       className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white/10 dark:hover:bg-white/15"
                     >
-                      {loading ? "Signing in..." : "Sign In"}
+                      {loading ? t("login.signing_in") : t("login.submit_button")}
                     </button>
                   </form>
                 </div>

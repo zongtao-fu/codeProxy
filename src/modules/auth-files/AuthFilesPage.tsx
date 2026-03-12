@@ -185,18 +185,18 @@ type UsageIndex = {
 const buildUsageIndex = (usage: UsageData | null): { entries: UsageEntry[]; index: UsageIndex } => {
   const entries = usage
     ? (iterateUsageRecords(usage)
-      .map((detail) => {
-        const source = normalizeUsageSourceId((detail as UsageDetail).source, (v) => v);
-        if (!source) return null;
-        const authIndexKey = normalizeAuthIndexValue((detail as UsageDetail).auth_index);
-        return {
-          timestamp: (detail as UsageDetail).timestamp,
-          failed: Boolean((detail as UsageDetail).failed),
-          source,
-          authIndexKey,
-        };
-      })
-      .filter(Boolean) as UsageEntry[])
+        .map((detail) => {
+          const source = normalizeUsageSourceId((detail as UsageDetail).source, (v) => v);
+          if (!source) return null;
+          const authIndexKey = normalizeAuthIndexValue((detail as UsageDetail).auth_index);
+          return {
+            timestamp: (detail as UsageDetail).timestamp,
+            failed: Boolean((detail as UsageDetail).failed),
+            source,
+            authIndexKey,
+          };
+        })
+        .filter(Boolean) as UsageEntry[])
     : [];
 
   const entriesBySource: Record<string, UsageEntry[]> = {};
@@ -392,12 +392,15 @@ export function AuthFilesPage() {
       setFiles(list);
       setUsageData(usageRes);
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : "Failed to load auth files" });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("auth_files.load_failed"),
+      });
     } finally {
       setLoading(false);
       setUsageLoading(false);
     }
-  }, [notify]);
+  }, [notify, t]);
 
   useEffect(() => {
     void loadAll();
@@ -485,12 +488,15 @@ export function AuthFilesPage() {
         const text = await authFilesApi.downloadText(file.name);
         setDetailText(text);
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : "Failed to read file" });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.read_failed"),
+        });
       } finally {
         setDetailLoading(false);
       }
     },
-    [notify],
+    [notify, t],
   );
 
   const openModels = useCallback(
@@ -519,12 +525,12 @@ export function AuthFilesPage() {
           setModelsError("unsupported");
           return;
         }
-        notify({ type: "error", message: message || "Failed to get models" });
+        notify({ type: "error", message: message || t("auth_files.failed_get_models") });
       } finally {
         setModelsLoading(false);
       }
     },
-    [notify],
+    [notify, t],
   );
 
   const handleUpload = useCallback(
@@ -548,7 +554,11 @@ export function AuthFilesPage() {
         const first = tooLarge[0];
         notify({
           type: "error",
-          message: `File too large (${formatFileSize(first.size)}): ${first.name} (max ${formatFileSize(MAX_AUTH_FILE_SIZE)})`,
+          message: t("auth_files.file_too_large_detail", {
+            size: formatFileSize(first.size),
+            name: first.name,
+            maxSize: formatFileSize(MAX_AUTH_FILE_SIZE),
+          }),
         });
         return;
       }
@@ -578,7 +588,10 @@ export function AuthFilesPage() {
 
         await loadAll();
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.upload_failed") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.upload_failed"),
+        });
       } finally {
         setUploading(false);
         if (fileInputRef.current) {
@@ -586,7 +599,7 @@ export function AuthFilesPage() {
         }
       }
     },
-    [loadAll, notify],
+    [loadAll, notify, t],
   );
 
   const handleDelete = useCallback(
@@ -596,10 +609,13 @@ export function AuthFilesPage() {
         setFiles((prev) => prev.filter((file) => file.name !== name));
         notify({ type: "success", message: t("auth_files.deleted") });
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.delete_failed") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.delete_failed"),
+        });
       }
     },
-    [notify],
+    [notify, t],
   );
 
   const handleDeleteAll = useCallback(async () => {
@@ -609,7 +625,7 @@ export function AuthFilesPage() {
       if (!normalizedFilter || normalizedFilter === "all") {
         await authFilesApi.deleteAll();
         setFiles([]);
-        notify({ type: "success", message: "All auth files deleted" });
+        notify({ type: "success", message: t("auth_files.delete_all_success") });
         return;
       }
 
@@ -629,7 +645,7 @@ export function AuthFilesPage() {
         (file) => matchesSearch(file) && matchesFilter(file) && !isRuntimeOnlyAuthFile(file),
       );
       if (deletable.length === 0) {
-        notify({ type: "info", message: `No deletable auth files in filter: ${filter}` });
+        notify({ type: "info", message: t("auth_files.delete_filtered_none", { type: filter }) });
         return;
       }
 
@@ -652,18 +668,27 @@ export function AuthFilesPage() {
       }
 
       if (failed === 0) {
-        notify({ type: "success", message: t("auth_files.batch_deleted", { count: success, filter }) });
+        notify({
+          type: "success",
+          message: t("auth_files.batch_deleted", { count: success, filter }),
+        });
       } else {
-        notify({ type: "error", message: `${filter} delete done: ${success} success, ${failed} failed` });
+        notify({
+          type: "error",
+          message: t("auth_files.delete_filtered_partial", { type: filter, success, failed }),
+        });
       }
       setFilter("all");
       setPage(1);
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.delete_failed") });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("auth_files.delete_failed"),
+      });
     } finally {
       setDeletingAll(false);
     }
-  }, [filter, files, notify, search]);
+  }, [filter, files, notify, search, t]);
 
   const setFileEnabled = useCallback(
     async (file: AuthFileItem, enabled: boolean) => {
@@ -681,12 +706,18 @@ export function AuthFilesPage() {
         setFiles((prev) =>
           prev.map((it) => (it.name === name ? { ...it, disabled: res.disabled } : it)),
         );
-        notify({ type: "success", message: enabled ? t("auth_files.enabled") : t("auth_files.disabled") });
+        notify({
+          type: "success",
+          message: enabled ? t("auth_files.enabled") : t("auth_files.disabled"),
+        });
       } catch (err: unknown) {
         setFiles((prev) =>
           prev.map((it) => (it.name === name ? { ...it, disabled: prevDisabled } : it)),
         );
-        notify({ type: "error", message: err instanceof Error ? err.message : "Failed to update status" });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.status_update_failed"),
+        });
       } finally {
         setStatusUpdating((prev) => {
           const next = { ...prev };
@@ -695,7 +726,7 @@ export function AuthFilesPage() {
         });
       }
     },
-    [notify],
+    [notify, t],
   );
 
   const openPrefixProxyEditor = useCallback(
@@ -749,11 +780,18 @@ export function AuthFilesPage() {
           error: null,
         }));
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : "Failed to read file" });
-        setPrefixProxyEditor((prev) => ({ ...prev, loading: false, error: t("auth_files.read_failed") }));
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.read_failed"),
+        });
+        setPrefixProxyEditor((prev) => ({
+          ...prev,
+          loading: false,
+          error: t("auth_files.read_failed"),
+        }));
       }
     },
-    [notify],
+    [notify, t],
   );
 
   const prefixProxyDirty = useMemo(() => {
@@ -789,7 +827,10 @@ export function AuthFilesPage() {
     const payload = prefixProxyUpdatedText;
     const fileSize = new Blob([payload]).size;
     if (fileSize > MAX_AUTH_FILE_SIZE) {
-      notify({ type: "error", message: t("auth_files.save_too_large", { size: formatFileSize(fileSize) }) });
+      notify({
+        type: "error",
+        message: t("auth_files.save_too_large", { size: formatFileSize(fileSize) }),
+      });
       return;
     }
 
@@ -811,7 +852,10 @@ export function AuthFilesPage() {
         proxyUrl: "",
       });
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.save_failed") });
+      notify({
+        type: "error",
+        message: err instanceof Error ? err.message : t("auth_files.save_failed"),
+      });
       setPrefixProxyEditor((prev) => ({ ...prev, saving: false }));
     }
   }, [
@@ -821,6 +865,7 @@ export function AuthFilesPage() {
     prefixProxyEditor.fileName,
     prefixProxyEditor.json,
     prefixProxyUpdatedText,
+    t,
   ]);
 
   const refreshExcluded = useCallback(async () => {
@@ -846,11 +891,11 @@ export function AuthFilesPage() {
         setExcludedDraft({});
         return;
       }
-      notify({ type: "error", message: message || "Failed to load OAuth excluded models" });
+      notify({ type: "error", message: message || t("auth_files.load_excluded_failed") });
     } finally {
       setExcludedLoading(false);
     }
-  }, [notify]);
+  }, [notify, t]);
 
   const refreshAlias = useCallback(async () => {
     setAliasLoadAttempted(true);
@@ -870,11 +915,11 @@ export function AuthFilesPage() {
         setAliasEditing({});
         return;
       }
-      notify({ type: "error", message: message || "Failed to load OAuth model aliases" });
+      notify({ type: "error", message: message || t("auth_files.load_alias_failed") });
     } finally {
       setAliasLoading(false);
     }
-  }, [notify]);
+  }, [notify, t]);
 
   useEffect(() => {
     if (
@@ -914,8 +959,7 @@ export function AuthFilesPage() {
       if (excludedUnsupported) {
         notify({
           type: "error",
-          message:
-            t("auth_files.server_no_excluded_api"),
+          message: t("auth_files.server_no_excluded_api"),
         });
         return;
       }
@@ -929,7 +973,10 @@ export function AuthFilesPage() {
         notify({ type: "success", message: t("auth_files.saved") });
         startTransition(() => void refreshExcluded());
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.save_failed") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.save_failed"),
+        });
       }
     },
     [excludedUnsupported, notify, refreshExcluded, startTransition],
@@ -951,7 +998,10 @@ export function AuthFilesPage() {
         notify({ type: "success", message: t("auth_files.deleted") });
         startTransition(() => void refreshExcluded());
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.delete_failed") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.delete_failed"),
+        });
       }
     },
     [excludedUnsupported, notify, refreshExcluded, startTransition],
@@ -1003,7 +1053,10 @@ export function AuthFilesPage() {
         notify({ type: "success", message: t("auth_files.saved") });
         startTransition(() => void refreshAlias());
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : "Save failed" });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.save_failed"),
+        });
       }
     },
     [aliasEditing, aliasUnsupported, notify, refreshAlias, startTransition],
@@ -1014,7 +1067,7 @@ export function AuthFilesPage() {
       if (aliasUnsupported) {
         notify({
           type: "error",
-          message: "Server does not support OAuth model alias API (/oauth-model-alias). Please upgrade.",
+          message: t("auth_files.server_no_alias_api"),
         });
         return;
       }
@@ -1024,7 +1077,10 @@ export function AuthFilesPage() {
         notify({ type: "success", message: t("auth_files.deleted") });
         startTransition(() => void refreshAlias());
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.delete_failed") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.delete_failed"),
+        });
       }
     },
     [aliasUnsupported, notify, refreshAlias, startTransition],
@@ -1049,7 +1105,10 @@ export function AuthFilesPage() {
         setImportModels(list);
         setImportSelected(new Set(list.map((m) => m.id)));
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.failed_get_models") });
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.failed_get_models"),
+        });
         setImportOpen(false);
       } finally {
         setImportLoading(false);
@@ -1154,7 +1213,9 @@ export function AuthFilesPage() {
                   disabled={deletingAll || loading || uploading}
                 >
                   <Trash2 size={14} />
-                  {filter === "all" ? t("auth_files.delete_all") : t("auth_files.delete_type", { type: filter })}
+                  {filter === "all"
+                    ? t("auth_files.delete_all")
+                    : t("auth_files.delete_type", { type: filter })}
                 </Button>
               </>
             ) : null}
@@ -1410,7 +1471,10 @@ export function AuthFilesPage() {
                                   } catch (err: unknown) {
                                     notify({
                                       type: "error",
-                                      message: err instanceof Error ? err.message : t("auth_files.download_failed"),
+                                      message:
+                                        err instanceof Error
+                                          ? err.message
+                                          : t("auth_files.download_failed"),
                                     });
                                   }
                                 }}
@@ -1437,7 +1501,11 @@ export function AuthFilesPage() {
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-slate-600 dark:text-white/65 tabular-nums">
-                  {t("auth_files.total_page", { total: filteredFiles.length, page: safePage, pages: totalPages })}
+                  {t("auth_files.total_page", {
+                    total: filteredFiles.length,
+                    page: safePage,
+                    pages: totalPages,
+                  })}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -1541,7 +1609,7 @@ export function AuthFilesPage() {
                                 {provider}
                               </p>
                               <p className="mt-1 text-xs text-slate-500 dark:text-white/55">
-                                共 {count} 条
+                                {t("auth_files.count_items", { count })}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -1634,7 +1702,10 @@ export function AuthFilesPage() {
 
               <div className="mt-4 space-y-3">
                 {Object.keys(aliasEditing).length === 0 ? (
-                  <EmptyState title={t("auth_files.no_config")} description={t("auth_files_page.alias_no_config")} />
+                  <EmptyState
+                    title={t("auth_files.no_config")}
+                    description={t("auth_files_page.alias_no_config")}
+                  />
                 ) : (
                   Object.keys(aliasEditing)
                     .sort((a, b) => a.localeCompare(b))
@@ -1791,7 +1862,11 @@ export function AuthFilesPage() {
 
       <Modal
         open={detailOpen}
-        title={detailFile ? t("auth_files.view_file_title", { name: detailFile.name }) : t("auth_files.view_auth_file", "View Auth File")}
+        title={
+          detailFile
+            ? t("auth_files.view_file_title", { name: detailFile.name })
+            : t("auth_files.view_auth_file")
+        }
         onClose={() => setDetailOpen(false)}
         footer={
           <div className="flex items-center gap-2">
@@ -1814,7 +1889,9 @@ export function AuthFilesPage() {
         }
       >
         {detailLoading ? (
-          <div className="text-sm text-slate-600 dark:text-white/65">Loading…</div>
+          <div className="text-sm text-slate-600 dark:text-white/65">
+            {t("common.loading_ellipsis")}
+          </div>
         ) : (
           <pre className="whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-white p-4 font-mono text-xs text-slate-900 dark:border-neutral-800 dark:bg-neutral-950 dark:text-slate-100">
             {detailText || "--"}
@@ -1824,7 +1901,10 @@ export function AuthFilesPage() {
 
       <Modal
         open={modelsOpen}
-        title={t("auth_files.models_list_title", { name: modelsFileName || "--", type: modelsFileType || "" })}
+        title={t("auth_files.models_list_title", {
+          name: modelsFileName || "--",
+          type: modelsFileType || "",
+        })}
         onClose={() => setModelsOpen(false)}
         footer={
           <Button variant="secondary" onClick={() => setModelsOpen(false)}>
@@ -1833,7 +1913,9 @@ export function AuthFilesPage() {
         }
       >
         {modelsLoading ? (
-          <div className="text-sm text-slate-600 dark:text-white/65">Loading…</div>
+          <div className="text-sm text-slate-600 dark:text-white/65">
+            {t("common.loading_ellipsis")}
+          </div>
         ) : modelsError === "unsupported" ? (
           <EmptyState
             title={t("auth_files.api_not_supported")}
@@ -1841,7 +1923,7 @@ export function AuthFilesPage() {
           />
         ) : modelsList.length === 0 ? (
           <EmptyState
-            title={t("common.no_model_data", "No Models Data")}
+            title={t("common.no_model_data")}
             description={t("auth_files_page.models_hint")}
           />
         ) : (
@@ -1934,11 +2016,15 @@ export function AuthFilesPage() {
         }
       >
         {prefixProxyEditor.loading ? (
-          <div className="text-sm text-slate-600 dark:text-white/65">Loading…</div>
+          <div className="text-sm text-slate-600 dark:text-white/65">
+            {t("common.loading_ellipsis")}
+          </div>
         ) : prefixProxyEditor.json ? (
           <div className="space-y-4">
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("auth_files.prefix_label")}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                {t("auth_files.prefix_label")}
+              </p>
               <div className="mt-2">
                 <TextInput
                   value={prefixProxyEditor.prefix}
@@ -1984,7 +2070,10 @@ export function AuthFilesPage() {
             </div>
           </div>
         ) : (
-          <EmptyState title={t("auth_files_page.cannot_edit")} description={prefixProxyEditor.error || t("auth_files.unknown_error")} />
+          <EmptyState
+            title={t("auth_files_page.cannot_edit")}
+            description={prefixProxyEditor.error || t("auth_files.unknown_error")}
+          />
         )}
       </Modal>
 
@@ -2010,10 +2099,12 @@ export function AuthFilesPage() {
         }
       >
         {importLoading ? (
-          <div className="text-sm text-slate-600 dark:text-white/65">Loading…</div>
+          <div className="text-sm text-slate-600 dark:text-white/65">
+            {t("common.loading_ellipsis")}
+          </div>
         ) : importModels.length === 0 ? (
           <EmptyState
-            title={t("common.no_model_def", "No Model Definitions")}
+            title={t("common.no_model_def")}
             description={t("auth_files_page.cannot_edit_desc")}
           />
         ) : (
@@ -2027,7 +2118,10 @@ export function AuthFilesPage() {
 
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
               <p className="text-xs text-slate-600 dark:text-white/65 tabular-nums">
-                {t("auth_files.models_selected", { models: importFilteredModels.length, selected: importSelected.size })}
+                {t("auth_files.models_selected", {
+                  models: importFilteredModels.length,
+                  selected: importSelected.size,
+                })}
               </p>
               <div className="mt-2 max-h-72 overflow-y-auto space-y-1">
                 {importFilteredModels.map((model) => {
@@ -2069,16 +2163,18 @@ export function AuthFilesPage() {
         title={
           confirm?.type === "deleteAll"
             ? filter === "all"
-              ? t("auth_files.delete_all_auth_files", "Delete All Auth Files")
+              ? t("auth_files.delete_all_auth_files")
               : t("auth_files.delete_filter_title", { filter })
-            : t("auth_files.delete_auth_file", "Delete Auth File")
+            : t("auth_files.delete_auth_file")
         }
         description={
           confirm?.type === "deleteAll"
             ? filter === "all"
-              ? t("auth_files.confirm_delete_all", "Are you sure you want to delete all auth files? This operation is irreversible.")
+              ? t("auth_files.confirm_delete_all")
               : t("auth_files.confirm_delete_filter", { filter })
-            : t("auth_files.confirm_delete_file", { name: confirm?.type === "deleteFile" ? confirm.name : "" })
+            : t("auth_files.confirm_delete_file", {
+                name: confirm?.type === "deleteFile" ? confirm.name : "",
+              })
         }
         confirmText={t("common.delete")}
         busy={deletingAll}

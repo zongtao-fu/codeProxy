@@ -37,9 +37,9 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
         usageApi.getLogContent(logId).then((res) => {
             setErrorContent(res.output_content || "");
         }).catch((err) => {
-            setError(err instanceof Error ? err.message : "Load failed");
+            setError(err instanceof Error ? err.message : t("error_detail.load_failed"));
         }).finally(() => setLoading(false));
-    }, [open, logId]);
+    }, [logId, open, t]);
 
     // Escape key
     useEffect(() => {
@@ -104,7 +104,7 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
                         </div>
                         <div className="min-w-0">
                             <h2 className="truncate text-base font-semibold tracking-tight text-red-900 dark:text-red-200">
-                                Request failed{model ? ` · ${model}` : ""}
+                                {t("error_detail.request_failed")}{model ? ` · ${model}` : ""}
                             </h2>
                             <p className="mt-0.5 text-xs text-red-600/70 dark:text-red-400/60">{t("error_detail.upstream_error")}</p>
                         </div>
@@ -113,7 +113,7 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
                         type="button"
                         onClick={onClose}
                         className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white/80 text-red-700 transition hover:bg-white dark:border-red-900/40 dark:bg-neutral-950/60 dark:text-red-300 dark:hover:bg-neutral-900"
-                        aria-label="Close"
+                        aria-label={t("common.close")}
                     >
                         <X size={14} />
                     </button>
@@ -124,7 +124,7 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
                             <Loader2 size={22} className="animate-spin text-slate-400" />
-                            <span className="ml-2 text-sm text-slate-500">Loading…</span>
+                            <span className="ml-2 text-sm text-slate-500">{t("common.loading_ellipsis")}</span>
                         </div>
                     ) : error ? (
                         <div className="flex flex-col items-center justify-center py-12">
@@ -154,7 +154,7 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
                                         className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-slate-500 transition hover:bg-slate-100 dark:text-white/40 dark:hover:bg-neutral-800"
                                     >
                                         {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-                                        {copied ? "Copied" : "Copy"}
+                                        {copied ? t("common.copied") : t("log_content.copy")}
                                     </button>
                                 </div>
                                 <pre className="max-h-[40vh] overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-800 dark:border-neutral-800 dark:bg-neutral-900 dark:text-slate-200" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflowWrap: 'anywhere' }}>
