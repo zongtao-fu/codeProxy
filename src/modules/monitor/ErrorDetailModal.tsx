@@ -120,7 +120,7 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+                <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-5 py-4">
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
                             <Loader2 size={22} className="animate-spin text-slate-400" />
@@ -139,8 +139,8 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
                         <div className="space-y-3">
                             {/* Error summary */}
                             {errorMessage && (
-                                <div className="overflow-hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-950/20">
-                                    <p className="whitespace-pre-wrap break-all text-sm font-medium text-red-700 dark:text-red-300">{errorMessage}</p>
+                                <div className="min-w-0 overflow-hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-950/20">
+                                    <p className="text-sm font-medium text-red-700 dark:text-red-300" style={{ overflowWrap: 'anywhere', wordBreak: 'break-all' }}>{errorMessage}</p>
                                 </div>
                             )}
 
@@ -157,7 +157,7 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
                                         {copied ? "Copied" : "Copy"}
                                     </button>
                                 </div>
-                                <pre className="max-h-[40vh] overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-800 dark:border-neutral-800 dark:bg-neutral-900 dark:text-slate-200">
+                                <pre className="max-h-[40vh] overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-800 dark:border-neutral-800 dark:bg-neutral-900 dark:text-slate-200" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflowWrap: 'anywhere' }}>
                                     {formattedContent}
                                 </pre>
                             </div>
