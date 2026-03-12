@@ -62,7 +62,8 @@
     "priority_optional": "优先级（可选）",
     "all_models": "全部模型",
     "clear_action": "清空",
-    "chart_legend": "图表图例"
+    "chart_legend": "图表图例",
+    "loading_ellipsis": "加载中…"
   },
   "title": {
     "main": "CLI Proxy API Management Center",
@@ -439,7 +440,7 @@
     "delete_filtered_confirm": "确定要删除筛选出的 {{type}} 认证文件吗？此操作不可恢复！",
     "upload_error_json": "只能上传JSON文件",
     "upload_error_size": "文件大小不能超过 {{maxSize}}",
-    "upload_success": "文件上传成功",
+    "upload_success": "上传成功（{{count}} 个文件）",
     "download_success": "文件下载成功",
     "delete_success": "文件删除成功",
     "delete_all_success": "成功删除",
@@ -512,8 +513,8 @@
     "prefix_proxy_source_label": "认证文件 JSON（预览）",
     "prefix_label": "前缀（prefix）",
     "proxy_url_label": "代理 URL（proxy_url）",
-    "prefix_placeholder": "",
-    "proxy_url_placeholder": "socks5://username:password@proxy_ip:port/",
+    "prefix_placeholder": "例如 team-a",
+    "proxy_url_placeholder": "例如 http://127.0.0.1:7890",
     "priority_label": "优先级（priority）",
     "priority_placeholder": "例如: 10 或 -1",
     "priority_hint": "仅支持整数；非法值会被忽略。数值越大优先级越高。",
@@ -547,7 +548,21 @@
     "one_model_per_line": "每行一个模型；使用 * 禁用所有模型",
     "search_models_placeholder": "搜索模型 id / display_name",
     "api_not_supported": "API 不支持",
-    "no_config": "暂无配置"
+    "no_config": "暂无配置",
+    "upload_partial": "上传完成：{{success}} 成功，{{failed}} 失败，{{skipped}} 跳过",
+    "upload_failed": "上传失败",
+    "deleted": "已删除",
+    "delete_failed": "删除失败",
+    "batch_deleted": "已删除 {{count}} 个 {{filter}} 认证文件",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "enable_disable": "启用/禁用",
+    "read_failed": "读取失败",
+    "saved": "已保存",
+    "save_failed": "保存失败",
+    "save_too_large": "保存失败：文件过大（{{size}}）",
+    "not_valid_json": "文件不是有效的 JSON，无法编辑。",
+    "not_json_object": "文件不是 JSON 对象，无法编辑。"
   },
   "antigravity_quota": {
     "title": "Antigravity 额度",

@@ -55,7 +55,8 @@
     "all_models": "All Models",
     "clear_action": "Clear",
     "chart_legend": "Chart legend",
-    "success_rate": "Success Rate"
+    "success_rate": "Success Rate",
+    "loading_ellipsis": "Loading…"
   },
   "title": {
     "main": "CLI Proxy API Management Center",
@@ -424,7 +425,7 @@
     "delete_filtered_confirm": "Are you sure you want to delete all {{type}} auth files? This operation cannot be undone!",
     "upload_error_json": "Only JSON files are allowed",
     "upload_error_size": "File size cannot exceed {{maxSize}}",
-    "upload_success": "File uploaded successfully",
+    "upload_success": "Upload success ({{count}} files)",
     "download_success": "File downloaded successfully",
     "delete_success": "File deleted successfully",
     "delete_all_success": "Successfully deleted",
@@ -497,8 +498,8 @@
     "prefix_proxy_source_label": "Auth file JSON (preview)",
     "prefix_label": "Prefix (prefix)",
     "proxy_url_label": "Proxy URL (proxy_url)",
-    "prefix_placeholder": "",
-    "proxy_url_placeholder": "socks5://username:password@proxy_ip:port/",
+    "prefix_placeholder": "e.g. team-a",
+    "proxy_url_placeholder": "e.g. http://127.0.0.1:7890",
     "priority_label": "Priority (priority)",
     "priority_placeholder": "e.g. 10 or -1",
     "priority_hint": "Integers only. Invalid values are ignored. Larger value means higher priority.",
@@ -526,7 +527,21 @@
     "one_model_per_line": "One model per line; use * to disable all models",
     "search_models_placeholder": "SearchModels id / display_name",
     "api_not_supported": "API Not Supported",
-    "no_config": "No config"
+    "no_config": "No config",
+    "upload_partial": "Upload done: {{success}} success, {{failed}} failed, {{skipped}} skipped",
+    "upload_failed": "Upload failed",
+    "deleted": "Deleted",
+    "delete_failed": "Delete failed",
+    "batch_deleted": "Deleted {{count}} {{filter}} auth files",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "enable_disable": "Enable/Disable",
+    "read_failed": "Read failed",
+    "saved": "Saved",
+    "save_failed": "Save failed",
+    "save_too_large": "Save failed: file too large ({{size}})",
+    "not_valid_json": "File is not valid JSON and cannot be edited.",
+    "not_json_object": "File is not a JSON object and cannot be edited."
   },
   "antigravity_quota": {
     "title": "Antigravity Quota",

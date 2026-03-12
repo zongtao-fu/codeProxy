@@ -568,17 +568,17 @@ export function AuthFilesPage() {
         }
 
         if (failed === 0 && tooLarge.length === 0) {
-          notify({ type: "success", message: `Upload success (${success} files)` });
+          notify({ type: "success", message: t("auth_files.upload_success", { count: success }) });
         } else {
           notify({
             type: failed > 0 ? "error" : "info",
-            message: `Upload done: ${success} success, ${failed} failed, ${tooLarge.length} skipped`,
+            message: t("auth_files.upload_partial", { success, failed, skipped: tooLarge.length }),
           });
         }
 
         await loadAll();
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : "Upload failed" });
+        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.upload_failed") });
       } finally {
         setUploading(false);
         if (fileInputRef.current) {
@@ -594,9 +594,9 @@ export function AuthFilesPage() {
       try {
         await authFilesApi.deleteFile(name);
         setFiles((prev) => prev.filter((file) => file.name !== name));
-        notify({ type: "success", message: "Deleted" });
+        notify({ type: "success", message: t("auth_files.deleted") });
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : "Delete failed" });
+        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.delete_failed") });
       }
     },
     [notify],
@@ -652,14 +652,14 @@ export function AuthFilesPage() {
       }
 
       if (failed === 0) {
-        notify({ type: "success", message: `Deleted ${success} ${filter} auth files` });
+        notify({ type: "success", message: t("auth_files.batch_deleted", { count: success, filter }) });
       } else {
         notify({ type: "error", message: `${filter} delete done: ${success} success, ${failed} failed` });
       }
       setFilter("all");
       setPage(1);
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : "Delete failed" });
+      notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.delete_failed") });
     } finally {
       setDeletingAll(false);
     }
@@ -681,7 +681,7 @@ export function AuthFilesPage() {
         setFiles((prev) =>
           prev.map((it) => (it.name === name ? { ...it, disabled: res.disabled } : it)),
         );
-        notify({ type: "success", message: enabled ? "Enabled" : "Disabled" });
+        notify({ type: "success", message: enabled ? t("auth_files.enabled") : t("auth_files.disabled") });
       } catch (err: unknown) {
         setFiles((prev) =>
           prev.map((it) => (it.name === name ? { ...it, disabled: prevDisabled } : it)),
@@ -722,7 +722,7 @@ export function AuthFilesPage() {
           setPrefixProxyEditor((prev) => ({
             ...prev,
             loading: false,
-            error: "File is not valid JSON and cannot be edited.",
+            error: t("auth_files.not_valid_json"),
           }));
           return;
         }
@@ -731,7 +731,7 @@ export function AuthFilesPage() {
           setPrefixProxyEditor((prev) => ({
             ...prev,
             loading: false,
-            error: "File is not a JSON object and cannot be edited.",
+            error: t("auth_files.not_json_object"),
           }));
           return;
         }
@@ -750,7 +750,7 @@ export function AuthFilesPage() {
         }));
       } catch (err: unknown) {
         notify({ type: "error", message: err instanceof Error ? err.message : "Failed to read file" });
-        setPrefixProxyEditor((prev) => ({ ...prev, loading: false, error: "Read failed" }));
+        setPrefixProxyEditor((prev) => ({ ...prev, loading: false, error: t("auth_files.read_failed") }));
       }
     },
     [notify],
@@ -789,7 +789,7 @@ export function AuthFilesPage() {
     const payload = prefixProxyUpdatedText;
     const fileSize = new Blob([payload]).size;
     if (fileSize > MAX_AUTH_FILE_SIZE) {
-      notify({ type: "error", message: `Save failed: file too large (${formatFileSize(fileSize)})` });
+      notify({ type: "error", message: t("auth_files.save_too_large", { size: formatFileSize(fileSize) }) });
       return;
     }
 
@@ -798,7 +798,7 @@ export function AuthFilesPage() {
     try {
       const file = new File([payload], name, { type: "application/json" });
       await authFilesApi.upload(file);
-      notify({ type: "success", message: "Saved" });
+      notify({ type: "success", message: t("auth_files.saved") });
       await loadAll();
       setPrefixProxyEditor({
         open: false,
@@ -811,7 +811,7 @@ export function AuthFilesPage() {
         proxyUrl: "",
       });
     } catch (err: unknown) {
-      notify({ type: "error", message: err instanceof Error ? err.message : "Save failed" });
+      notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.save_failed") });
       setPrefixProxyEditor((prev) => ({ ...prev, saving: false }));
     }
   }, [
@@ -951,7 +951,7 @@ export function AuthFilesPage() {
         notify({ type: "success", message: "Deleted" });
         startTransition(() => void refreshExcluded());
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : "Delete failed" });
+        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.delete_failed") });
       }
     },
     [excludedUnsupported, notify, refreshExcluded, startTransition],
@@ -1024,7 +1024,7 @@ export function AuthFilesPage() {
         notify({ type: "success", message: "Deleted" });
         startTransition(() => void refreshAlias());
       } catch (err: unknown) {
-        notify({ type: "error", message: err instanceof Error ? err.message : "Delete failed" });
+        notify({ type: "error", message: err instanceof Error ? err.message : t("auth_files.delete_failed") });
       }
     },
     [aliasUnsupported, notify, refreshAlias, startTransition],
@@ -1354,7 +1354,7 @@ export function AuthFilesPage() {
                                   Enable
                                 </span>
                                 <ToggleSwitch
-                                  ariaLabel="Enable/Disable"
+                                  ariaLabel={t("auth_files.enable_disable")}
                                   checked={!disabled}
                                   onCheckedChange={(enabled) => void setFileEnabled(file, enabled)}
                                   disabled={switching}
@@ -1945,7 +1945,7 @@ export function AuthFilesPage() {
                   onChange={(e) =>
                     setPrefixProxyEditor((prev) => ({ ...prev, prefix: e.currentTarget.value }))
                   }
-                  placeholder="e.g. team-a"
+                  placeholder={t("auth_files.prefix_placeholder")}
                 />
               </div>
               <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
@@ -1963,7 +1963,7 @@ export function AuthFilesPage() {
                   onChange={(e) =>
                     setPrefixProxyEditor((prev) => ({ ...prev, proxyUrl: e.currentTarget.value }))
                   }
-                  placeholder="e.g. http://127.0.0.1:7890"
+                  placeholder={t("auth_files.proxy_url_placeholder")}
                 />
               </div>
               <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
@@ -2081,7 +2081,7 @@ export function AuthFilesPage() {
               : `Are you sure you want to delete auth files under current filter (${filter})? This operation is irreversible.`
             : `Are you sure you want to delete ${confirm?.type === "deleteFile" ? confirm.name : ""}? This operation is irreversible.`
         }
-        confirmText="Delete"
+        confirmText={t("common.delete")}
         busy={deletingAll}
         onClose={() => setConfirm(null)}
         onConfirm={() => {
