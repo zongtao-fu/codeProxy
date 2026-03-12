@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronDown, Copy, Plus, Trash2 } from "lucide-react";
 import type {
   PayloadFilterRule,
@@ -121,6 +122,7 @@ function ApiKeysEditor({
   onChange: (nextValue: string) => void;
 }) {
   const { notify } = useToast();
+  const { t } = useTranslation();
   const apiKeys = useMemo(
     () =>
       value
@@ -301,7 +303,7 @@ function ApiKeysEditor({
       <ConfirmModal
         open={deleteIndex !== null}
         title="Delete API Key"
-        description="确定要Delete该 API Key 吗？此操作不可恢复。"
+        description={t("common.confirm_delete_api_key", "Are you sure you want to delete this API Key? This operation is irreversible.")}
         confirmText="Delete"
         variant="danger"
         onClose={() => setDeleteIndex(null)}
@@ -669,8 +671,8 @@ function PayloadFilterRulesEditor({
 
   return (
     <Card
-      title="Payload 过滤Rule"
-      description="Match Models后，从请求 payload 中移除指定参数路径列表（对应 `payload.filter`）。"
+      title="Payload Filter Rule"
+      description="After matching models, remove specified parameter paths from the request payload (corresponds to `payload.filter`)."
       actions={
         <Button size="sm" onClick={addRule} disabled={disabled}>
           <Plus size={14} />
@@ -1146,15 +1148,15 @@ export function VisualConfigEditor({
 
       <div className="space-y-6">
         <PayloadRulesEditor
-          title="Payload 默认Rule"
-          description="Match Models后，对请求 payload 追加/Override Params（对应 `payload.default`）。"
+          title="Payload Default Rule"
+          description="After matching models, append/override parameters in the request payload (corresponds to `payload.default`)."
           rules={values.payloadDefaultRules}
           disabled={disabled}
           onChange={(payloadDefaultRules) => update({ payloadDefaultRules })}
         />
         <PayloadRulesEditor
-          title="Payload 覆盖Rule"
-          description="Match Models后，覆盖请求 payload 参数（对应 `payload.override`）。"
+          title="Payload Override Rule"
+          description="After matching models, override parameters in the request payload (corresponds to `payload.override`)."
           rules={values.payloadOverrideRules}
           disabled={disabled}
           onChange={(payloadOverrideRules) => update({ payloadOverrideRules })}

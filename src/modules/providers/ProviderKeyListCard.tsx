@@ -22,7 +22,7 @@ export function ProviderKeyListCard({
   onEdit,
   onDelete,
   onToggleEnabled,
-  onCopy,
+
   getStats,
   getStatusBar,
 }: {
@@ -49,7 +49,7 @@ export function ProviderKeyListCard({
       }
     >
       {items.length === 0 ? (
-        <EmptyState title="暂无配置" description="点击“新增”创建第一条配置。" />
+        <EmptyState title="No configuration" description="Click Add New to create the first config." />
       ) : (
         <div className="space-y-3">
           {items.map((item, idx) => {
@@ -88,7 +88,7 @@ export function ProviderKeyListCard({
                         <p className="truncate font-mono">proxyUrl：{item.proxyUrl}</p>
                       ) : null}
                       <p className="tabular-nums">
-                        models: {models.length} · excluded：{excludedModels.length} · headers: 
+                        models: {models.length} · excluded：{excludedModels.length} · headers:
                         {headerEntries.length} · Success: {stats.success} · Failed: {stats.failure}
                       </p>
                     </div>

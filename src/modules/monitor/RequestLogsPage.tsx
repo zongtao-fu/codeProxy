@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   useCallback,
   useEffect,
@@ -297,6 +298,7 @@ function toLogRow(item: UsageLogItem): LogRow {
 }
 
 export function RequestLogsPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
 
   // Content modal state
@@ -390,7 +392,7 @@ export function RequestLogsPage() {
         setStats(resp.stats ?? { total: 0, success_rate: 0, total_tokens: 0 });
         setLastUpdatedAt(Date.now());
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Request Logs刷新Failed";
+        const message = err instanceof Error ? err.message : "Request Logs refresh failed";
         notify({ type: "error", message });
       } finally {
         fetchInFlightRef.current = false;
@@ -515,8 +517,7 @@ export function RequestLogsPage() {
           <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-white/55">
             <Filter size={12} aria-hidden="true" />
             <span className="font-mono tabular-nums">{stats.total.toLocaleString()}</span>  records
-            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>
-            Success率 <span className="font-mono tabular-nums">{stats.success_rate.toFixed(1)}%</span>
+            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>{t("common.success_rate", "Success Rate")}<span className="font-mono tabular-nums">{stats.success_rate.toFixed(1)}%</span>
             <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>
             Token <span className="font-mono tabular-nums">{stats.total_tokens.toLocaleString()}</span>
             <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>
@@ -536,7 +537,7 @@ export function RequestLogsPage() {
             onScrollBottom={loadNextPage}
             rowHeight={44}
             caption="Request Logs Table"
-            emptyText="暂无数据"
+            emptyText="No Data"
           />
           {loading ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-2xl bg-white/70 backdrop-blur-sm dark:bg-neutral-950/55">
@@ -545,7 +546,7 @@ export function RequestLogsPage() {
                   className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-slate-900 motion-reduce:animate-none motion-safe:animate-spin dark:border-white/20 dark:border-t-white/80"
                   aria-hidden="true"
                 />
-                <span role="status">加载中…</span>
+                <span role="status">{t("common.loading", "Loading...")}</span>
               </div>
             </div>
           ) : null}

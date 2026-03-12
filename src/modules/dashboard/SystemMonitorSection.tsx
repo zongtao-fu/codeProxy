@@ -38,7 +38,7 @@ function formatMs(ms: number): string {
 
 function statusColor(pct: number) {
     if (pct >= 95) return { text: "text-red-500", bg: "bg-red-500", ring: "stroke-red-500", bar: "bg-red-500", label: "Critical", labelBg: "bg-red-500/10 text-red-500" };
-    if (pct >= 80) return { text: "text-amber-500", bg: "bg-amber-500", ring: "stroke-amber-500", bar: "bg-amber-500", label: "警告", labelBg: "bg-amber-500/10 text-amber-500" };
+    if (pct >= 80) return { text: "text-amber-500", bg: "bg-amber-500", ring: "stroke-amber-500", bar: "bg-amber-500", label: "Warn", labelBg: "bg-amber-500/10 text-amber-500" };
     return { text: "text-emerald-500", bg: "bg-emerald-500", ring: "stroke-emerald-500", bar: "bg-emerald-500", label: "Normal", labelBg: "bg-emerald-500/10 text-emerald-500" };
 }
 
@@ -377,7 +377,7 @@ export function SystemMonitorSection() {
                         <MiniKpi label="Uptime" value={formatUptime(stats.uptime_seconds)} icon={Clock}
                             sublabel={`Started ${new Date(stats.start_time).toLocaleString()}`} />
                         <MiniKpi label="Goroutines" value={String(stats.go_routines)} icon={Zap}
-                            color="text-violet-500" sublabel={`堆 ${formatBytes(stats.go_heap_bytes)}`} />
+                            color="text-violet-500" sublabel={`Heap ${formatBytes(stats.go_heap_bytes)}`} />
                         <MiniKpi label="Database" value={formatBytes(stats.db_size_bytes)} icon={Database}
                             sublabel="SQLite + WAL" />
                         <MiniKpi label="Log Storage" value={formatBytes(stats.log_size_bytes)} icon={FileText}

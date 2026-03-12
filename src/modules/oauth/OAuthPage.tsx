@@ -32,24 +32,24 @@ type ProviderState = {
 };
 
 const PROVIDERS: { id: OAuthProvider; title: string; hint: string }[] = [
-  { id: "codex", title: "Codex OAuth", hint: "一键启动授权流程，服务端会自动保存认证文件。" },
+  { id: "codex", title: "Codex OAuth", hint: "Start authorization workflow, server saves auth file automatically." },
   {
     id: "anthropic",
     title: "Anthropic OAuth",
-    hint: "用于 Claude / Anthropic 服务的 OAuth Login。",
+    hint: "For Claude/Anthropic OAuth Login.",
   },
   {
     id: "antigravity",
     title: "Antigravity OAuth",
-    hint: "用于 Antigravity 配额/能力相关的 OAuth Login。",
+    hint: "For Antigravity Quota/Capabilities OAuth Login.",
   },
   {
     id: "gemini-cli",
     title: "Gemini CLI OAuth",
-    hint: "支持可选 Project ID；不填则由服务端自动选择。",
+    hint: "Supports optional Project ID; auto-selected by server if empty.",
   },
-  { id: "kimi", title: "Kimi OAuth", hint: "如果服务端支持，将自动保存认证文件。" },
-  { id: "qwen", title: "Qwen OAuth", hint: "如果服务端支持，将自动保存认证文件。" },
+  { id: "kimi", title: "Kimi OAuth", hint: "If server supports, auth file is auto-saved." },
+  { id: "qwen", title: "Qwen OAuth", hint: "If server supports, auth file is auto-saved." },
 ];
 
 const getErrorMessage = (err: unknown): string => {
@@ -118,12 +118,12 @@ export function OAuthPage() {
           const res = await oauthApi.getAuthStatus(state);
           if (res.status === "ok") {
             updateProviderState(provider, { status: "success", polling: false });
-            notify({ type: "success", message: `${provider} 授权成功` });
+            notify({ type: "success", message: `${provider} Authorization successful` });
             window.clearInterval(timer);
             delete timers.current[provider];
           } else if (res.status === "error") {
             updateProviderState(provider, { status: "error", error: res.error, polling: false });
-            notify({ type: "error", message: `${provider} 授权失败：${res.error || ""}`.trim() });
+            notify({ type: "error", message: `${provider} Authorization failed：${res.error || ""}`.trim() });
             window.clearInterval(timer);
             delete timers.current[provider];
           }
@@ -170,9 +170,9 @@ export function OAuthPage() {
           startPolling(provider, res.state);
         }
       } catch (err: unknown) {
-        const message = getErrorMessage(err) || "启动授权失败";
+        const message = getErrorMessage(err) || "Failed to start authorization";
         updateProviderState(provider, { status: "error", error: message, polling: false });
-        notify({ type: "error", message: `${provider} 启动授权失败：${message}` });
+        notify({ type: "error", message: `${provider} Failed to start auth: ${message}` });
       }
     },
     [notify, startPolling, states, updateProviderState],
@@ -184,9 +184,9 @@ export function OAuthPage() {
       if (!link) return;
       try {
         await navigator.clipboard.writeText(link);
-        notify({ type: "success", message: "链接已复制" });
+        notify({ type: "success", message: "Link copied" });
       } catch {
-        notify({ type: "error", message: "复制失败（浏览器不支持或无权限）" });
+        notify({ type: "error", message: "Copy failed" });
       }
     },
     [notify],
@@ -202,7 +202,7 @@ export function OAuthPage() {
     async (provider: OAuthProvider) => {
       const redirectUrl = (states[provider]?.callbackUrl || "").trim();
       if (!redirectUrl) {
-        notify({ type: "info", message: "请输入回调 URL" });
+        notify({ type: "info", message: "Please enter callback URL" });
         return;
       }
       updateProviderState(provider, {
@@ -213,9 +213,9 @@ export function OAuthPage() {
       try {
         await oauthApi.submitCallback(provider, redirectUrl);
         updateProviderState(provider, { callbackSubmitting: false, callbackStatus: "success" });
-        notify({ type: "success", message: "回调提交成功" });
+        notify({ type: "success", message: "Callback submitted successfully" });
       } catch (err: unknown) {
-        const message = getErrorMessage(err) || "回调提交失败";
+        const message = getErrorMessage(err) || "Callback submission failed";
         updateProviderState(provider, {
           callbackSubmitting: false,
           callbackStatus: "error",
@@ -228,15 +228,15 @@ export function OAuthPage() {
   );
 
   const iflowHint = useMemo(() => {
-    if (!iflowResult) return "使用 iFlow Cookie 进行一次性认证导入。";
-    if (iflowResult.status === "ok") return `导入成功：${iflowResult.saved_path || ""}`.trim();
-    return `导入失败：${iflowResult.error || ""}`.trim();
+    if (!iflowResult) return "Use iFlow Cookie for one-time auth import.";
+    if (iflowResult.status === "ok") return `Import successful：${iflowResult.saved_path || ""}`.trim();
+    return `Import failed：${iflowResult.error || ""}`.trim();
   }, [iflowResult]);
 
   const submitIflow = useCallback(async () => {
     const cookie = iflowCookie.trim();
     if (!cookie) {
-      notify({ type: "info", message: "请输入 Cookie" });
+      notify({ type: "info", message: "Please enter Cookie" });
       return;
     }
     setIflowLoading(true);
@@ -246,10 +246,10 @@ export function OAuthPage() {
       setIflowResult(res);
       notify({
         type: res.status === "ok" ? "success" : "error",
-        message: res.status === "ok" ? "导入成功" : res.error || "导入失败",
+        message: res.status === "ok" ? "Import successful" : res.error || "Import failed",
       });
     } catch (err: unknown) {
-      notify({ type: "error", message: getErrorMessage(err) || "导入失败" });
+      notify({ type: "error", message: getErrorMessage(err) || "Import failed" });
     } finally {
       setIflowLoading(false);
     }
@@ -270,9 +270,9 @@ export function OAuthPage() {
           location: (res as any).location,
           authFile: typeof authFile === "string" ? authFile : undefined,
         });
-        notify({ type: "success", message: "Vertex 导入成功" });
+        notify({ type: "success", message: "Vertex Import successful" });
       } catch (err: unknown) {
-        notify({ type: "error", message: getErrorMessage(err) || "Vertex 导入失败" });
+        notify({ type: "error", message: getErrorMessage(err) || "Vertex Import failed" });
       } finally {
         setVertexLoading(false);
       }
@@ -318,7 +318,7 @@ export function OAuthPage() {
                     onChange={(e) =>
                       updateProviderState(provider.id, { projectId: e.currentTarget.value })
                     }
-                    placeholder="Project ID（可选）"
+                    placeholder="Project ID(Optional)"
                   />
                 </div>
               ) : null}
@@ -356,12 +356,12 @@ export function OAuthPage() {
                   <div className="text-xs text-slate-600 dark:text-white/65">
                     状态：
                     {polling
-                      ? "轮询中…"
+                      ? "Polling..."
                       : status === "success"
-                        ? "成功"
+                        ? "Success"
                         : status === "error"
-                          ? "失败"
-                          : "待开始"}
+                          ? "Failed"
+                          : "Waiting"}
                     {state.error ? ` · ${state.error}` : ""}
                   </div>
                 </div>
@@ -375,7 +375,7 @@ export function OAuthPage() {
                     onChange={(e) =>
                       updateProviderState(provider.id, { callbackUrl: e.currentTarget.value })
                     }
-                    placeholder="粘贴浏览器回调后的完整 URL"
+                    placeholder="Paste the full callback URL from browser"
                   />
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
@@ -385,7 +385,7 @@ export function OAuthPage() {
                       disabled={Boolean(state.callbackSubmitting)}
                     >
                       <Send size={14} />
-                      {state.callbackSubmitting ? "提交中…" : "提交回调"}
+                      {state.callbackSubmitting ? "Submitting..." : "Submit Callback"}
                     </Button>
                     {state.callbackStatus ? (
                       <span
@@ -396,8 +396,8 @@ export function OAuthPage() {
                         }
                       >
                         {state.callbackStatus === "success"
-                          ? "已提交"
-                          : state.callbackError || "提交失败"}
+                          ? "Submitted"
+                          : state.callbackError || "Submit Failed"}
                       </span>
                     ) : null}
                   </div>
@@ -410,7 +410,7 @@ export function OAuthPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card
-          title="iFlow Cookie 认证"
+          title="iFlow Cookie Auth"
           description={iflowHint}
           actions={
             <Button
@@ -420,7 +420,7 @@ export function OAuthPage() {
               disabled={iflowLoading}
             >
               <ShieldCheck size={14} />
-              {iflowLoading ? "导入中…" : "导入"}
+              {iflowLoading ? "Importing..." : "Import"}
             </Button>
           }
           loading={false}
@@ -428,7 +428,7 @@ export function OAuthPage() {
           <textarea
             value={iflowCookie}
             onChange={(e) => setIflowCookie(e.currentTarget.value)}
-            placeholder="粘贴 Cookie（将发送到管理 API）"
+            placeholder="Paste Cookie (sent to Management API)"
             className="min-h-[140px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400/35 dark:border-neutral-800 dark:bg-neutral-950 dark:text-slate-100 dark:placeholder:text-neutral-500 dark:focus-visible:ring-white/15"
             spellCheck={false}
             aria-label="iFlow Cookie"
@@ -436,8 +436,8 @@ export function OAuthPage() {
         </Card>
 
         <Card
-          title="Vertex 凭证导入"
-          description="上传 Vertex 凭证文件并由服务端生成认证文件。"
+          title="Vertex Credential Import"
+          description="Upload Vertex credentials file to generate auth file."
           actions={
             <label className="inline-flex">
               <input
@@ -448,7 +448,7 @@ export function OAuthPage() {
               <span className="inline-flex">
                 <Button variant="secondary" size="sm" disabled={vertexLoading}>
                   <Upload size={14} />
-                  {vertexLoading ? "导入中…" : "选择文件"}
+                  {vertexLoading ? "Importing..." : "Select File"}
                 </Button>
               </span>
             </label>
@@ -458,7 +458,7 @@ export function OAuthPage() {
             <TextInput
               value={vertexLocation}
               onChange={(e) => setVertexLocation(e.currentTarget.value)}
-              placeholder="location（可选）"
+              placeholder="location(Optional)"
               endAdornment={<KeyRound size={16} className="text-slate-400" />}
             />
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
@@ -466,7 +466,7 @@ export function OAuthPage() {
                 最近导入
               </p>
               <p className="mt-2 font-mono text-xs text-slate-900 dark:text-white">
-                文件：{vertexFileName || "--"}
+                File: {vertexFileName || "--"}
               </p>
               {vertexResult ? (
                 <div className="mt-2 space-y-1 font-mono text-xs text-slate-700 dark:text-slate-200">
@@ -476,7 +476,7 @@ export function OAuthPage() {
                   <div>auth_file：{vertexResult.authFile || "--"}</div>
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-slate-600 dark:text-white/65">尚未导入</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-white/65">Not Imported</p>
               )}
             </div>
           </div>

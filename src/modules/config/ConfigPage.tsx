@@ -404,7 +404,7 @@ function RuntimeConfigPanel() {
                 />
               </div>
               <p className="text-xs text-slate-600 dark:text-white/65">
-                修改后点击上方“Save Changes”。
+                Click "Save Changes" above after editing.
               </p>
             </div>
           </Card>
@@ -826,7 +826,7 @@ export function ConfigPage() {
                           setLastSearchedQuery("");
                         }}
                         disabled={disableControls || loading}
-                        ariaLabel="config.yaml 编辑器"
+                        ariaLabel="config.yaml editor"
                         highlight={editorHighlight}
                       />
                     </div>

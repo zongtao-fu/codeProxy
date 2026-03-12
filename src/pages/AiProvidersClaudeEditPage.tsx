@@ -262,8 +262,8 @@ export function AiProvidersClaudeEditPage() {
         ) : (
           <div className={styles.openaiEditForm}>
             <Input
-              label="渠道名称 *"
-              placeholder="例如：Claude 主力渠道（必填）"
+              label="Channel Name *"
+              placeholder="e.g. Main Claude Channel (Required)"
               value={form.name ?? ""}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               disabled={saving || disableControls || isTesting}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Activity,
     Check,
@@ -585,6 +586,7 @@ function ModelsTabContent({
 // ── Page Component ──────────────────────────────────────────────────────────
 
 export function ApiKeyLookupPage() {
+    const { t } = useTranslation();
     const {
         state: { mode },
     } = useTheme();
@@ -786,7 +788,7 @@ export function ApiKeyLookupPage() {
             const ids = await fetchAvailableModels(key);
             setAvailableModels(ids);
         } catch (err: unknown) {
-            setModelsError(err instanceof Error ? err.message : "加载模型列表Failed");
+            setModelsError(err instanceof Error ? err.message : "Failed to load models list");
         } finally {
             setModelsLoading(false);
         }
@@ -1089,7 +1091,7 @@ export function ApiKeyLookupPage() {
                                             value={<AnimatedNumber value={chartStats?.total ?? 0} format={formatNumber} />}
                                         />
                                         <KpiCard
-                                            title="Success率"
+                                            title={t("common.success_rate", "Success Rate")}
                                             icon={ShieldCheck}
                                             hint={`Last ${timeRange} days`}
                                             value={<AnimatedNumber value={chartStats?.success_rate ?? 0} format={formatRate} />}
@@ -1246,8 +1248,7 @@ export function ApiKeyLookupPage() {
                                         <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-white/55">
                                             <Filter size={12} aria-hidden="true" />
                                             <span className="font-mono tabular-nums">{stats.total.toLocaleString()}</span>  records
-                                            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>
-                                            Success率 <span className="font-mono tabular-nums">{stats.success_rate.toFixed(1)}%</span>
+                                            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>{t("common.success_rate", "Success Rate")}<span className="font-mono tabular-nums">{stats.success_rate.toFixed(1)}%</span>
                                             <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>
                                             Token <span className="font-mono tabular-nums">{stats.total_tokens.toLocaleString()}</span>
                                             {lastUpdatedText && (

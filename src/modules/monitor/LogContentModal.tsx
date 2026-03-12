@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { usageApi } from "@/lib/http/apis";
 import { createPortal } from "react-dom";
 import {
@@ -159,6 +160,7 @@ const PROSE_CLASSES = `prose prose-sm dark:prose-invert max-w-none break-words l
 /* ---- macOS-style code block with syntax highlighting & copy ---- */
 
 function CodeBlock({ language, children }: { language: string; children: string }) {
+    const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
     const handleCopy = () => {
         navigator.clipboard.writeText(children).then(() => {
@@ -189,7 +191,7 @@ function CodeBlock({ language, children }: { language: string; children: string 
                     className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
                 >
                     {copied ? (
-                        <><Check size={13} className="text-emerald-400" /><span className="text-emerald-400">已Copy</span></>
+                        <><Check size={13} className="text-emerald-400" /><span className="text-emerald-400">{t("common.copied", "Copied")}</span></>
                     ) : (
                         <><Copy size={13} /><span>Copy</span></>
                     )}
@@ -857,6 +859,7 @@ function ContentModal({
 /* ========================================================================== */
 
 export function LogContentModal({ open, logId, initialTab = "input", onClose, fetchFn }: LogContentModalProps) {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [inputContent, setInputContent] = useState("");
@@ -1010,7 +1013,7 @@ export function LogContentModal({ open, logId, initialTab = "input", onClose, fe
             return (
                 <div className="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-white/25">
                     <FileInput size={40} className="mb-3 opacity-40" />
-                    <p className="text-sm">No Input记录</p>
+                    <p className="text-sm">No Input Records</p>
                 </div>
             );
         }
@@ -1040,7 +1043,7 @@ export function LogContentModal({ open, logId, initialTab = "input", onClose, fe
             return (
                 <div className="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-white/25">
                     <FileOutput size={40} className="mb-3 opacity-40" />
-                    <p className="text-sm">No Output记录</p>
+                    <p className="text-sm">No Output Records</p>
                 </div>
             );
         }

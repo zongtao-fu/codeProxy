@@ -184,7 +184,7 @@ export function LoginPage() {
                             type="button"
                             onClick={() => setShowKey((value) => !value)}
                             className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
-                            aria-label={showKey ? "隐藏Management Key" : "显示Management Key"}
+                            aria-label={showKey ? "Hide Management Key" : "Show Management Key"}
                           >
                             {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
                           </button>

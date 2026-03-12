@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   CircleHelp,
@@ -184,18 +185,18 @@ type UsageIndex = {
 const buildUsageIndex = (usage: UsageData | null): { entries: UsageEntry[]; index: UsageIndex } => {
   const entries = usage
     ? (iterateUsageRecords(usage)
-        .map((detail) => {
-          const source = normalizeUsageSourceId((detail as UsageDetail).source, (v) => v);
-          if (!source) return null;
-          const authIndexKey = normalizeAuthIndexValue((detail as UsageDetail).auth_index);
-          return {
-            timestamp: (detail as UsageDetail).timestamp,
-            failed: Boolean((detail as UsageDetail).failed),
-            source,
-            authIndexKey,
-          };
-        })
-        .filter(Boolean) as UsageEntry[])
+      .map((detail) => {
+        const source = normalizeUsageSourceId((detail as UsageDetail).source, (v) => v);
+        if (!source) return null;
+        const authIndexKey = normalizeAuthIndexValue((detail as UsageDetail).auth_index);
+        return {
+          timestamp: (detail as UsageDetail).timestamp,
+          failed: Boolean((detail as UsageDetail).failed),
+          source,
+          authIndexKey,
+        };
+      })
+      .filter(Boolean) as UsageEntry[])
     : [];
 
   const entriesBySource: Record<string, UsageEntry[]> = {};
@@ -304,6 +305,7 @@ const buildAliasRows = (entries: OAuthModelAliasEntry[] | undefined): AliasRow[]
 };
 
 export function AuthFilesPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1273,7 +1275,7 @@ export function AuthFilesPage() {
                   <div className="md:col-span-2 xl:col-span-3">
                     <EmptyState
                       title="No auth files"
-                      description="可以通过“Upload”按钮导入 JSON 认证文件。"
+                      description="You can import JSON auth files via the Upload button."
                     />
                   </div>
                 ) : (
@@ -1352,7 +1354,7 @@ export function AuthFilesPage() {
                                   Enable
                                 </span>
                                 <ToggleSwitch
-                                  ariaLabel="Enable/禁用"
+                                  ariaLabel="Enable/Disable"
                                   checked={!disabled}
                                   onCheckedChange={(enabled) => void setFileEnabled(file, enabled)}
                                   disabled={switching}
@@ -1378,7 +1380,7 @@ export function AuthFilesPage() {
 
                           {runtimeOnly ? (
                             <p className="text-xs text-slate-600 dark:text-white/55">
-                              Virtual auth file仅用于运行时注入：不可View/Download/编辑/Delete。
+                              Virtual auth files are for runtime injection only: cannot View/Download/Edit/Delete.
                             </p>
                           ) : (
                             <>
@@ -1435,7 +1437,7 @@ export function AuthFilesPage() {
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-slate-600 dark:text-white/65 tabular-nums">
-                  共 {filteredFiles.length} 条 · 第 {safePage} / {totalPages} 页
+                  Total {filteredFiles.length} · Page {safePage} / {totalPages}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -1459,7 +1461,7 @@ export function AuthFilesPage() {
 
               {usageData ? null : (
                 <p className="text-xs text-slate-500 dark:text-white/55">
-                  使用统计加载Failed：不会影响文件管理，但Success/Failed与状态条将显示为 0。
+                  Usage stats loading failed: File management is not affected, but success/failed stats will show 0.
                 </p>
               )}
             </div>
@@ -1468,7 +1470,7 @@ export function AuthFilesPage() {
           <TabsContent value="excluded" className="mt-4">
             <Card
               title="OAuth ExcludedModels"
-              description="按 provider 维护禁用Models列表（每行一个Models）。"
+              description="Maintain disabled models list by provider (one model per line)."
               actions={
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
@@ -1488,7 +1490,7 @@ export function AuthFilesPage() {
                 <div className="mb-4">
                   <EmptyState
                     title="API Not Supported"
-                    description="服务端未实现 /oauth-excluded-models（或版本过旧）。请升级服务端后再配置 OAuth ExcludedModels。"
+                    description="Server does not implement /oauth-excluded-models (or version is too old). Please update the server."
                   />
                 </div>
               ) : null}
@@ -1515,7 +1517,7 @@ export function AuthFilesPage() {
                 {Object.keys(excluded).length === 0 ? (
                   <EmptyState
                     title="No config"
-                    description="你可以Add一个 provider 并Save排除Models列表。"
+                    description="You can add a provider and save the excluded models list."
                   />
                 ) : (
                   Object.entries(excluded)
@@ -1572,8 +1574,8 @@ export function AuthFilesPage() {
                               const nextText = e.currentTarget.value;
                               setExcludedDraft((prev) => ({ ...prev, [provider]: nextText }));
                             }}
-                            placeholder="每行一个Models；使用 * 可禁用全部Models"
-                            aria-label={`${provider} 排除Models`}
+                            placeholder="One model per line; use * to disable all models"
+                            aria-label={`${provider} Excluded Models`}
                             disabled={excludedUnsupported}
                             className="mt-3 min-h-[120px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400/35 dark:border-neutral-800 dark:bg-neutral-950 dark:text-slate-100 dark:placeholder:text-neutral-500 dark:focus-visible:ring-white/15"
                           />
@@ -1587,8 +1589,8 @@ export function AuthFilesPage() {
 
           <TabsContent value="alias" className="mt-4">
             <Card
-              title="OAuth Models别名"
-              description="按 channel 维护Models name -> alias 映射（用于 OAuth 场景）。"
+              title="OAuth Model Alias"
+              description="Maintain Models name -> alias mapping by channel (for OAuth)."
               actions={
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
@@ -1608,7 +1610,7 @@ export function AuthFilesPage() {
                 <div className="mb-4">
                   <EmptyState
                     title="API Not Supported"
-                    description="服务端未实现 /oauth-model-alias（或版本过旧）。请升级服务端后再配置 OAuth Models别名。"
+                    description="Server does not implement /oauth-model-alias. Please upgrade the server."
                   />
                 </div>
               ) : null}
@@ -1616,7 +1618,7 @@ export function AuthFilesPage() {
                 <TextInput
                   value={aliasNewChannel}
                   onChange={(e) => setAliasNewChannel(e.currentTarget.value)}
-                  placeholder="Add channel（如 codex / gemini / anthropic）"
+                  placeholder="Add channel (e.g. codex/gemini/anthropic)"
                   disabled={aliasUnsupported}
                 />
                 <Button
@@ -1632,7 +1634,7 @@ export function AuthFilesPage() {
 
               <div className="mt-4 space-y-3">
                 {Object.keys(aliasEditing).length === 0 ? (
-                  <EmptyState title="No config" description="你可以Add一个 channel 并维护映射。" />
+                  <EmptyState title="No config" description="You can add a channel and maintain mapping." />
                 ) : (
                   Object.keys(aliasEditing)
                     .sort((a, b) => a.localeCompare(b))
@@ -1653,7 +1655,7 @@ export function AuthFilesPage() {
                                 {channel}
                               </p>
                               <p className="mt-1 text-xs text-slate-500 dark:text-white/55">
-                                有效映射 {mappingCount} 条
+                                Valid mappings: {mappingCount}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -1749,7 +1751,7 @@ export function AuthFilesPage() {
                                         ),
                                       }));
                                     }}
-                                    aria-label="Delete这一行"
+                                    aria-label={t("common.delete_row", "Delete Row")}
                                     title="Delete"
                                   >
                                     <X size={14} />
@@ -1789,7 +1791,7 @@ export function AuthFilesPage() {
 
       <Modal
         open={detailOpen}
-        title={detailFile ? `View：${detailFile.name}` : "View认证文件"}
+        title={detailFile ? `View：${detailFile.name}` : t("auth_files.view_auth_file", "View Auth File")}
         onClose={() => setDetailOpen(false)}
         footer={
           <div className="flex items-center gap-2">
@@ -1822,7 +1824,7 @@ export function AuthFilesPage() {
 
       <Modal
         open={modelsOpen}
-        title={`Models列表：${modelsFileName || "--"}${modelsFileType ? ` (${modelsFileType})` : ""}`}
+        title={`Models List: ${modelsFileName || "--"}${modelsFileType ? ` (${modelsFileType})` : ""}`}
         onClose={() => setModelsOpen(false)}
         footer={
           <Button variant="secondary" onClick={() => setModelsOpen(false)}>
@@ -1835,12 +1837,12 @@ export function AuthFilesPage() {
         ) : modelsError === "unsupported" ? (
           <EmptyState
             title="API Not Supported"
-            description="服务端未实现 /auth-files/models 或当前认证文件不支持查询Models。"
+            description="Server does not implement /auth-files/models or auth file does not support querying models."
           />
         ) : modelsList.length === 0 ? (
           <EmptyState
-            title="暂无Models数据"
-            description="该认证文件可能不支持查询Models列表，或服务端未返回数据。"
+            title={t("common.no_model_data", "No Models Data")}
+            description="Auth file might not support querying models, or server did not return data."
           />
         ) : (
           <div className="space-y-2">
@@ -1878,7 +1880,7 @@ export function AuthFilesPage() {
       <Modal
         open={prefixProxyEditor.open}
         title={`Edit: ${prefixProxyEditor.fileName || "--"}`}
-        description="仅修改 prefix / proxy_url 字段，其余内容保持不变（通过重新Upload同名文件覆盖）。"
+        description="Only modifies prefix/proxy_url, everything else remains unchanged (by re-uploading file with same name)."
         onClose={() =>
           setPrefixProxyEditor({
             open: false,
@@ -1971,13 +1973,13 @@ export function AuthFilesPage() {
 
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                预览（Save后内容）
+                Preview (After Save)
               </p>
               <pre className="mt-3 max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-white p-3 font-mono text-xs text-slate-900 dark:border-neutral-800 dark:bg-neutral-950 dark:text-slate-100">
                 {prefixProxyUpdatedText}
               </pre>
               <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
-                注意：Save会重新Upload同名文件；建议保持总大小不超过{" "}
+                Note: Saving will re-upload the file; recommended max size is{" "}
                 {formatFileSize(MAX_AUTH_FILE_SIZE)}。
               </p>
             </div>
@@ -1989,8 +1991,8 @@ export function AuthFilesPage() {
 
       <Modal
         open={importOpen}
-        title={`导入Models：${importChannel || "--"}`}
-        description="从 /model-definitions 拉取Models列表，并批量生成别名映射（默认 alias=同名）。"
+        title={`Import Models: ${importChannel || "--"}`}
+        description="Fetch models from /model-definitions and batch generate aliases (default alias=same)."
         onClose={() => setImportOpen(false)}
         footer={
           <div className="flex items-center gap-2">
@@ -2012,8 +2014,8 @@ export function AuthFilesPage() {
           <div className="text-sm text-slate-600 dark:text-white/65">Loading…</div>
         ) : importModels.length === 0 ? (
           <EmptyState
-            title="暂无Models定义"
-            description="服务端未返回Models列表或该 channel 不支持。"
+            title={t("common.no_model_def", "No Model Definitions")}
+            description="Server did not return models or channel unsupported."
           />
         ) : (
           <div className="space-y-3">
@@ -2026,7 +2028,7 @@ export function AuthFilesPage() {
 
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
               <p className="text-xs text-slate-600 dark:text-white/65 tabular-nums">
-                共 {importFilteredModels.length} 个Models · 已选择 {importSelected.size} 个
+                {importFilteredModels.length} models · {importSelected.size} selected
               </p>
               <div className="mt-2 max-h-72 overflow-y-auto space-y-1">
                 {importFilteredModels.map((model) => {
@@ -2068,16 +2070,16 @@ export function AuthFilesPage() {
         title={
           confirm?.type === "deleteAll"
             ? filter === "all"
-              ? "Delete全部认证文件"
-              : `Delete ${filter} 认证文件`
-            : "Delete认证文件"
+              ? t("auth_files.delete_all_auth_files", "Delete All Auth Files")
+              : `Delete ${filter} Auth files`
+            : t("auth_files.delete_auth_file", "Delete Auth File")
         }
         description={
           confirm?.type === "deleteAll"
             ? filter === "all"
-              ? "确定要Delete全部认证文件吗？此操作不可恢复。"
-              : `确定要Delete当前筛选（${filter}）下的认证文件吗？此操作不可恢复。`
-            : `确定要Delete ${confirm?.type === "deleteFile" ? confirm.name : ""} 吗？此操作不可恢复。`
+              ? t("auth_files.confirm_delete_all", "Are you sure you want to delete all auth files? This operation is irreversible.")
+              : `Are you sure you want to delete auth files under current filter (${filter})? This operation is irreversible.`
+            : `Are you sure you want to delete ${confirm?.type === "deleteFile" ? confirm.name : ""}? This operation is irreversible.`
         }
         confirmText="Delete"
         busy={deletingAll}

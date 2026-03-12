@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Plus,
     Copy,
@@ -202,6 +203,7 @@ interface FormValues {
 /* ─── component ─── */
 
 export function ApiKeysPage() {
+    const { t } = useTranslation();
     const { notify } = useToast();
 
     const [entries, setEntries] = useState<ApiKeyEntry[]>([]);
@@ -317,7 +319,7 @@ export function ApiKeysPage() {
             setEntries(newEntries);
             notify({
                 type: "success",
-                message: updated.disabled ? `已禁用「${entry.name || "Unnamed"}」` : `已启用「${entry.name || "Unnamed"}」`,
+                message: updated.disabled ? `Disabled "${entry.name || "Unnamed"}"` : `Enabled "${entry.name || "Unnamed"}"`,
             });
         } catch (err: unknown) {
             notify({ type: "error", message: err instanceof Error ? err.message : "Operation failed" });
@@ -495,7 +497,7 @@ export function ApiKeysPage() {
             render: (row) => (
                 <OverflowTooltip content={row.name || "Unnamed"} className="block min-w-0">
                     <span className="block min-w-0 truncate">
-                        {row.name || <span className="text-slate-400 dark:text-white/40">未命名</span>}
+                        {row.name || <span className="text-slate-400 dark:text-white/40">{t("common.unnamed", "Unnamed")}</span>}
                     </span>
                 </OverflowTooltip>
             ),
@@ -819,7 +821,7 @@ export function ApiKeysPage() {
 
             <div className="grid gap-4 lg:grid-cols-2">
                 <div>
-                    <HoverTooltip content="Requests Per Minute，每分钟最大请求数。类似 OpenAI 的 RPM Limit。" className="mb-1 inline-flex items-center gap-1">
+                    <HoverTooltip content="Requests Per Minute, maximum requests per minute. Similar to OpenAI's RPM Limit." className="mb-1 inline-flex items-center gap-1">
                         <label className="text-sm font-medium text-slate-700 dark:text-white/80">
                             RPM Limit
                         </label>
@@ -835,7 +837,7 @@ export function ApiKeysPage() {
                     />
                 </div>
                 <div>
-                    <HoverTooltip content="Tokens Per Minute，每分钟最大 Token 消耗数。类似 OpenAI 的 TPM Limit。" className="mb-1 inline-flex items-center gap-1">
+                    <HoverTooltip content="Tokens Per Minute, maximum tokens per minute. Similar to OpenAI's TPM Limit." className="mb-1 inline-flex items-center gap-1">
                         <label className="text-sm font-medium text-slate-700 dark:text-white/80">
                             TPM Limit
                         </label>
@@ -854,7 +856,7 @@ export function ApiKeysPage() {
 
             <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-white/80">
-                    允许的模型（不选 = All可用）
+                    Allowed Models (Empty = All)
                 </label>
                 <MultiSelect
                     options={availableModels}
@@ -872,12 +874,12 @@ export function ApiKeysPage() {
                 <textarea
                     value={form.systemPrompt}
                     onChange={(e) => setForm((p) => ({ ...p, systemPrompt: e.target.value }))}
-                    placeholder="可选。设置后，使用此 API Key 的所有请求将自动在 messages 首位注入此System Prompt。"
+                    placeholder="Optional. Requests using this API Key will automatically inject this System Prompt."
                     rows={3}
                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-indigo-500 resize-y"
                 />
                 <p className="mt-1 text-xs text-slate-400 dark:text-white/40">
-                    设置后，该 Key 的每次请求都会自动注入此System Prompt作为第一条 system 消息。
+                    Requests using this API Key will automatically inject this System Prompt.
                 </p>
             </div>
         </div>
@@ -907,7 +909,7 @@ export function ApiKeysPage() {
                 {entries.length === 0 ? (
                     <EmptyState
                         title="No API Keys"
-                        description="点击「Create Key」按钮来添加第一个 API Key。"
+                        description="Click 'Create Key' to add the first API Key."
                         icon={<KeyRound size={32} className="text-slate-400" />}
                     />
                 ) : (

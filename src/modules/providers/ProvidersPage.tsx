@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Bot,
@@ -71,6 +72,7 @@ import {
 } from "@/modules/providers/providers-helpers";
 
 export function ProvidersPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
   const [isPending, startTransition] = useTransition();
   const location = useLocation();
@@ -910,7 +912,7 @@ export function ProvidersPage() {
 
         <TabsContent value="openai" className="mt-6">
           <Card
-            title="OpenAI Compatible提供商"
+            title={t("providers.openai_compatible", "OpenAI Compatible Providers")}
             description="Multiple keys, headers, model aliases & /models discovery."
             actions={
               <Button variant="primary" size="sm" onClick={() => openOpenAIEditor(null)}>
@@ -920,7 +922,7 @@ export function ProvidersPage() {
             }
           >
             {openaiProviders.length === 0 ? (
-              <EmptyState title="No OpenAI Providers" description="点击“Add Provider”开始配置。" />
+              <EmptyState title={t("providers.no_openai_providers", "No OpenAI Providers")} description="Click Add Provider to start configuring." />
             ) : (
               <div className="space-y-3">
                 {openaiProviders.map((provider, idx) => {
@@ -1112,7 +1114,7 @@ export function ProvidersPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">模型Mappings</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">Model Mappings</p>
                 {ampMappings.map((entry, idx) => (
                   <div key={entry.id} className="grid gap-2 md:grid-cols-12">
                     <div className="md:col-span-5">
@@ -1258,7 +1260,7 @@ export function ProvidersPage() {
           <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
             <ToggleSwitch
               label="Enable"
-              description={editKeyEnabled ? "Current: Enable" : "Current: 禁用（已写入 * 规则）"}
+              description={editKeyEnabled ? "Current: Enable" : "Current: Disabled (wrote * rules)"}
               checked={editKeyEnabled}
               onCheckedChange={editKeyEnabledToggle}
             />
@@ -1317,7 +1319,7 @@ export function ProvidersPage() {
               />
             </div>
             <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
-              Prefix 既用于路由，也用于使用统计来源匹配；设置后更容易区分多 entries Key。
+              Prefix is used for routing and matching stats; makes it easier to distinguish multiple entries key.
             </p>
           </div>
 
@@ -1384,7 +1386,7 @@ export function ProvidersPage() {
             />
             {editKeyType === "vertex" ? (
               <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
-                Vertex 需要把“下游模型名”Mappings成 Vertex 可识别的名称，所以每 entries都必须填 alias。
+                Vertex needs downward model names mapped to Vertex-recognized names, so alias is required.
               </p>
             ) : (
               <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
@@ -1428,7 +1430,7 @@ export function ProvidersPage() {
 
             <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
               Excluded: <span className="font-semibold tabular-nums">{editKeyExcludedCount}</span>{" "}
-               entries（不含 *）。
+              entries (excluding *).
             </p>
           </div>
         </div>
@@ -1481,7 +1483,7 @@ export function ProvidersPage() {
                 placeholder="baseUrl"
               />
               <p className="text-xs text-slate-500 dark:text-white/55">
-                /models fetch URL: 
+                /models fetch URL:
                 {openaiDraft.baseUrl.trim() ? buildModelsEndpoint(openaiDraft.baseUrl) : "--"}
               </p>
             </div>
@@ -1686,7 +1688,7 @@ export function ProvidersPage() {
             {discoveredModels.length ? (
               <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
                 <p className="text-xs text-slate-600 dark:text-white/65">
-                  发现 {discoveredModels.length} 个模型（默认全选）
+                  Found {discoveredModels.length} models (all selected by default)
                 </p>
                 <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
                   {discoveredModels.map((model) => {
@@ -1730,7 +1732,7 @@ export function ProvidersPage() {
         title="Confirm Delete"
         description={
           confirm?.type === "deleteOpenAI"
-            ? `确定要Delete OpenAI 提供商 “${openaiProviders[confirm.index]?.name ?? ""}” 吗？此操作不可恢复。`
+            ? `Are you sure you want to delete OpenAI provider "${openaiProviders[confirm.index]?.name ?? ""}"? This operation is irreversible.`
             : confirm?.type === "deleteKey"
               ? "Delete this config? This cannot be undone."
               : "Are you sure?"

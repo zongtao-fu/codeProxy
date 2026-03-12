@@ -63,7 +63,7 @@ export function KeyValueInputList({
       </div>
 
       {entries.length === 0 ? (
-        <p className="text-xs text-slate-500 dark:text-white/55">未设置（可选）</p>
+        <p className="text-xs text-slate-500 dark:text-white/55">Not Set (Optional)</p>
       ) : (
         <div className="space-y-2">
           {entries.map((entry, idx) => (
@@ -96,8 +96,8 @@ export function KeyValueInputList({
                   size="sm"
                   onClick={() => onChange(entries.filter((_, i) => i !== idx))}
                   disabled={disabled}
-                  aria-label="删除 Header"
-                  title="删除"
+                  aria-label="Delete Header"
+                  title="Delete"
                 >
                   <Trash2 size={14} />
                 </Button>

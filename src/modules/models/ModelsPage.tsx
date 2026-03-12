@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     RefreshCw,
     Cpu,
@@ -153,6 +154,7 @@ async function savePricingToBackend(items: Array<{ model_id: string; input_price
 /* ─── component ─── */
 
 export function ModelsPage() {
+    const { t } = useTranslation();
     const { notify } = useToast();
     const { state: { mode } } = useTheme();
     const _isDark = mode === "dark";
@@ -345,12 +347,12 @@ export function ModelsPage() {
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-white/55">
-                        <DollarSign size={14} /> Priced模型
+                        <DollarSign size={14} /> Priced Models
                     </div>
                     <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
                         {totalStats.pricedCount}
                     </div>
-                    <div className="mt-0.5 text-xs text-slate-500 dark:text-white/45">共 {totalStats.modelCount} 个模型</div>
+                    <div className="mt-0.5 text-xs text-slate-500 dark:text-white/45">{t("models.total_models_count", "Total {{count}} models", { count: totalStats.modelCount })}</div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-white/55">
@@ -359,7 +361,7 @@ export function ModelsPage() {
                     <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
                         ${totalCost.toFixed(4)}
                     </div>
-                    <div className="mt-0.5 text-xs text-slate-500 dark:text-white/45">累计总费用 (USD)</div>
+                    <div className="mt-0.5 text-xs text-slate-500 dark:text-white/45">Total Cost (USD)</div>
                 </div>
             </div>
 
@@ -373,7 +375,7 @@ export function ModelsPage() {
                             Model Pricing
                         </h2>
                         <p className="mt-1 text-xs text-slate-500 dark:text-white/45">
-                            管理所有Available Models的定价配置。定价数据持久化存储在数据库中，用于计算请求费用和执行消费限额。
+                            Manage pricing config for all Available Models. Persisted in database and used for limits.
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -406,7 +408,7 @@ export function ModelsPage() {
                         rowKey={(row) => row.id}
                         loading={loading}
                         rowHeight={44}
-                        caption="Model Pricing表格"
+                        caption="Model Pricing Table"
                         emptyText={searchFilter ? "No results" : "No model data"}
                         minWidth="min-w-[800px]"
                         height="h-[calc(100vh-390px)]"

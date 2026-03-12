@@ -16,7 +16,7 @@ export const createHourlyModelOption = (input: {
   const selectedKeys = input.hourlySeries.modelKeys.filter(
     (key) => input.hourlyModelSelected[key] ?? true,
   );
-  const showTotalLine = input.hourlyModelSelected["总请求"] ?? true;
+  const showTotalLine = input.hourlyModelSelected["Total Requests"] ?? true;
 
   const series = selectedKeys.map((key) => {
     const data = points.map((point) => {
@@ -106,7 +106,7 @@ export const createHourlyModelOption = (input: {
       ...(showTotalLine
         ? [
             {
-              name: "总请求",
+              name: "Total Requests",
               type: "line",
               smooth: true,
               symbol: "circle",

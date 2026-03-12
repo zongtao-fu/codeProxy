@@ -573,7 +573,7 @@ export function MonitorPage() {
               </div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">No monitoring data</p>
               <p className="text-sm text-slate-600 dark:text-white/65">
-                可以点击上方“Refresh”重新拉取数据。
+                You can click "Refresh" above to re-fetch data.
               </p>
               <button
                 type="button"

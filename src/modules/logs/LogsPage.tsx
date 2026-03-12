@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   useCallback,
   useEffect,
@@ -281,6 +282,7 @@ const getStatusStyles = (statusCode: number): string => {
 };
 
 export function LogsPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
 
   const [tab, setTab] = useState<"content" | "errors">("content");
@@ -605,7 +607,7 @@ export function LogsPage() {
               <div className="rounded-2xl border border-slate-200 bg-white/60 px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/40">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="text-xs text-slate-600 dark:text-white/65">
-                    自动Refresh：{autoRefresh ? "On" : "Off"} · Hide management traffic: 
+                    Auto Refresh: {autoRefresh ? "On" : "Off"} · Hide management traffic:
                     {hideManagement ? "On" : "Off"} · Raw logs: {showRawLogs ? "On" : "Off"}
                   </div>
                   <Button
@@ -628,7 +630,7 @@ export function LogsPage() {
                 {optionsOpen ? (
                   <div className="mt-3 grid gap-4 border-t border-slate-200 pt-4 dark:border-neutral-800 sm:grid-cols-2">
                     <ToggleSwitch
-                      label="自动Refresh"
+                      label="Auto Refresh"
                       description="Fetch incremental logs every 3s"
                       checked={autoRefresh}
                       onCheckedChange={setAutoRefresh}
@@ -688,7 +690,7 @@ export function LogsPage() {
                   <div className="px-1 py-4">
                     <EmptyState
                       title="No logs"
-                      description="你可以点击“Refresh”或开启“自动Refresh”来拉取最新日志。"
+                      description="You can click Refresh or enable Auto Refresh to pull latest logs."
                     />
                   </div>
                 ) : showRawLogs ? (
@@ -780,7 +782,7 @@ export function LogsPage() {
         <TabsContent value="errors">
           <Card
             title="Error Logs"
-            description="从服务器拉取Error Log Files列表，并支持按请求 ID Download日志。"
+            description="Fetch Error Log files from server and support downloading by Request ID."
             actions={
               <div className="flex flex-wrap items-center gap-2">
                 <Button
@@ -803,7 +805,7 @@ export function LogsPage() {
                       按请求 ID Download
                     </p>
                     <p className="mt-1 text-sm text-slate-600 dark:text-white/65">
-                      输入请求 ID（8位），Download该请求对应日志文件。
+                      Input Request ID (8 chars) to download correspond log.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -831,7 +833,7 @@ export function LogsPage() {
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
                 <p className="text-sm font-semibold text-slate-900 dark:text-white">Error Log Files</p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-white/65">
-                  列表按文件名展示，点击“Download”获取对应文件。
+                  List by file name, click Download to obtain file.
                 </p>
 
                 <div className="mt-4">
@@ -840,7 +842,7 @@ export function LogsPage() {
                   ) : errorLogs.length === 0 ? (
                     <EmptyState
                       title="No error logs"
-                      description="当前服务器没有可Download的Error Log Files。"
+                      description="Current server has no downloadable Error Log files."
                     />
                   ) : (
                     <div className="space-y-2">
@@ -860,8 +862,8 @@ export function LogsPage() {
                               ·{" "}
                               {typeof file.modified === "number"
                                 ? new Date(
-                                    file.modified < 1e12 ? file.modified * 1000 : file.modified,
-                                  ).toLocaleString()
+                                  file.modified < 1e12 ? file.modified * 1000 : file.modified,
+                                ).toLocaleString()
                                 : "--"}
                             </p>
                           </div>
@@ -886,8 +888,8 @@ export function LogsPage() {
 
       <ConfirmModal
         open={confirmClearOpen}
-        title="Clear服务器日志"
-        description="确定要Clear服务器日志吗？此操作不可恢复。"
+        title={t("logs.clear_server_logs", "Clear Server Logs")}
+        description={t("logs.confirm_clear_logs", "Are you sure you want to clear server logs? This operation is irreversible.")}
         confirmText="Clear"
         onClose={() => setConfirmClearOpen(false)}
         onConfirm={() => {
