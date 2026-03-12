@@ -193,7 +193,7 @@ function CodeBlock({ language, children }: { language: string; children: string 
                     {copied ? (
                         <><Check size={13} className="text-emerald-400" /><span className="text-emerald-400">{t("common.copied", "Copied")}</span></>
                     ) : (
-                        <><Copy size={13} /><span>Copy</span></>
+                        <><Copy size={13} /><span>{t("log_content.copy")}</span></>
                     )}
                 </button>
             </div>
@@ -773,6 +773,7 @@ function ContentModal({
     children: React.ReactNode;
     tabs: React.ReactNode;
 }) {
+  const { t } = useTranslation();
     const [mounted, setMounted] = useState(open);
     const [visible, setVisible] = useState(open);
 
@@ -826,7 +827,7 @@ function ContentModal({
                         <h2 className="truncate text-base font-semibold tracking-tight text-slate-900 dark:text-white">
                             Message Content{model ? ` · ${model}` : ""}
                         </h2>
-                        <p className="mt-1 text-sm text-slate-500 dark:text-white/50">Request/Response message details</p>
+                        <p className="mt-1 text-sm text-slate-500 dark:text-white/50">{t("log_content.title")}</p>
                     </div>
                     <button
                         type="button"
@@ -968,7 +969,7 @@ export function LogContentModal({ open, logId, initialTab = "input", onClose, fe
                     <button
                         type="button"
                         onClick={() => setViewMode("rendered")}
-                        title="Rendered View"
+                        title={t("log_content.rendered")}
                         className={[
                             "flex items-center justify-center rounded-md p-1.5 transition-all",
                             viewMode === "rendered"
@@ -981,7 +982,7 @@ export function LogContentModal({ open, logId, initialTab = "input", onClose, fe
                     <button
                         type="button"
                         onClick={() => setViewMode("raw")}
-                        title="Raw Data"
+                        title={t("log_content.raw_data")}
                         className={[
                             "flex items-center justify-center rounded-md p-1.5 transition-all",
                             viewMode === "raw"
@@ -998,7 +999,7 @@ export function LogContentModal({ open, logId, initialTab = "input", onClose, fe
                     type="button"
                     onClick={handleDownload}
                     disabled={!currentContent}
-                    title="Download"
+                    title={t("log_content.download")}
                     className="flex items-center justify-center rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed dark:text-white/30 dark:hover:bg-neutral-900 dark:hover:text-white/60"
                 >
                     <Download size={14} />
@@ -1009,11 +1010,12 @@ export function LogContentModal({ open, logId, initialTab = "input", onClose, fe
 
     /* ---- Render input ---- */
     const renderInput = () => {
+  const { t } = useTranslation();
         if (!inputContent) {
             return (
                 <div className="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-white/25">
                     <FileInput size={40} className="mb-3 opacity-40" />
-                    <p className="text-sm">No Input Records</p>
+                    <p className="text-sm">{t("log_content.no_input")}</p>
                 </div>
             );
         }
@@ -1039,11 +1041,12 @@ export function LogContentModal({ open, logId, initialTab = "input", onClose, fe
 
     /* ---- Render output ---- */
     const renderOutput = () => {
+  const { t } = useTranslation();
         if (!outputContent) {
             return (
                 <div className="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-white/25">
                     <FileOutput size={40} className="mb-3 opacity-40" />
-                    <p className="text-sm">No Output Records</p>
+                    <p className="text-sm">{t("log_content.no_output")}</p>
                 </div>
             );
         }

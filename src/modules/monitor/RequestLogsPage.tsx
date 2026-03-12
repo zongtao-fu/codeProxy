@@ -95,6 +95,7 @@ function buildLogColumns(
   onContentClick?: (logId: number, tab: "input" | "output") => void,
   onErrorClick?: (logId: number, model: string) => void,
 ): VirtualTableColumn<LogRow>[] {
+  const { t } = useTranslation();
   return [
     {
       key: "timestamp",
@@ -156,7 +157,7 @@ function buildLogColumns(
             type="button"
             onClick={() => onErrorClick?.(Number(row.id), row.model)}
             className="inline-flex min-w-[52px] cursor-pointer justify-center rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-100 hover:shadow-sm dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/25"
-            title="Click to view error details"
+            title={t("request_logs.view_error")}
           >
             Failed
           </button>
@@ -192,7 +193,7 @@ function buildLogColumns(
             type="button"
             onClick={() => onContentClick(Number(row.id), "input")}
             className="inline-block ml-auto cursor-pointer rounded px-1.5 py-0.5 transition hover:bg-sky-50 dark:hover:bg-sky-950/30"
-            title="Click to view input"
+            title={t("request_logs.view_input")}
           >
             <span className="truncate text-sky-600 dark:text-sky-400 underline decoration-sky-300/50 dark:decoration-sky-500/40 underline-offset-2">
               {row.inputTokens.toLocaleString()}
@@ -233,7 +234,7 @@ function buildLogColumns(
             type="button"
             onClick={() => onContentClick(Number(row.id), "output")}
             className="inline-block ml-auto cursor-pointer rounded px-1.5 py-0.5 transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-            title="Click to view output"
+            title={t("request_logs.view_output")}
           >
             <span className="truncate text-emerald-600 dark:text-emerald-400 underline decoration-emerald-300/50 dark:decoration-emerald-500/40 underline-offset-2">
               {row.outputTokens.toLocaleString()}
@@ -467,8 +468,8 @@ export function RequestLogsPage() {
               onClick={() => fetchLogs(1)}
               disabled={loading}
               aria-busy={loading}
-              aria-label="Refresh"
-              title="Refresh"
+              aria-label={t("request_logs.refresh")}
+              title={t("request_logs.refresh")}
               className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-900 text-white transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/35 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-neutral-950 dark:hover:bg-slate-200 dark:focus-visible:ring-white/15"
             >
               <RefreshCw
@@ -486,17 +487,17 @@ export function RequestLogsPage() {
             value={apiQuery}
             onChange={setApiQuery}
             options={keyOptions}
-            placeholder="All Keys"
+            placeholder={t("request_logs.all_keys_placeholder")}
             searchPlaceholder="Search Keys…"
-            aria-label="Filter by Key name"
+            aria-label={t("request_logs.filter_key")}
           />
           <SearchableSelect
             value={modelQuery}
             onChange={setModelQuery}
             options={modelOptions}
-            placeholder="All Models"
+            placeholder={t("request_logs.all_models_placeholder")}
             searchPlaceholder="Search models…"
-            aria-label="Filter by model"
+            aria-label={t("request_logs.filter_model")}
           />
           <Select
             value={statusFilter}
@@ -506,7 +507,7 @@ export function RequestLogsPage() {
               { value: "success", label: "Success" },
               { value: "failed", label: "Failed" },
             ]}
-            aria-label="Filter by status"
+            aria-label={t("request_logs.filter_status")}
             name="statusFilter"
           />
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, X } from "lucide-react";
 
@@ -29,6 +30,7 @@ export function MultiSelect({
     disabled = false,
     className = "",
 }: MultiSelectProps) {
+  const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -181,7 +183,7 @@ export function MultiSelect({
                     >
                         {value.length === 0 && <Check size={12} className="text-white dark:text-black" />}
                     </div>
-                    <span className="font-medium">All Models</span>
+                    <span className="font-medium">{t("common.all_models")}</span>
                 </button>
 
                 <div className="mx-3 my-1 h-px bg-slate-100 dark:bg-neutral-800" />

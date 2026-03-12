@@ -205,8 +205,8 @@ export function AiProvidersGeminiEditPage() {
         ) : (
           <>
             <Input
-              label="Channel Name"
-              placeholder="e.g. Main Gemini Channel (Required)"
+              label={t("providers.channel_name")}
+              placeholder={t("providers.gemini_channel_hint")}
               value={form.name ?? ""}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               disabled={disableControls || saving}

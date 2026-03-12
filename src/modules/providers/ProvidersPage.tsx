@@ -800,7 +800,7 @@ export function ProvidersPage() {
       {/* 标题头：描述 + 刷新 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-0.5">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">Config Overview</h2>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t("providers.config_overview")}</h2>
           <p className="text-xs text-slate-500 dark:text-white/55">
             Manage API Keys / OpenAI providers / Ampcode mappings in tabs.
           </p>
@@ -854,8 +854,8 @@ export function ProvidersPage() {
         <TabsContent value="gemini" className="mt-6">
           <ProviderKeyListCard
             icon={Globe}
-            title="Gemini Keys"
-            description="API Key / Prefix / Base URL / Excluded Models / Headers / Models"
+            title={t("providers.gemini_keys")}
+            description={t("providers.openai_desc")}
             items={geminiKeys}
             onAdd={() => openKeyEditor("gemini", null)}
             onEdit={(idx) => openKeyEditor("gemini", idx)}
@@ -869,8 +869,8 @@ export function ProvidersPage() {
         <TabsContent value="claude" className="mt-6">
           <ProviderKeyListCard
             icon={Bot}
-            title="Claude Keys"
-            description="Supports proxyUrl / custom headers / model aliases / Excluded Models (* to disable all)."
+            title={t("providers.claude_keys")}
+            description={t("providers.codex_desc")}
             items={claudeKeys}
             onAdd={() => openKeyEditor("claude", null)}
             onEdit={(idx) => openKeyEditor("claude", idx)}
@@ -884,8 +884,8 @@ export function ProvidersPage() {
         <TabsContent value="codex" className="mt-6">
           <ProviderKeyListCard
             icon={FileKey}
-            title="Codex Keys"
-            description="Supports baseUrl / proxyUrl / headers / models config."
+            title={t("providers.codex_keys")}
+            description={t("providers.gemini_desc")}
             items={codexKeys}
             onAdd={() => openKeyEditor("codex", null)}
             onEdit={(idx) => openKeyEditor("codex", idx)}
@@ -899,8 +899,8 @@ export function ProvidersPage() {
         <TabsContent value="vertex" className="mt-6">
           <ProviderKeyListCard
             icon={Database}
-            title="Vertex Keys"
-            description="Models must have name=>alias to map downstream model names to Vertex."
+            title={t("providers.vertex_keys")}
+            description={t("providers.vertex_desc")}
             items={vertexKeys}
             onAdd={() => openKeyEditor("vertex", null)}
             onEdit={(idx) => openKeyEditor("vertex", idx)}
@@ -913,7 +913,7 @@ export function ProvidersPage() {
         <TabsContent value="openai" className="mt-6">
           <Card
             title={t("providers.openai_compatible", "OpenAI Compatible Providers")}
-            description="Multiple keys, headers, model aliases & /models discovery."
+            description={t("providers.claude_desc")}
             actions={
               <Button variant="primary" size="sm" onClick={() => openOpenAIEditor(null)}>
                 <Plus size={14} />
@@ -1072,8 +1072,8 @@ export function ProvidersPage() {
 
         <TabsContent value="ampcode" className="mt-6">
           <Card
-            title="Ampcode Integration"
-            description="Configure upstream URL / API Key, model mapping & force mapping."
+            title={t("providers.ampcode_title")}
+            description={t("providers.ampcode_desc")}
             actions={
               <Button
                 variant="primary"
@@ -1091,17 +1091,17 @@ export function ProvidersPage() {
                 <TextInput
                   value={ampUpstreamUrl}
                   onChange={(e) => setAmpUpstreamUrl(e.currentTarget.value)}
-                  placeholder="upstream-url (empty to clear)"
+                  placeholder={t("providers.upstream_url_hint")}
                 />
                 <TextInput
                   value={ampUpstreamApiKey}
                   onChange={(e) => setAmpUpstreamApiKey(e.currentTarget.value)}
-                  placeholder="upstream-api-key (for update; empty to keep)"
+                  placeholder={t("providers.upstream_key_hint")}
                 />
                 <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
                   <ToggleSwitch
-                    label="Force Model Mapping"
-                    description="Only allow models in the mapping list."
+                    label={t("providers.force_mapping")}
+                    description={t("providers.force_mapping_desc")}
                     checked={ampForceMappings}
                     onCheckedChange={setAmpForceMappings}
                   />
@@ -1114,7 +1114,7 @@ export function ProvidersPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">Model Mappings</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("providers.model_mappings")}</p>
                 {ampMappings.map((entry, idx) => (
                   <div key={entry.id} className="grid gap-2 md:grid-cols-12">
                     <div className="md:col-span-5">
@@ -1249,7 +1249,7 @@ export function ProvidersPage() {
                   const val = e.currentTarget.value;
                   setKeyDraft((prev) => ({ ...prev, name: val }));
                 }}
-                placeholder="e.g. Gemini Primary"
+                placeholder={t("providers.channel_placeholder")}
               />
             </div>
             <p className="mt-2 text-xs text-slate-500 dark:text-white/55">
@@ -1259,7 +1259,7 @@ export function ProvidersPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
             <ToggleSwitch
-              label="Enable"
+              label={t("providers.enable")}
               description={editKeyEnabled ? "Current: Enable" : "Current: Disabled (wrote * rules)"}
               checked={editKeyEnabled}
               onCheckedChange={editKeyEnabledToggle}
@@ -1272,7 +1272,7 @@ export function ProvidersPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">API Key</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("providers.api_key")}</p>
               <span className="text-xs text-slate-500 dark:text-white/55">
                 Show: {maskApiKey(keyDraft.apiKey)}
               </span>
@@ -1284,15 +1284,15 @@ export function ProvidersPage() {
                   const val = e.currentTarget.value;
                   setKeyDraft((prev) => ({ ...prev, apiKey: val }));
                 }}
-                placeholder="Paste API Key"
+                placeholder={t("providers.paste_key")}
                 endAdornment={
                   <button
                     type="button"
                     onClick={() => void copyText(keyDraft.apiKey.trim())}
                     disabled={!keyDraft.apiKey.trim()}
                     className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white/80 text-slate-700 shadow-sm transition hover:bg-white disabled:opacity-50 dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-slate-200 dark:hover:bg-neutral-950"
-                    aria-label="Copy API Key"
-                    title="Copy"
+                    aria-label={t("providers.copy_api_key")}
+                    title={t("providers.copy")}
                   >
                     <Copy size={14} />
                   </button>
@@ -1329,7 +1329,7 @@ export function ProvidersPage() {
             </p>
             <div className="mt-3 grid gap-3">
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-slate-700 dark:text-white/75">Base URL</p>
+                <p className="text-xs font-semibold text-slate-700 dark:text-white/75">{t("providers.base_url")}</p>
                 <TextInput
                   value={keyDraft.baseUrl}
                   onChange={(e) => {
@@ -1342,7 +1342,7 @@ export function ProvidersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-slate-700 dark:text-white/75">Proxy URL</p>
+                <p className="text-xs font-semibold text-slate-700 dark:text-white/75">{t("providers.proxy_url")}</p>
                 <TextInput
                   value={keyDraft.proxyUrl}
                   onChange={(e) => {
@@ -1360,7 +1360,7 @@ export function ProvidersPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
             <KeyValueInputList
-              title="Headers (optional)"
+              title={t("providers.headers_optional")}
               entries={keyDraft.headersEntries}
               onChange={(next) => setKeyDraft((prev) => ({ ...prev, headersEntries: next }))}
               keyPlaceholder="Header name"
@@ -1423,7 +1423,7 @@ export function ProvidersPage() {
                 const val = e.currentTarget.value;
                 setKeyDraft((prev) => ({ ...prev, excludedModelsText: val }));
               }}
-              placeholder="One model per line; * disables all"
+              placeholder={t("providers.excluded_placeholder")}
               aria-label="excludedModels"
               className="mt-3 min-h-[140px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400/35 dark:border-neutral-800 dark:bg-neutral-950 dark:text-slate-100 dark:placeholder:text-neutral-500 dark:focus-visible:ring-white/15"
             />
@@ -1439,7 +1439,7 @@ export function ProvidersPage() {
       <Modal
         open={editOpenAIOpen}
         title={`${editOpenAIIndex === null ? "Add" : "Edit"} OpenAI Provider`}
-        description="Configure name/baseUrl, apiKeyEntries, headers & model aliases; supports /models auto-fetch."
+        description={t("providers.openai_config_desc")}
         onClose={closeOpenAIEditor}
         footer={
           <div className="flex flex-wrap items-center gap-2">
@@ -1461,7 +1461,7 @@ export function ProvidersPage() {
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">Name</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("providers.name")}</p>
               <TextInput
                 value={openaiDraft.name}
                 onChange={(e) =>
@@ -1491,7 +1491,7 @@ export function ProvidersPage() {
 
           <div className="grid gap-3 md:grid-cols-3">
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">Prefix (optional)</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("providers.prefix_optional")}</p>
               <TextInput
                 value={openaiDraft.prefix}
                 onChange={(e) =>
@@ -1528,7 +1528,7 @@ export function ProvidersPage() {
           </div>
 
           <KeyValueInputList
-            title="Provider Headers (optional)"
+            title={t("providers.provider_headers")}
             entries={openaiDraft.headersEntries}
             onChange={(next) => setOpenaiDraft((prev) => ({ ...prev, headersEntries: next }))}
           />
@@ -1635,7 +1635,7 @@ export function ProvidersPage() {
 
                   <div className="mt-3">
                     <KeyValueInputList
-                      title="Key Headers (optional)"
+                      title={t("providers.key_headers")}
                       entries={entry.headersEntries}
                       onChange={(next) => {
                         setOpenaiDraft((prev) => ({
@@ -1678,7 +1678,7 @@ export function ProvidersPage() {
             </div>
 
             <ModelInputList
-              title="Models (optional)"
+              title={t("providers.models_optional")}
               entries={openaiDraft.modelEntries}
               onChange={(next) => setOpenaiDraft((prev) => ({ ...prev, modelEntries: next }))}
               showPriority
@@ -1729,7 +1729,7 @@ export function ProvidersPage() {
 
       <ConfirmModal
         open={confirm !== null}
-        title="Confirm Delete"
+        title={t("providers.confirm_delete")}
         description={
           confirm?.type === "deleteOpenAI"
             ? `Are you sure you want to delete OpenAI provider "${openaiProviders[confirm.index]?.name ?? ""}"? This operation is irreversible.`

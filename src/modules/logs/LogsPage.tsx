@@ -551,13 +551,13 @@ export function LogsPage() {
     <div className="space-y-6">
       <Tabs value={tab} onValueChange={(next) => setTab(next as typeof tab)}>
         <TabsList>
-          <TabsTrigger value="content">Log Content</TabsTrigger>
-          <TabsTrigger value="errors">Error Logs</TabsTrigger>
+          <TabsTrigger value="content">{t("logs_page.log_content")}</TabsTrigger>
+          <TabsTrigger value="errors">{t("logs_page.error_logs")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="content">
           <Card
-            title="Live Logs"
+            title={t("logs_page.live_logs")}
             description={`Latest: ${latestLabel} (buffer: last ${MAX_BUFFER_LINES} lines)`}
             actions={
               <div className="flex flex-wrap items-center gap-2">
@@ -596,7 +596,7 @@ export function LogsPage() {
               <TextInput
                 value={search}
                 onChange={(e) => setSearch(e.currentTarget.value)}
-                placeholder="Search keywords (case insensitive)…"
+                placeholder={t("logs_page.search_placeholder")}
                 type="search"
                 name="log_search"
                 autoComplete="off"
@@ -630,22 +630,22 @@ export function LogsPage() {
                 {optionsOpen ? (
                   <div className="mt-3 grid gap-4 border-t border-slate-200 pt-4 dark:border-neutral-800 sm:grid-cols-2">
                     <ToggleSwitch
-                      label="Auto Refresh"
-                      description="Fetch incremental logs every 3s"
+                      label={t("logs_page.auto_refresh")}
+                      description={t("logs_page.auto_refresh_desc")}
                       checked={autoRefresh}
                       onCheckedChange={setAutoRefresh}
                       disabled={loading}
                     />
                     <ToggleSwitch
-                      label="Hide Management Traffic"
-                      description="Filter /v0/management logs"
+                      label={t("logs_page.hide_mgmt")}
+                      description={t("logs_page.hide_mgmt_desc")}
                       checked={hideManagement}
                       onCheckedChange={setHideManagement}
                       disabled={loading}
                     />
                     <ToggleSwitch
-                      label="Show Raw Logs"
-                      description="Plain text for easy copy."
+                      label={t("logs_page.show_raw")}
+                      description={t("logs_page.raw_desc")}
                       checked={showRawLogs}
                       onCheckedChange={setShowRawLogs}
                       disabled={loading}
@@ -689,8 +689,8 @@ export function LogsPage() {
                 {visibleLines.length === 0 ? (
                   <div className="px-1 py-4">
                     <EmptyState
-                      title="No logs"
-                      description="You can click Refresh or enable Auto Refresh to pull latest logs."
+                      title={t("logs_page.no_logs")}
+                      description={t("logs_page.no_logs_desc")}
                     />
                   </div>
                 ) : showRawLogs ? (
@@ -781,8 +781,8 @@ export function LogsPage() {
 
         <TabsContent value="errors">
           <Card
-            title="Error Logs"
-            description="Fetch Error Log files from server and support downloading by Request ID."
+            title={t("logs_page.error_logs_title")}
+            description={t("logs_page.error_fetch_desc")}
             actions={
               <div className="flex flex-wrap items-center gap-2">
                 <Button
@@ -812,7 +812,7 @@ export function LogsPage() {
                     <TextInput
                       value={requestLogId}
                       onChange={(e) => setRequestLogId(e.currentTarget.value)}
-                      placeholder="Request ID (8 digits)…"
+                      placeholder={t("logs_page.request_id_placeholder")}
                       name="request_log_id"
                       autoComplete="off"
                       spellCheck={false}
@@ -831,7 +831,7 @@ export function LogsPage() {
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">Error Log Files</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("logs_page.error_log_files")}</p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-white/65">
                   List by file name, click Download to obtain file.
                 </p>
@@ -841,8 +841,8 @@ export function LogsPage() {
                     <div className="text-sm text-slate-600 dark:text-white/65">Loading…</div>
                   ) : errorLogs.length === 0 ? (
                     <EmptyState
-                      title="No error logs"
-                      description="Current server has no downloadable Error Log files."
+                      title={t("logs_page.no_error_logs")}
+                      description={t("logs_page.no_error_desc")}
                     />
                   ) : (
                     <div className="space-y-2">

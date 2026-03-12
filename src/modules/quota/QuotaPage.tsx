@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useTranslation } from "react-i18next";
 import { RefreshCw } from "lucide-react";
 import { apiCallApi, authFilesApi, getApiCallErrorMessage } from "@/lib/http/apis";
 import type { ApiCallResult, AuthFileItem } from "@/lib/http/types";
@@ -191,6 +192,7 @@ const fetchQuota = async (
 /* ═══════════════════════════════════════════ */
 
 export function QuotaPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
   const [isPending, startTransition] = useTransition();
   const [files, setFiles] = useState<AuthFileItem[]>([]);
@@ -267,6 +269,7 @@ export function QuotaPage() {
     list: AuthFileItem[],
     stateMap: Record<string, QuotaState>,
   ) => {
+  const { t } = useTranslation();
     const meta = PROVIDER_META[type];
     return (
       <section key={type}>
@@ -297,7 +300,7 @@ export function QuotaPage() {
 
         {list.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-200 px-4 py-4 text-center dark:border-neutral-800">
-            <p className="text-xs text-slate-400 dark:text-white/30">No matching auth files</p>
+            <p className="text-xs text-slate-400 dark:text-white/30">{t("quota.no_matching")}</p>
           </div>
         ) : (
           <div className="grid gap-2.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

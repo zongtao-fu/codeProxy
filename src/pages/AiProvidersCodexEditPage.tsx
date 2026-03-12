@@ -220,8 +220,8 @@ export function AiProvidersCodexEditPage() {
         ) : (
           <>
             <Input
-              label="Channel Name"
-              placeholder="e.g. Main Codex Channel (Required)"
+              label={t("providers.channel_name")}
+              placeholder={t("providers.codex_channel_hint")}
               value={form.name ?? ""}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               disabled={disableControls || saving}

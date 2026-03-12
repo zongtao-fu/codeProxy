@@ -13,6 +13,8 @@ import {
   stripDisableAllModelsRule,
 } from "@/modules/providers/providers-helpers";
 
+import { useTranslation } from "react-i18next";
+
 export function ProviderKeyListCard({
   icon: Icon,
   title,
@@ -37,6 +39,7 @@ export function ProviderKeyListCard({
   getStats: (item: ProviderSimpleConfig) => KeyStatBucket;
   getStatusBar: (item: ProviderSimpleConfig) => StatusBarData;
 }) {
+  const { t } = useTranslation();
   return (
     <Card
       title={title}

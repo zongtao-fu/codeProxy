@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/modules/ui/Button";
 import { TextInput } from "@/modules/ui/Input";
@@ -39,6 +40,7 @@ export function ModelInputList({
   showPriority?: boolean;
   showTestModel?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <section className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -55,7 +57,7 @@ export function ModelInputList({
       </div>
 
       {entries.length === 0 ? (
-        <p className="text-xs text-slate-500 dark:text-white/55">Not Set (Optional)</p>
+        <p className="text-xs text-slate-500 dark:text-white/55">{t("common.not_set")}</p>
       ) : (
         <div className="space-y-2">
           {entries.map((entry, idx) => (
@@ -86,7 +88,7 @@ export function ModelInputList({
                 <div className={showTestModel ? "md:col-span-2" : "md:col-span-3"}>
                   <TextInput
                     value={entry.priorityText}
-                    placeholder="Priority (Optional)"
+                    placeholder={t("common.priority_optional")}
                     disabled={disabled}
                     inputMode="numeric"
                     onChange={(e) => {
@@ -119,8 +121,8 @@ export function ModelInputList({
                   size="sm"
                   onClick={() => onChange(entries.filter((_, i) => i !== idx))}
                   disabled={disabled}
-                  aria-label="Delete Model"
-                  title="Delete"
+                  aria-label={t("common.delete_model")}
+                  title={t("common.delete")}
                 >
                   <Trash2 size={14} />
                 </Button>

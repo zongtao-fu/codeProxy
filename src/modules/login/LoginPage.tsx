@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock } from "lucide-react";
 import { detectApiBaseFromLocation, normalizeApiBase } from "@/lib/connection";
@@ -17,6 +18,7 @@ interface RedirectState {
 }
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -141,7 +143,7 @@ export function LoginPage() {
             <section className="relative">
               <div className="rounded-[34px] border border-slate-200 bg-white/90 p-8 text-slate-900 shadow-[0_30px_80px_-60px_rgba(15,23,42,0.6)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-slate-50 dark:shadow-[0_30px_80px_-60px_rgba(0,0,0,0.8)]">
                 <div className="space-y-6">
-                  <h2 className="text-center text-3xl font-semibold tracking-tight">Sign In</h2>
+                  <h2 className="text-center text-3xl font-semibold tracking-tight">{t("login.sign_in")}</h2>
 
                   <div className="flex items-center gap-4">
                     <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
@@ -176,7 +178,7 @@ export function LoginPage() {
                         value={managementKey}
                         onChange={(event) => setManagementKey(event.target.value)}
                         type={showKey ? "text" : "password"}
-                        placeholder="Enter MANAGEMENT_KEY"
+                        placeholder={t("login.placeholder")}
                         autoComplete="current-password"
                         className="rounded-full px-5 py-3"
                         endAdornment={

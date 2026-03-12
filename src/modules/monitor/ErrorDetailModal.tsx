@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import { AlertTriangle, X, Loader2, Copy, Check } from "lucide-react";
 import { usageApi } from "@/lib/http/apis";
@@ -11,6 +12,7 @@ interface ErrorDetailModalProps {
 }
 
 export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailModalProps) {
+  const { t } = useTranslation();
     const [visible, setVisible] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -104,7 +106,7 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
                             <h2 className="truncate text-base font-semibold tracking-tight text-red-900 dark:text-red-200">
                                 Request failed{model ? ` · ${model}` : ""}
                             </h2>
-                            <p className="mt-0.5 text-xs text-red-600/70 dark:text-red-400/60">Error response from upstream API</p>
+                            <p className="mt-0.5 text-xs text-red-600/70 dark:text-red-400/60">{t("error_detail.upstream_error")}</p>
                         </div>
                     </div>
                     <button
@@ -131,7 +133,7 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
                     ) : !errorContent ? (
                         <div className="flex flex-col items-center justify-center py-12 text-slate-400 dark:text-white/30">
                             <AlertTriangle size={32} className="mb-2 opacity-40" />
-                            <p className="text-sm">No error content recorded</p>
+                            <p className="text-sm">{t("error_detail.no_content")}</p>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -145,7 +147,7 @@ export function ErrorDetailModal({ open, logId, model, onClose }: ErrorDetailMod
                             {/* Full response */}
                             <div className="relative">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/35">Full Response</span>
+                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/35">{t("error_detail.full_response")}</span>
                                     <button
                                         type="button"
                                         onClick={handleCopy}

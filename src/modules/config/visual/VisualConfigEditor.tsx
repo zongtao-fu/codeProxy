@@ -203,7 +203,7 @@ function ApiKeysEditor({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-sm font-semibold text-slate-900 dark:text-white">API Keys</div>
+        <div className="text-sm font-semibold text-slate-900 dark:text-white">{t("visual_config.api_keys")}</div>
         <Button size="sm" onClick={openAddModal} disabled={disabled}>
           <Plus size={14} />
           Add
@@ -287,7 +287,7 @@ function ApiKeysEditor({
           </>
         }
       >
-        <Field label="API Key" hint="Only visible ASCII characters (no spaces).">
+        <Field label={t("visual_config.api_key")} hint={t("visual_config.ascii_hint")}>
           <TextInput
             value={inputValue}
             onChange={(e) => setInputValue(e.currentTarget.value)}
@@ -302,7 +302,7 @@ function ApiKeysEditor({
 
       <ConfirmModal
         open={deleteIndex !== null}
-        title="Delete API Key"
+        title={t("visual_config.delete_api_key")}
         description={t("common.confirm_delete_api_key", "Are you sure you want to delete this API Key? This operation is irreversible.")}
         confirmText="Delete"
         variant="danger"
@@ -349,6 +349,7 @@ function PayloadRulesEditor({
   disabled?: boolean;
   onChange: (rules: PayloadRule[]) => void;
 }) {
+  const { t } = useTranslation();
   const addRule = () => {
     const next: PayloadRule = {
       id: makeClientId(),
@@ -485,7 +486,7 @@ function PayloadRulesEditor({
                         onChange={(e) =>
                           updateModel(ruleIndex, modelIndex, { name: e.currentTarget.value })
                         }
-                        placeholder="model name"
+                        placeholder={t("visual_config.model_name")}
                         disabled={disabled}
                       />
                       <SelectInput
@@ -546,7 +547,7 @@ function PayloadRulesEditor({
                             onChange={(e) =>
                               updateParam(ruleIndex, paramIndex, { path: e.currentTarget.value })
                             }
-                            placeholder="param path, e.g. headers.Authorization"
+                            placeholder={t("visual_config.param_path")}
                             disabled={disabled}
                           />
                           <SelectInput
@@ -612,6 +613,7 @@ function PayloadFilterRulesEditor({
   disabled?: boolean;
   onChange: (rules: PayloadFilterRule[]) => void;
 }) {
+  const { t } = useTranslation();
   const addRule = () => {
     const next: PayloadFilterRule = {
       id: makeClientId(),
@@ -671,7 +673,7 @@ function PayloadFilterRulesEditor({
 
   return (
     <Card
-      title="Payload Filter Rule"
+      title={t("visual_config.payload_filter")}
       description="After matching models, remove specified parameter paths from the request payload (corresponds to `payload.filter`)."
       actions={
         <Button size="sm" onClick={addRule} disabled={disabled}>
@@ -824,6 +826,7 @@ export function VisualConfigEditor({
   disabled?: boolean;
   onChange: (values: Partial<VisualConfigValues>) => void;
 }) {
+  const { t } = useTranslation();
   const update = useCallback(
     (patch: Partial<VisualConfigValues>) => {
       onChange(patch);
@@ -843,10 +846,10 @@ export function VisualConfigEditor({
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Basics" description="Host/port, auth directory & API Keys.">
+        <Card title={t("visual_config.basics")} description={t("visual_config.basics_desc")}>
           <div className="space-y-4">
             <div className="grid gap-3 lg:grid-cols-2">
-              <Field label="host" hint="Empty uses server default.">
+              <Field label="host" hint={t("visual_config.empty_default")}>
                 <TextInput
                   value={values.host}
                   onChange={(e) => update({ host: e.currentTarget.value })}
@@ -854,7 +857,7 @@ export function VisualConfigEditor({
                   disabled={disabled}
                 />
               </Field>
-              <Field label="port" hint="Non-negative integer.">
+              <Field label="port" hint={t("visual_config.retry_count")}>
                 <TextInput
                   value={values.port}
                   onChange={(e) => update({ port: e.currentTarget.value })}
@@ -865,7 +868,7 @@ export function VisualConfigEditor({
               </Field>
             </div>
 
-            <Field label="auth-dir" hint="Auth file directory path.">
+            <Field label="auth-dir" hint={t("visual_config.auth_dir")}>
               <TextInput
                 value={values.authDir}
                 onChange={(e) => update({ authDir: e.currentTarget.value })}
@@ -888,17 +891,17 @@ export function VisualConfigEditor({
           </div>
         </Card>
 
-        <Card title="TLS" description="Enable TLS and configure certificate paths.">
+        <Card title={t("visual_config.tls")} description={t("visual_config.tls_desc")}>
           <div className="space-y-4">
             <ToggleSwitch
-              label="Enable TLS"
-              description="Uses tls.cert / tls.key when enabled."
+              label={t("visual_config.enable_tls")}
+              description={t("visual_config.tls_uses")}
               checked={values.tlsEnable}
               onCheckedChange={(next) => update({ tlsEnable: next })}
               disabled={disabled}
             />
             <div className="grid gap-3">
-              <Field label="tls.cert" hint="Certificate file path.">
+              <Field label="tls.cert" hint={t("visual_config.cert_path")}>
                 <TextInput
                   value={values.tlsCert}
                   onChange={(e) => update({ tlsCert: e.currentTarget.value })}
@@ -906,7 +909,7 @@ export function VisualConfigEditor({
                   disabled={disabled}
                 />
               </Field>
-              <Field label="tls.key" hint="Private key file path.">
+              <Field label="tls.key" hint={t("visual_config.key_path")}>
                 <TextInput
                   value={values.tlsKey}
                   onChange={(e) => update({ tlsKey: e.currentTarget.value })}
@@ -919,18 +922,18 @@ export function VisualConfigEditor({
         </Card>
       </div>
 
-      <Card title="Remote Management" description="Corresponds to `remote-management` config section.">
+      <Card title={t("visual_config.remote_mgmt")} description={t("visual_config.remote_desc")}>
         <div className="grid gap-5 lg:grid-cols-2">
           <div className="space-y-4">
             <ToggleSwitch
-              label="Allow Remote Access"
+              label={t("visual_config.allow_remote")}
               description="remote-management.allow-remote"
               checked={values.rmAllowRemote}
               onCheckedChange={(next) => update({ rmAllowRemote: next })}
               disabled={disabled}
             />
             <ToggleSwitch
-              label="Disable Control Panel"
+              label={t("visual_config.disable_panel")}
               description="remote-management.disable-control-panel"
               checked={values.rmDisableControlPanel}
               onCheckedChange={(next) => update({ rmDisableControlPanel: next })}
@@ -938,7 +941,7 @@ export function VisualConfigEditor({
             />
           </div>
           <div className="space-y-4">
-            <Field label="secret-key" hint="Remote management key (keep secure).">
+            <Field label="secret-key" hint={t("visual_config.remote_key")}>
               <TextInput
                 value={values.rmSecretKey}
                 onChange={(e) => update({ rmSecretKey: e.currentTarget.value })}
@@ -946,7 +949,7 @@ export function VisualConfigEditor({
                 disabled={disabled}
               />
             </Field>
-            <Field label="panel-github-repository" hint="Panel repository URL (if needed).">
+            <Field label="panel-github-repository" hint={t("visual_config.panel_url")}>
               <TextInput
                 value={values.rmPanelRepo}
                 onChange={(e) => update({ rmPanelRepo: e.currentTarget.value })}
@@ -969,8 +972,8 @@ export function VisualConfigEditor({
               disabled={disabled}
             />
             <ToggleSwitch
-              label="Commercial Mode"
-              description="commercial-mode (restart usually required)"
+              label={t("visual_config.commercial")}
+              description={t("visual_config.commercial_mode")}
               checked={values.commercialMode}
               onCheckedChange={(next) => update({ commercialMode: next })}
               disabled={disabled}
@@ -992,9 +995,9 @@ export function VisualConfigEditor({
           </div>
         </Card>
 
-        <Card title="Proxy & Retry" description="proxy-url, request-retry, max-retry-interval.">
+        <Card title={t("visual_config.proxy_retry")} description="proxy-url, request-retry, max-retry-interval.">
           <div className="space-y-4">
-            <Field label="proxy-url" hint="Empty means no proxy.">
+            <Field label="proxy-url" hint={t("visual_config.empty_no_proxy")}>
               <TextInput
                 value={values.proxyUrl}
                 onChange={(e) => update({ proxyUrl: e.currentTarget.value })}
@@ -1012,7 +1015,7 @@ export function VisualConfigEditor({
                   disabled={disabled}
                 />
               </Field>
-              <Field label="max-retry-interval" hint="Non-negative integer (seconds).">
+              <Field label="max-retry-interval" hint={t("visual_config.retry_hint")}>
                 <TextInput
                   value={values.maxRetryInterval}
                   onChange={(e) => update({ maxRetryInterval: e.currentTarget.value })}
@@ -1041,9 +1044,9 @@ export function VisualConfigEditor({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Log Limits" description="logs-max-total-size-mb。">
+        <Card title={t("visual_config.log_limits")} description="logs-max-total-size-mb。">
           <div className="space-y-4">
-            <Field label="logs-max-total-size-mb" hint="Max total log size (MB).">
+            <Field label="logs-max-total-size-mb" hint={t("visual_config.log_max")}>
               <TextInput
                 value={values.logsMaxTotalSizeMb}
                 onChange={(e) => update({ logsMaxTotalSizeMb: e.currentTarget.value })}
@@ -1056,19 +1059,19 @@ export function VisualConfigEditor({
         </Card>
 
         <Card
-          title="Quota Exceeded Strategy"
+          title={t("visual_config.quota_strategy")}
           description="quota-exceeded.switch-project / switch-preview-model。"
         >
           <div className="space-y-4">
             <ToggleSwitch
-              label="Switch Project"
+              label={t("visual_config.switch_project")}
               description="quota-exceeded.switch-project"
               checked={values.quotaSwitchProject}
               onCheckedChange={(next) => update({ quotaSwitchProject: next })}
               disabled={disabled}
             />
             <ToggleSwitch
-              label="Switch Preview Model"
+              label={t("visual_config.switch_preview")}
               description="quota-exceeded.switch-preview-model"
               checked={values.quotaSwitchPreviewModel}
               onCheckedChange={(next) => update({ quotaSwitchPreviewModel: next })}
@@ -1081,7 +1084,7 @@ export function VisualConfigEditor({
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Routing" description="routing.strategy。">
           <div className="space-y-4">
-            <Field label="routing.strategy" hint="Select routing strategy.">
+            <Field label="routing.strategy" hint={t("visual_config.routing_select")}>
               <SelectInput
                 value={values.routingStrategy}
                 onChange={(value) => update({ routingStrategy: value as RoutingStrategy })}
@@ -1148,14 +1151,14 @@ export function VisualConfigEditor({
 
       <div className="space-y-6">
         <PayloadRulesEditor
-          title="Payload Default Rule"
+          title={t("visual_config.payload_default")}
           description="After matching models, append/override parameters in the request payload (corresponds to `payload.default`)."
           rules={values.payloadDefaultRules}
           disabled={disabled}
           onChange={(payloadDefaultRules) => update({ payloadDefaultRules })}
         />
         <PayloadRulesEditor
-          title="Payload Override Rule"
+          title={t("visual_config.payload_override")}
           description="After matching models, override parameters in the request payload (corresponds to `payload.override`)."
           rules={values.payloadOverrideRules}
           disabled={disabled}

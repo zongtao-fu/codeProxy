@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Check, Copy, ExternalLink, Globe, GitBranch, CalendarClock,
   MonitorSmartphone, KeyRound, RefreshCw, Search, Server, Layers,
@@ -130,6 +131,7 @@ function InfoCard({ icon: Icon, label, value, mono = false, copyable = false, li
   copyable?: boolean;
   link?: boolean;
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -164,7 +166,7 @@ function InfoCard({ icon: Icon, label, value, mono = false, copyable = false, li
             type="button"
             onClick={handleCopy}
             className="shrink-0 rounded-md p-1 text-slate-400 opacity-0 transition group-hover:opacity-100 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-neutral-800 dark:hover:text-white"
-            title="Copy"
+            title={t("system_page.copy")}
           >
             {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
           </button>
@@ -182,6 +184,7 @@ function InfoCard({ icon: Icon, label, value, mono = false, copyable = false, li
    ═══════════════════════════════════════════════════════════ */
 
 function ModelTag({ id }: { id: string }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const vc = getVendorColor(id);
 
@@ -195,7 +198,7 @@ function ModelTag({ id }: { id: string }) {
     <button
       type="button"
       onClick={handleClick}
-      title="Click to copy"
+      title={t("system_page.click_copy")}
       className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-xs transition hover:shadow-sm active:scale-95 ${vc.bg} ${vc.text} ${vc.border}`}
     >
       {copied ? (
@@ -220,6 +223,7 @@ function ModelTag({ id }: { id: string }) {
 const AUTO_REFRESH_INTERVAL = 30_000;
 
 export function SystemPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
   const auth = useAuth();
 
@@ -281,19 +285,19 @@ export function SystemPage() {
             <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
               System Info
             </h2>
-            <p className="text-xs text-slate-500 dark:text-white/45">Service, version & models</p>
+            <p className="text-xs text-slate-500 dark:text-white/45">{t("system_page.subtitle")}</p>
           </div>
         </div>
       </div>
 
       {/* ── Connection & Version Grid ── */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <InfoCard icon={Globe} label="API Base" value={auth.state.apiBase || "--"} mono copyable />
-        <InfoCard icon={Globe} label="Management Endpoint" value={auth.meta.managementEndpoint || "--"} mono copyable />
-        <InfoCard icon={GitBranch} label="Server Version" value={auth.state.serverVersion ?? "--"} />
-        <InfoCard icon={CalendarClock} label="Build Time" value={auth.state.serverBuildDate ?? "--"} mono />
-        <InfoCard icon={MonitorSmartphone} label="Frontend Version" value={__APP_VERSION__ || "--"} />
-        <InfoCard icon={KeyRound} label="API Key Lookup" value={apiKeyLookupUrl} link />
+        <InfoCard icon={Globe} label={t("system_page.api_base")} value={auth.state.apiBase || "--"} mono copyable />
+        <InfoCard icon={Globe} label={t("system_page.mgmt_endpoint")} value={auth.meta.managementEndpoint || "--"} mono copyable />
+        <InfoCard icon={GitBranch} label={t("system_page.server_version")} value={auth.state.serverVersion ?? "--"} />
+        <InfoCard icon={CalendarClock} label={t("system_page.build_time")} value={auth.state.serverBuildDate ?? "--"} mono />
+        <InfoCard icon={MonitorSmartphone} label={t("system_page.frontend_version")} value={__APP_VERSION__ || "--"} />
+        <InfoCard icon={KeyRound} label={t("system_page.api_key_lookup")} value={apiKeyLookupUrl} link />
       </div>
 
       {/* ── Model List ── */}
@@ -302,7 +306,7 @@ export function SystemPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5 dark:border-neutral-800">
           <div className="flex items-center gap-2.5">
             <Layers size={15} className="text-slate-500 dark:text-white/40" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Available Models</h3>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t("system_page.available_models")}</h3>
             <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-bold tabular-nums text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300">
               {filteredModels.length}
             </span>
@@ -316,7 +320,7 @@ export function SystemPage() {
               <TextInput
                 value={modelFilter}
                 onChange={(e) => setModelFilter(e.target.value)}
-                placeholder="Search models…"
+                placeholder={t("system_page.search_models")}
                 className="!w-48 !rounded-lg !py-1.5 !pl-8 !text-xs"
               />
             </div>

@@ -262,8 +262,8 @@ export function AiProvidersClaudeEditPage() {
         ) : (
           <div className={styles.openaiEditForm}>
             <Input
-              label="Channel Name *"
-              placeholder="e.g. Main Claude Channel (Required)"
+              label={t("providers.channel_name_required")}
+              placeholder={t("providers.claude_channel_hint")}
               value={form.name ?? ""}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
               disabled={saving || disableControls || isTesting}

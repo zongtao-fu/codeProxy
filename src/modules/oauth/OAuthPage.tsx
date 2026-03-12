@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Copy,
   ExternalLink,
@@ -67,6 +68,7 @@ const getErrorMessage = (err: unknown): string => {
 };
 
 export function OAuthPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
   const timers = useRef<Record<string, number>>({});
 
@@ -318,7 +320,7 @@ export function OAuthPage() {
                     onChange={(e) =>
                       updateProviderState(provider.id, { projectId: e.currentTarget.value })
                     }
-                    placeholder="Project ID(Optional)"
+                    placeholder={t("oauth.project_placeholder")}
                   />
                 </div>
               ) : null}
@@ -375,7 +377,7 @@ export function OAuthPage() {
                     onChange={(e) =>
                       updateProviderState(provider.id, { callbackUrl: e.currentTarget.value })
                     }
-                    placeholder="Paste the full callback URL from browser"
+                    placeholder={t("oauth.callback_placeholder")}
                   />
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
@@ -410,7 +412,7 @@ export function OAuthPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card
-          title="iFlow Cookie Auth"
+          title={t("oauth.iflow_title")}
           description={iflowHint}
           actions={
             <Button
@@ -428,16 +430,16 @@ export function OAuthPage() {
           <textarea
             value={iflowCookie}
             onChange={(e) => setIflowCookie(e.currentTarget.value)}
-            placeholder="Paste Cookie (sent to Management API)"
+            placeholder={t("oauth.cookie_placeholder")}
             className="min-h-[140px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400/35 dark:border-neutral-800 dark:bg-neutral-950 dark:text-slate-100 dark:placeholder:text-neutral-500 dark:focus-visible:ring-white/15"
             spellCheck={false}
-            aria-label="iFlow Cookie"
+            aria-label={t("oauth.iflow_cookie")}
           />
         </Card>
 
         <Card
-          title="Vertex Credential Import"
-          description="Upload Vertex credentials file to generate auth file."
+          title={t("oauth.vertex_title")}
+          description={t("oauth.vertex_desc")}
           actions={
             <label className="inline-flex">
               <input
@@ -476,7 +478,7 @@ export function OAuthPage() {
                   <div>auth_file：{vertexResult.authFile || "--"}</div>
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-slate-600 dark:text-white/65">Not Imported</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-white/65">{t("oauth.not_imported")}</p>
               )}
             </div>
           </div>

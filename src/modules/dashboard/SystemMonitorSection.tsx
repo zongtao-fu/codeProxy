@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
     Cpu, Database, FileText, Clock, MemoryStick, HardDrive,
     Network, ArrowUpRight, ArrowDownRight, Wifi,
@@ -71,6 +72,7 @@ function healthRingColor(score: number) {
    ═══════════════════════════════════════════════════════════ */
 
 function HealthGauge({ score }: { score: number }) {
+  const { t } = useTranslation();
     const radius = 60;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (score / 100) * circumference;
@@ -94,7 +96,7 @@ function HealthGauge({ score }: { score: number }) {
                     <span className={`mt-0.5 text-xs font-semibold ${hl.color}`}>{hl.text}</span>
                 </div>
             </div>
-            <p className="mt-2 text-[11px] text-slate-400 dark:text-white/40">Health Score</p>
+            <p className="mt-2 text-[11px] text-slate-400 dark:text-white/40">{t("system_monitor.health_score")}</p>
         </div>
     );
 }
@@ -162,6 +164,7 @@ function MiniKpi({ label, value, icon: Icon, color = "text-slate-900 dark:text-w
    ═══════════════════════════════════════════════════════════ */
 
 function NetworkCard({ stats }: { stats: SystemStats }) {
+  const { t } = useTranslation();
     return (
         <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/40 mb-2.5">
@@ -185,7 +188,7 @@ function NetworkCard({ stats }: { stats: SystemStats }) {
                 </div>
             </div>
             <div className="mt-2 flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-neutral-800/50">
-                <span className="text-[10px] text-slate-500 dark:text-white/45">Total Traffic</span>
+                <span className="text-[10px] text-slate-500 dark:text-white/45">{t("system_monitor.total_traffic")}</span>
                 <span className="text-xs font-bold tabular-nums text-slate-700 dark:text-white">{formatBytes(stats.net_bytes_sent + stats.net_bytes_recv)}</span>
             </div>
         </div>
@@ -197,6 +200,7 @@ function NetworkCard({ stats }: { stats: SystemStats }) {
    ═══════════════════════════════════════════════════════════ */
 
 function ChannelLatencyCard({ data }: { data: ChannelLatency[] }) {
+  const { t } = useTranslation();
     if (!data || data.length === 0) return null;
     const top5 = data.slice(0, 5);
     const maxMs = Math.max(...top5.map((d) => d.avg_ms));
@@ -206,7 +210,7 @@ function ChannelLatencyCard({ data }: { data: ChannelLatency[] }) {
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/40 mb-2.5">
                 <Network size={12} />
                 Channel Avg Latency
-                <span className="ml-auto text-[9px] font-normal normal-case tracking-normal">Top 5 · Last 7d</span>
+                <span className="ml-auto text-[9px] font-normal normal-case tracking-normal">{t("system_monitor.top5")}</span>
             </div>
             <div className="space-y-1.5">
                 {top5.map((ch) => {
@@ -239,6 +243,7 @@ function ChannelLatencyCard({ data }: { data: ChannelLatency[] }) {
    ═══════════════════════════════════════════════════════════ */
 
 function ConcurrencyCard({ stats }: { stats: SystemStats }) {
+  const { t } = useTranslation();
     const rpm = stats.total_rpm ?? 0;
     const tpm = stats.total_tpm ?? 0;
 
@@ -264,7 +269,7 @@ function ConcurrencyCard({ stats }: { stats: SystemStats }) {
                     <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
                         {rpm.toLocaleString()}
                     </p>
-                    <p className="mt-0.5 text-[10px] text-slate-400 dark:text-white/35">RPM</p>
+                    <p className="mt-0.5 text-[10px] text-slate-400 dark:text-white/35">{t("system_monitor.rpm")}</p>
                 </div>
                 <div className="rounded-lg bg-slate-50 px-3 py-2.5 dark:bg-neutral-800/50">
                     <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-slate-400 dark:text-white/35">
@@ -274,7 +279,7 @@ function ConcurrencyCard({ stats }: { stats: SystemStats }) {
                     <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
                         {tpm.toLocaleString()}
                     </p>
-                    <p className="mt-0.5 text-[10px] text-slate-400 dark:text-white/35">TPM</p>
+                    <p className="mt-0.5 text-[10px] text-slate-400 dark:text-white/35">{t("system_monitor.tpm")}</p>
                 </div>
             </div>
         </div>
@@ -325,6 +330,7 @@ function SkeletonLayout() {
    ═══════════════════════════════════════════════════════════ */
 
 export function SystemMonitorSection() {
+  const { t } = useTranslation();
     const { stats, connected } = useSystemStats(3);
 
     if (!stats) {
@@ -333,7 +339,7 @@ export function SystemMonitorSection() {
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <Activity size={16} className="text-slate-600 dark:text-white" />
-                        <span className="text-sm font-semibold text-slate-900 dark:text-white">System Monitor</span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">{t("system_monitor.title")}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-slate-400">
                         <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-slate-300 dark:bg-neutral-600" />
@@ -380,24 +386,24 @@ export function SystemMonitorSection() {
                             color="text-violet-500" sublabel={`Heap ${formatBytes(stats.go_heap_bytes)}`} />
                         <MiniKpi label="Database" value={formatBytes(stats.db_size_bytes)} icon={Database}
                             sublabel="SQLite + WAL" />
-                        <MiniKpi label="Log Storage" value={formatBytes(stats.log_size_bytes)} icon={FileText}
-                            sublabel="Log dir" />
+                        <MiniKpi label={t("system_monitor.log_storage")} value={formatBytes(stats.log_size_bytes)} icon={FileText}
+                            sublabel={t("system_monitor.log_dir")} />
                         <NetworkCard stats={stats} />
                         {stats.channel_latency?.length > 0 ? (
                             <ChannelLatencyCard data={stats.channel_latency} />
                         ) : (
-                            <MiniKpi label="Latency" value="--" icon={Network} sublabel="No data" />
+                            <MiniKpi label="Latency" value="--" icon={Network} sublabel={t("system_monitor.no_data")} />
                         )}
                     </div>
                 </div>
 
                 {/* ── Row 2: System Resources — compact horizontal bars ── */}
                 <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-                    <ResourceBar icon={Cpu} label="System CPU" value={`${stats.system_cpu_pct.toFixed(1)}%`} pct={stats.system_cpu_pct} />
-                    <ResourceBar icon={MemoryStick} label="System Memory" value={`${stats.system_mem_pct.toFixed(1)}%`} pct={stats.system_mem_pct}
+                    <ResourceBar icon={Cpu} label={t("system_monitor.system_cpu")} value={`${stats.system_cpu_pct.toFixed(1)}%`} pct={stats.system_cpu_pct} />
+                    <ResourceBar icon={MemoryStick} label={t("system_monitor.system_memory")} value={`${stats.system_mem_pct.toFixed(1)}%`} pct={stats.system_mem_pct}
                         detail={`${formatBytes(stats.system_mem_used)} / ${formatBytes(stats.system_mem_total)}`} />
-                    <ResourceBar icon={Cpu} label="Service CPU" value={`${stats.process_cpu_pct.toFixed(1)}%`} pct={Math.min(stats.process_cpu_pct, 100)} />
-                    <ResourceBar icon={MemoryStick} label="Service Memory" value={`${stats.process_mem_pct.toFixed(1)}%`} pct={stats.process_mem_pct}
+                    <ResourceBar icon={Cpu} label={t("system_monitor.service_cpu")} value={`${stats.process_cpu_pct.toFixed(1)}%`} pct={Math.min(stats.process_cpu_pct, 100)} />
+                    <ResourceBar icon={MemoryStick} label={t("system_monitor.service_memory")} value={`${stats.process_mem_pct.toFixed(1)}%`} pct={stats.process_mem_pct}
                         detail={formatBytes(stats.process_mem_bytes)} />
                     <ResourceBar icon={HardDrive} label="Disk" value={`${stats.disk_pct.toFixed(1)}%`} pct={stats.disk_pct}
                         detail={`${formatBytes(stats.disk_used)} / ${formatBytes(stats.disk_total)}`} />
@@ -409,7 +415,7 @@ export function SystemMonitorSection() {
                     <div className="grid gap-3 grid-cols-2">
                         <MiniKpi label="Database" value={formatBytes(stats.db_size_bytes)} icon={Database}
                             sublabel="SQLite + WAL + SHM" />
-                        <MiniKpi label="Disk Free" value={formatBytes(stats.disk_free)} icon={HardDrive}
+                        <MiniKpi label={t("system_monitor.disk_free")} value={formatBytes(stats.disk_free)} icon={HardDrive}
                             color={stats.disk_pct >= 90 ? "text-red-500" : stats.disk_pct >= 75 ? "text-amber-500" : "text-emerald-500"}
                             sublabel={`Total ${formatBytes(stats.disk_total)}`} />
                     </div>

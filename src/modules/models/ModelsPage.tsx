@@ -325,7 +325,7 @@ export function ModelsPage() {
                 <button
                     onClick={() => handleOpenPricing(row.id)}
                     className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-indigo-600 dark:text-white/50 dark:hover:bg-neutral-800 dark:hover:text-indigo-400"
-                    title="Set pricing"
+                    title={t("models_page.set_pricing_action")}
                 >
                     <DollarSign size={15} />
                 </button>
@@ -361,7 +361,7 @@ export function ModelsPage() {
                     <div className="mt-2 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
                         ${totalCost.toFixed(4)}
                     </div>
-                    <div className="mt-0.5 text-xs text-slate-500 dark:text-white/45">Total Cost (USD)</div>
+                    <div className="mt-0.5 text-xs text-slate-500 dark:text-white/45">{t("models_page.total_cost")}</div>
                 </div>
             </div>
 
@@ -384,7 +384,7 @@ export function ModelsPage() {
                             <input
                                 value={searchFilter}
                                 onChange={(e) => setSearchFilter(e.target.value)}
-                                placeholder="Search models…"
+                                placeholder={t("models_page.search")}
                                 className="w-48 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-white dark:placeholder:text-white/30 dark:focus:border-indigo-600"
                             />
                         </div>
@@ -393,7 +393,7 @@ export function ModelsPage() {
                             onClick={() => void loadModels()}
                             disabled={loading}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-900 text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-neutral-950 dark:hover:bg-slate-200"
-                            title="Refresh"
+                            title={t("models_page.refresh")}
                         >
                             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
                         </button>
@@ -428,7 +428,7 @@ export function ModelsPage() {
             <Modal
                 open={pricingModel !== null}
                 onClose={() => setPricingModel(null)}
-                title="Set Model Pricing"
+                title={t("models_page.set_pricing")}
                 description={pricingModel ? `Set price per million tokens (USD) for ${pricingModel}` : ""}
                 footer={
                     <>
@@ -489,7 +489,7 @@ export function ModelsPage() {
                             type="number"
                             value={editCachedPrice}
                             onChange={(e) => setEditCachedPrice(e.target.value)}
-                            placeholder="e.g. 1.50 (usually cheaper than input)"
+                            placeholder={t("models_page.input_price_hint")}
                             step="0.01"
                             min={0}
                             className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-indigo-500"

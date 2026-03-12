@@ -504,6 +504,7 @@ export function LogsPage() {
   };
 
   const downloadLogs = () => {
+  const { t } = useTranslation();
     const text = logState.buffer.join("\n");
     const blob = new Blob([text], { type: "text/plain" });
     const url = window.URL.createObjectURL(blob);
@@ -864,8 +865,8 @@ export function LogsPage() {
                         type="button"
                         className={styles.searchClear}
                         onClick={() => setSearchQuery("")}
-                        title="Clear"
-                        aria-label="Clear"
+                        title={t("common.clear_action")}
+                        aria-label={t("common.clear_action")}
                       >
                         <IconX size={16} />
                       </button>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Activity, RefreshCw, Sigma, TriangleAlert } from "lucide-react";
 import { usageApi, type DashboardSummary } from "@/lib/http/apis/usage";
 import { KpiCard } from "@/modules/monitor/MonitorPagePieces";
@@ -23,6 +24,7 @@ const formatRate = (rate: number) =>
   `${rate.toFixed(2)}%`;
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const { notify } = useToast();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [range, setRange] = useState<DashboardRange>(7);
@@ -77,7 +79,7 @@ export function DashboardPage() {
       {/* ── Error State ── */}
       {error ? (
         <EmptyState
-          title="Load failed"
+          title={t("dashboard.load_failed")}
           description={error}
           icon={<TriangleAlert size={18} />}
           action={
@@ -92,27 +94,27 @@ export function DashboardPage() {
       {/* ── KPI Row ── */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          title="Total Requests"
+          title={t("dashboard.total_requests")}
           value={<span className="tabular-nums">{formatNumber(kpi?.total_requests ?? 0)}</span>}
           hint={`Total requests for ${range === 1 ? "today" : `last ${range} days`}`}
           icon={Activity}
         />
         <KpiCard
-          title="Success Rate"
+          title={t("dashboard.success_rate")}
           value={<span className="tabular-nums">{formatRate(kpi?.success_rate ?? 0)}</span>}
           hint={`Success ${formatNumber(kpi?.success_requests ?? 0)} · Failed ${formatNumber(kpi?.failed_requests ?? 0)}`}
           icon={Sigma}
         />
         <KpiCard
-          title="Total Tokens"
+          title={t("dashboard.total_tokens")}
           value={<span className="tabular-nums">{formatNumber(kpi?.total_tokens ?? 0)}</span>}
           hint={`Input ${formatNumber(kpi?.input_tokens ?? 0)} · Output ${formatNumber(kpi?.output_tokens ?? 0)}`}
           icon={Sigma}
         />
         <KpiCard
-          title="Failed Requests"
+          title={t("dashboard.failed_requests")}
           value={<span className="tabular-nums">{formatNumber(kpi?.failed_requests ?? 0)}</span>}
-          hint="Failed requests (for provider/key quality analysis)"
+          hint={t("dashboard.failed_hint")}
           icon={TriangleAlert}
         />
       </div>
