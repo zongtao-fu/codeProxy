@@ -1,38 +1,37 @@
 import { useTranslation } from "react-i18next";
-import { Languages } from "lucide-react";
-import { SUPPORTED_LANGUAGES, STORAGE_KEY_LANGUAGE } from "@/utils/constants";
+import { SUPPORTED_LANGUAGES, LANGUAGE_LABEL_KEYS, STORAGE_KEY_LANGUAGE } from "@/utils/constants";
 import type { Language } from "@/types";
+import { Select } from "@/modules/ui/Select";
 
 export function LanguageSelector({ className }: { className?: string }) {
-    const { i18n } = useTranslation();
+    const { i18n, t } = useTranslation();
 
-    const currentLanguage = i18n.language as Language;
-    const currentIndex = SUPPORTED_LANGUAGES.findIndex(
-        (lng) => currentLanguage?.startsWith(lng) || (lng === "zh-CN" && currentLanguage?.startsWith("zh")),
-    );
-
-    const handleToggle = () => {
-        const nextIndex = (currentIndex + 1) % SUPPORTED_LANGUAGES.length;
-        const nextLang = SUPPORTED_LANGUAGES[nextIndex];
-        i18n.changeLanguage(nextLang).catch(console.error);
+    const handleLanguageChange = (lng: string) => {
+        i18n.changeLanguage(lng).catch(console.error);
         try {
-            localStorage.setItem(STORAGE_KEY_LANGUAGE, JSON.stringify({ language: nextLang, state: { language: nextLang } }));
+            localStorage.setItem(STORAGE_KEY_LANGUAGE, JSON.stringify({ language: lng, state: { language: lng } }));
         } catch {
             // ignore
         }
     };
 
-    const label = currentLanguage?.startsWith("zh") ? "Switch to English" : "切换到中文";
+    const currentLanguage = i18n.language as Language;
+    const currentValue = SUPPORTED_LANGUAGES.find(
+        (lng) => currentLanguage?.startsWith(lng) || (lng === "zh-CN" && currentLanguage?.startsWith("zh")),
+    ) ?? SUPPORTED_LANGUAGES[0];
+
+    const options = SUPPORTED_LANGUAGES.map((lng) => ({
+        value: lng,
+        label: t(LANGUAGE_LABEL_KEYS[lng]),
+    }));
 
     return (
-        <button
-            type="button"
-            onClick={handleToggle}
-            className={className}
-            aria-label={label}
-            title={label}
-        >
-            <Languages size={16} />
-        </button>
+        <Select
+            value={currentValue}
+            onChange={handleLanguageChange}
+            options={options}
+            aria-label={t("language.switch")}
+            className={`w-[90px] ${className ?? ""}`}
+        />
     );
 }

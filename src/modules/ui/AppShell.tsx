@@ -171,7 +171,7 @@ function ShellHeader({
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <LanguageSelector className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" />
+          <LanguageSelector />
           <ThemeToggleButton className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white" />
           <button
             type="button"
