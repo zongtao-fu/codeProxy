@@ -448,6 +448,7 @@ export function SystemMonitorSection() {
   }
 
   const health = computeHealthScore(stats);
+  const logDirSizeBytes = stats.log_dir_size_bytes || stats.log_size_bytes;
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white/50 p-5 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/50">
@@ -499,13 +500,13 @@ export function SystemMonitorSection() {
               label={t("system_monitor.database")}
               value={formatBytes(stats.db_size_bytes)}
               icon={Database}
-              sublabel={t("system_monitor.sqlite_wal")}
+              sublabel={t("system_monitor.sqlite_wal_shm")}
             />
             <MiniKpi
               label={t("system_monitor.log_storage")}
-              value={formatBytes(stats.log_size_bytes)}
+              value={formatBytes(stats.log_content_store_bytes)}
               icon={FileText}
-              sublabel={t("system_monitor.log_dir")}
+              sublabel={t("system_monitor.request_log_content")}
             />
             <NetworkCard stats={stats} />
             {stats.channel_latency?.length > 0 ? (
@@ -563,10 +564,10 @@ export function SystemMonitorSection() {
           <ConcurrencyCard stats={stats} />
           <div className="grid gap-3 grid-cols-2">
             <MiniKpi
-              label={t("system_monitor.database")}
-              value={formatBytes(stats.db_size_bytes)}
-              icon={Database}
-              sublabel={t("system_monitor.sqlite_wal_shm")}
+              label={t("system_monitor.log_dir")}
+              value={formatBytes(logDirSizeBytes)}
+              icon={Layers}
+              sublabel={t("system_monitor.log_files")}
             />
             <MiniKpi
               label={t("system_monitor.disk_free")}

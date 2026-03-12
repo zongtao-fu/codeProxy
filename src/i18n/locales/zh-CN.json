@@ -2437,6 +2437,8 @@
     "heap": "堆内存 {{size}}",
     "sqlite_wal": "SQLite + WAL",
     "sqlite_wal_shm": "SQLite + WAL + SHM",
+    "request_log_content": "request_log_content 正文数据",
+    "log_files": "日志目录文件占用",
     "total_size": "合计 {{size}}",
     "reqs": "{{count}} 次",
     "up_total": "↑ 总计 {{size}}",

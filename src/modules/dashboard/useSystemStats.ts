@@ -5,6 +5,8 @@ import { apiClient } from "@/lib/http/client";
 
 export interface SystemStats {
   db_size_bytes: number;
+  log_content_store_bytes: number;
+  log_dir_size_bytes: number;
   log_size_bytes: number;
   process_mem_bytes: number;
   process_mem_pct: number;
