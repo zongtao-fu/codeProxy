@@ -7,7 +7,6 @@ import "goey-toast/styles.css";
 import "@/i18n/index";
 import { useTranslation } from "react-i18next";
 
-
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {

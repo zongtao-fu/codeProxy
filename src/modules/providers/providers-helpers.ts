@@ -171,11 +171,11 @@ export const buildOpenAIDraft = (input?: OpenAIProvider | null): OpenAIDraft => 
   apiKeyEntries:
     Array.isArray(input?.apiKeyEntries) && input.apiKeyEntries.length
       ? input.apiKeyEntries.map((entry, idx) => ({
-        id: `key-${idx}-${entry.apiKey}`,
-        apiKey: entry.apiKey ?? "",
-        proxyUrl: entry.proxyUrl ?? "",
-        headersEntries: recordToKeyValueEntries(entry.headers),
-      }))
+          id: `key-${idx}-${entry.apiKey}`,
+          apiKey: entry.apiKey ?? "",
+          proxyUrl: entry.proxyUrl ?? "",
+          headersEntries: recordToKeyValueEntries(entry.headers),
+        }))
       : [{ id: `key-${Date.now()}`, apiKey: "", proxyUrl: "", headersEntries: [] }],
   modelEntries: buildModelEntries(input?.models),
 });

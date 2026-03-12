@@ -192,9 +192,9 @@ export const ModelMappingDiagram = forwardRef<ModelMappingDiagramRef, ModelMappi
     }, [modelAlias, allProviderModels, extraAliases]);
 
     // Track element positions
-    const providerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-    const sourceRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-    const aliasRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+    const providerRefs = useRef<Map<string, HTMLElement>>(new Map());
+    const sourceRefs = useRef<Map<string, HTMLElement>>(new Map());
+    const aliasRefs = useRef<Map<string, HTMLElement>>(new Map());
 
     const toggleProviderCollapse = (provider: string) => {
       setCollapsedProviders((prev) => {

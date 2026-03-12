@@ -7,17 +7,16 @@ import "goey-toast/styles.css";
 import "@/i18n/index";
 import { useTranslation } from "react-i18next";
 
-
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
-    throw new Error("Root element #root not found");
+  throw new Error("Root element #root not found");
 }
 
 createRoot(rootElement).render(
-    <StrictMode>
-        <BrowserRouter basename="/manage">
-            <AppRouter />
-        </BrowserRouter>
-    </StrictMode>,
+  <StrictMode>
+    <BrowserRouter basename="/manage">
+      <AppRouter />
+    </BrowserRouter>
+  </StrictMode>,
 );

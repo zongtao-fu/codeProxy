@@ -74,9 +74,13 @@ export function ProviderKeyListCard({
                       <Icon size={16} className="text-slate-900 dark:text-white" />
                       <span className="truncate">{item.name || maskApiKey(item.apiKey)}</span>
                       {disabled ? (
-                        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-200">{t("providers.disabled")}</span>
+                        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-200">
+                          {t("providers.disabled")}
+                        </span>
                       ) : (
-                        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200">{t("providers.enabled")}</span>
+                        <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-200">
+                          {t("providers.enabled")}
+                        </span>
                       )}
                     </p>
 
@@ -87,7 +91,11 @@ export function ProviderKeyListCard({
                         <p className="truncate font-mono">proxyUrl：{item.proxyUrl}</p>
                       ) : null}
                       <p className="tabular-nums">
-                        {t("providers.models_label")}: {models.length} · {t("providers.excluded_models_label")}: {excludedModels.length} · {t("providers.headers_optional")}: {headerEntries.length} · {t("providers.success_stats", { count: stats.success })} · {t("providers.failed_stats", { count: stats.failure })}
+                        {t("providers.models_label")}: {models.length} ·{" "}
+                        {t("providers.excluded_models_label")}: {excludedModels.length} ·{" "}
+                        {t("providers.headers_optional")}: {headerEntries.length} ·{" "}
+                        {t("providers.success_stats", { count: stats.success })} ·{" "}
+                        {t("providers.failed_stats", { count: stats.failure })}
                       </p>
                     </div>
 
@@ -143,7 +151,9 @@ export function ProviderKeyListCard({
                   <div className="flex flex-wrap items-center gap-2">
                     {onToggleEnabled ? (
                       <div className="inline-flex items-center gap-2">
-                        <span className="text-sm font-semibold leading-none text-slate-900 dark:text-white">{t("providers.enable")}</span>
+                        <span className="text-sm font-semibold leading-none text-slate-900 dark:text-white">
+                          {t("providers.enable")}
+                        </span>
                         <ToggleSwitch
                           checked={!disabled}
                           ariaLabel={t("providers.enable")}
@@ -152,9 +162,13 @@ export function ProviderKeyListCard({
                       </div>
                     ) : null}
                     <Button variant="secondary" size="sm" onClick={() => onEdit(idx)}>
-                      <Settings2 size={14} />{t("providers.edit")}</Button>
+                      <Settings2 size={14} />
+                      {t("providers.edit")}
+                    </Button>
                     <Button variant="danger" size="sm" onClick={() => onDelete(idx)}>
-                      <Trash2 size={14} />{t("providers.delete")}</Button>
+                      <Trash2 size={14} />
+                      {t("providers.delete")}
+                    </Button>
                   </div>
                 </div>
               </div>

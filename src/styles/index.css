@@ -7,6 +7,38 @@
   --font-sans: "Inter", "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
+/* 统一交互元素鼠标样式，便于用户识别可点击区域 */
+:where(
+  a[href],
+  button,
+  summary,
+  label[for],
+  select,
+  [role="button"],
+  [role="link"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  [type="checkbox"],
+  [type="radio"],
+  [type="file"],
+  [type="color"],
+  [type="range"]
+) {
+  cursor: pointer;
+}
+
+:where(
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [disabled],
+  [aria-disabled="true"]
+) {
+  cursor: not-allowed;
+}
+
 .scrollbar-hidden {
   scrollbar-width: none;
   -ms-overflow-style: none;

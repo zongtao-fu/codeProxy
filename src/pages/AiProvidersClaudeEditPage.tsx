@@ -404,12 +404,13 @@ export function AiProvidersClaudeEditPage() {
 
               {testMessage && (
                 <div
-                  className={`status-badge ${testStatus === "error"
-                    ? "error"
-                    : testStatus === "success"
-                      ? "success"
-                      : "muted"
-                    }`}
+                  className={`status-badge ${
+                    testStatus === "error"
+                      ? "error"
+                      : testStatus === "success"
+                        ? "success"
+                        : "muted"
+                  }`}
                 >
                   {testMessage}
                 </div>

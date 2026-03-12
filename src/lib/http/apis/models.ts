@@ -133,7 +133,8 @@ export const modelsApi = {
 
     const resolvedHeaders: Record<string, string> = { ...headers };
     const hasAuthHeader =
-      typeof resolvedHeaders.Authorization === "string" || hasHeader(resolvedHeaders, "authorization");
+      typeof resolvedHeaders.Authorization === "string" ||
+      hasHeader(resolvedHeaders, "authorization");
     if (apiKey && !hasAuthHeader) {
       resolvedHeaders.Authorization = `Bearer ${apiKey}`;
     }

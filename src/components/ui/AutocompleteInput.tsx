@@ -130,13 +130,31 @@ export function AutocompleteInput({
             display: "flex",
             alignItems: "center",
             pointerEvents: disabled ? "none" : "auto",
-            cursor: "pointer",
             height: "100%",
           }}
-          onClick={() => !disabled && setIsOpen(!isOpen)}
         >
           {rightElement}
-          <IconChevronDown size={16} style={{ opacity: 0.5, marginLeft: 4 }} />
+          <button
+            type="button"
+            onClick={() => !disabled && setIsOpen((prev) => !prev)}
+            aria-label={label || placeholder || "Toggle options"}
+            title={label || placeholder || "Toggle options"}
+            disabled={disabled}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              marginLeft: rightElement ? 4 : 0,
+              padding: 0,
+              border: 0,
+              background: "transparent",
+              color: "inherit",
+              cursor: disabled ? "not-allowed" : "pointer",
+            }}
+          >
+            <IconChevronDown size={16} style={{ opacity: 0.5 }} />
+          </button>
         </div>
 
         {isOpen && filteredOptions.length > 0 && !disabled && (
@@ -157,11 +175,15 @@ export function AutocompleteInput({
             }}
           >
             {filteredOptions.map((opt, index) => (
-              <div
+              <button
+                type="button"
                 key={`${opt.value}-${index}`}
                 onClick={() => handleSelect(opt.value)}
                 style={{
+                  width: "100%",
+                  border: 0,
                   padding: "8px 12px",
+                  textAlign: "left",
                   cursor: "pointer",
                   backgroundColor:
                     index === highlightedIndex ? "var(--bg-tertiary)" : "transparent",
@@ -178,7 +200,7 @@ export function AutocompleteInput({
                     {opt.label}
                   </span>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         )}

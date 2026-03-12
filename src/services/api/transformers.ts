@@ -139,9 +139,9 @@ const normalizeProviderKeyConfig = (item: unknown): ProviderKeyConfig | null => 
   if (models.length) config.models = models;
   const excludedModels = normalizeExcludedModels(
     record?.["excluded-models"] ??
-    record?.excludedModels ??
-    record?.["excluded_models"] ??
-    record?.excluded_models,
+      record?.excludedModels ??
+      record?.["excluded_models"] ??
+      record?.excluded_models,
   );
   if (excludedModels.length) config.excludedModels = excludedModels;
   return config;

@@ -103,7 +103,7 @@ export function ServiceHealthCard({ usage, loading }: ServiceHealthCardProps) {
     const timeRange = `${formatDateTime(detail.startTime)} – ${formatDateTime(detail.endTime)}`;
 
     return (
-      <div className={`${styles.healthTooltip} ${posClass} ${vertClass}`}>
+      <span className={`${styles.healthTooltip} ${posClass} ${vertClass}`}>
         <span className={styles.healthTooltipTime}>{timeRange}</span>
         {total > 0 ? (
           <span className={styles.healthTooltipStats}>
@@ -118,7 +118,7 @@ export function ServiceHealthCard({ usage, loading }: ServiceHealthCardProps) {
         ) : (
           <span className={styles.healthTooltipStats}>{t("status_bar.no_requests")}</span>
         )}
-      </div>
+      </span>
     );
   };
 
@@ -147,21 +147,27 @@ export function ServiceHealthCard({ usage, loading }: ServiceHealthCardProps) {
             const isIdle = detail.rate === -1;
             const blockStyle = isIdle ? undefined : { backgroundColor: rateToColor(detail.rate) };
             const isActive = activeTooltip === idx;
+            const timeRange = `${formatDateTime(detail.startTime)} – ${formatDateTime(detail.endTime)}`;
 
             return (
-              <div
+              <button
+                type="button"
                 key={idx}
                 className={`${styles.healthBlockWrapper} ${isActive ? styles.healthBlockActive : ""}`}
                 onPointerEnter={(e) => handlePointerEnter(e, idx)}
                 onPointerLeave={handlePointerLeave}
                 onPointerDown={(e) => handlePointerDown(e, idx)}
+                onFocus={() => setActiveTooltip(idx)}
+                onBlur={() => setActiveTooltip(null)}
+                aria-pressed={isActive}
+                title={timeRange}
               >
-                <div
+                <span
                   className={`${styles.healthBlock} ${isIdle ? styles.healthBlockIdle : ""}`}
                   style={blockStyle}
                 />
                 {isActive && renderTooltip(detail, idx)}
-              </div>
+              </button>
             );
           })}
         </div>

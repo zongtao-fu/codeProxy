@@ -9,6 +9,38 @@
 @use "./components.scss";
 @use "./layout.scss";
 
+// 统一交互元素鼠标样式，便于用户识别可点击区域
+:where(
+  a[href],
+  button,
+  summary,
+  label[for],
+  select,
+  [role="button"],
+  [role="link"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  [type="checkbox"],
+  [type="radio"],
+  [type="file"],
+  [type="color"],
+  [type="range"]
+) {
+  cursor: pointer;
+}
+
+:where(
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [disabled],
+  [aria-disabled="true"]
+) {
+  cursor: not-allowed;
+}
+
 body {
   background-color: var(--bg-secondary);
   color: var(--text-primary);

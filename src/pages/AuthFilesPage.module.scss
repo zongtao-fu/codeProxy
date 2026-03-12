@@ -667,11 +667,23 @@
   flex: 1;
   min-width: 6px;
   position: relative;
+  display: block;
+  border: 0;
+  padding: 0;
+  background: none;
+  appearance: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
 .statusBlock {
+  display: block;
   width: 100%;
   height: 8px;
   border-radius: 2px;
@@ -691,6 +703,7 @@
 }
 
 .statusTooltip {
+  display: block;
   position: absolute;
   bottom: calc(100% + 8px);
   left: 50%;
@@ -1247,8 +1260,12 @@
   display: flex;
   align-items: center;
   gap: $spacing-sm;
+  width: 100%;
   padding: $spacing-sm $spacing-md;
+  appearance: none;
   background-color: var(--bg-secondary);
+  text-align: left;
+  font: inherit;
   border-radius: $radius-md;
   border: 1px solid var(--border-color);
   flex-wrap: wrap;
@@ -1262,6 +1279,11 @@
 
   &:active {
     transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
   }
 }
 

@@ -504,7 +504,8 @@ export function LogsPage() {
         const blob = await logsApi.downloadErrorLog(file.name);
         downloadBlob(blob, file.name);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : t("logs_page.failed_download_error_log");
+        const message =
+          err instanceof Error ? err.message : t("logs_page.failed_download_error_log");
         notify({ type: "error", message });
       }
     },
@@ -536,7 +537,8 @@ export function LogsPage() {
       const blob = await logsApi.downloadRequestLogById(id);
       downloadBlob(blob, `request-log-${id}.log`);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("logs_page.failed_download_request_log");
+      const message =
+        err instanceof Error ? err.message : t("logs_page.failed_download_request_log");
       notify({ type: "error", message });
     }
   }, [notify, requestLogId]);
@@ -558,7 +560,10 @@ export function LogsPage() {
         <TabsContent value="content">
           <Card
             title={t("logs_page.live_logs")}
-            description={t("logs_page.latest_label", { time: latestLabel, max: MAX_BUFFER_LINES.toLocaleString() })}
+            description={t("logs_page.latest_label", {
+              time: latestLabel,
+              max: MAX_BUFFER_LINES.toLocaleString(),
+            })}
             actions={
               <div className="flex flex-wrap items-center gap-2">
                 <Button
@@ -608,9 +613,15 @@ export function LogsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="text-xs text-slate-600 dark:text-white/65">
                     {t("logs_page.status_summary", {
-                      autoRefresh: autoRefresh ? t("logs_page.auto_refresh_on") : t("logs_page.auto_refresh_off"),
-                      hideManagement: hideManagement ? t("logs_page.auto_refresh_on") : t("logs_page.auto_refresh_off"),
-                      rawLogs: showRawLogs ? t("logs_page.auto_refresh_on") : t("logs_page.auto_refresh_off"),
+                      autoRefresh: autoRefresh
+                        ? t("logs_page.auto_refresh_on")
+                        : t("logs_page.auto_refresh_off"),
+                      hideManagement: hideManagement
+                        ? t("logs_page.auto_refresh_on")
+                        : t("logs_page.auto_refresh_off"),
+                      rawLogs: showRawLogs
+                        ? t("logs_page.auto_refresh_on")
+                        : t("logs_page.auto_refresh_off"),
                     })}
                   </div>
                   <Button
@@ -663,9 +674,17 @@ export function LogsPage() {
                 <div className="min-w-0">
                   <span
                     className="block truncate whitespace-nowrap tabular-nums"
-                    title={t("logs_page.showing_lines", { visible: visibleLines.length.toLocaleString(), total: filteredLines.length.toLocaleString() }) + (canLoadMore ? " " + t("logs_page.scroll_up_hint") : "")}
+                    title={
+                      t("logs_page.showing_lines", {
+                        visible: visibleLines.length.toLocaleString(),
+                        total: filteredLines.length.toLocaleString(),
+                      }) + (canLoadMore ? " " + t("logs_page.scroll_up_hint") : "")
+                    }
                   >
-                    {t("logs_page.showing_lines", { visible: visibleLines.length.toLocaleString(), total: filteredLines.length.toLocaleString() })}
+                    {t("logs_page.showing_lines", {
+                      visible: visibleLines.length.toLocaleString(),
+                      total: filteredLines.length.toLocaleString(),
+                    })}
                     {canLoadMore ? " " + t("logs_page.scroll_up_hint") : ""}
                   </span>
                 </div>
@@ -833,14 +852,18 @@ export function LogsPage() {
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("logs_page.error_log_files")}</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("logs_page.error_log_files")}
+                </p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-white/65">
                   {t("logs_page.error_log_list_desc")}
                 </p>
 
                 <div className="mt-4">
                   {errorLogsLoading ? (
-                    <div className="text-sm text-slate-600 dark:text-white/65">{t("logs_page.loading")}</div>
+                    <div className="text-sm text-slate-600 dark:text-white/65">
+                      {t("logs_page.loading")}
+                    </div>
                   ) : errorLogs.length === 0 ? (
                     <EmptyState
                       title={t("logs_page.no_error_logs")}
@@ -864,8 +887,8 @@ export function LogsPage() {
                               ·{" "}
                               {typeof file.modified === "number"
                                 ? new Date(
-                                  file.modified < 1e12 ? file.modified * 1000 : file.modified,
-                                ).toLocaleString()
+                                    file.modified < 1e12 ? file.modified * 1000 : file.modified,
+                                  ).toLocaleString()
                                 : "--"}
                             </p>
                           </div>

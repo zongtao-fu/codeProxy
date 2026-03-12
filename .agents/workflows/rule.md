@@ -21,6 +21,7 @@ description: 前端项目规范和 CI/CD 检查流程
 ## CI/CD 流程
 
 ### 自动部署
+
 - 推送到 `dev` 分支后，GitHub Actions 会自动构建并部署到服务器
 - 工作流文件: `.github/workflows/deploy.yml`
 - 部署路径: `/home/web/html/cliproxy-panel/`
@@ -30,26 +31,31 @@ description: 前端项目规范和 CI/CD 检查流程
 // turbo-all
 
 1. 推送代码后等待 90 秒
+
 ```bash
 sleep 90
 ```
 
 2. 检查前端 CI 状态
+
 ```bash
 gh run list --repo kittors/codeProxy --branch dev -L 1 --json databaseId,status,conclusion,displayTitle
 ```
 
 3. 如果状态为 `in_progress`，再等 60 秒后重新检查
+
 ```bash
 sleep 60 && gh run list --repo kittors/codeProxy --branch dev -L 1 --json databaseId,status,conclusion,displayTitle
 ```
 
 4. 如果状态为 `failure`，查看失败日志
+
 ```bash
 gh run view <RUN_ID> --repo kittors/codeProxy --log-failed 2>&1 | tail -40
 ```
 
 5. 如果后端也有推送，检查后端 CI 状态
+
 ```bash
 gh run list --repo kittors/CliRelay -L 3 --json databaseId,status,conclusion,displayTitle,headBranch
 ```

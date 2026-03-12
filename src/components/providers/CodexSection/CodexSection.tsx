@@ -71,11 +71,7 @@ export function CodexSection({
       <Card
         title={
           <span className={styles.cardTitle}>
-            <img
-              src={iconCodex}
-              alt=""
-              className={styles.cardTitleIcon}
-            />
+            <img src={iconCodex} alt="" className={styles.cardTitleIcon} />
             {t("ai_providers.codex_title")}
           </span>
         }

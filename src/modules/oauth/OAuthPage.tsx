@@ -281,7 +281,8 @@ export function OAuthPage() {
       setIflowResult(res);
       notify({
         type: res.status === "ok" ? "success" : "error",
-        message: res.status === "ok" ? t("oauth.import_success") : res.error || t("oauth.import_failed"),
+        message:
+          res.status === "ok" ? t("oauth.import_success") : res.error || t("oauth.import_failed"),
       });
     } catch (err: unknown) {
       notify({ type: "error", message: getErrorMessage(err) || t("oauth.import_failed") });
@@ -414,7 +415,9 @@ export function OAuthPage() {
                       disabled={Boolean(state.callbackSubmitting)}
                     >
                       <Send size={14} />
-                      {state.callbackSubmitting ? t("oauth.callback_submitting") : t("oauth.submit_callback")}
+                      {state.callbackSubmitting
+                        ? t("oauth.callback_submitting")
+                        : t("oauth.submit_callback")}
                     </Button>
                     {state.callbackStatus ? (
                       <span
@@ -499,13 +502,23 @@ export function OAuthPage() {
               </p>
               {vertexResult ? (
                 <div className="mt-2 space-y-1 font-mono text-xs text-slate-700 dark:text-slate-200">
-                  <div>{t("oauth.project_id_label")}: {vertexResult.projectId || "--"}</div>
-                  <div>{t("oauth.email_label")}: {vertexResult.email || "--"}</div>
-                  <div>{t("oauth.location_label")}: {vertexResult.location || "--"}</div>
-                  <div>{t("oauth.auth_file_label")}: {vertexResult.authFile || "--"}</div>
+                  <div>
+                    {t("oauth.project_id_label")}: {vertexResult.projectId || "--"}
+                  </div>
+                  <div>
+                    {t("oauth.email_label")}: {vertexResult.email || "--"}
+                  </div>
+                  <div>
+                    {t("oauth.location_label")}: {vertexResult.location || "--"}
+                  </div>
+                  <div>
+                    {t("oauth.auth_file_label")}: {vertexResult.authFile || "--"}
+                  </div>
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-slate-600 dark:text-white/65">{t("oauth.not_imported")}</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-white/65">
+                  {t("oauth.not_imported")}
+                </p>
               )}
             </div>
           </div>

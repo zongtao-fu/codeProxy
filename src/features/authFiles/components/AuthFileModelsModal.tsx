@@ -39,16 +39,21 @@ export function AuthFileModelsModal(props: AuthFileModelsModalProps) {
         </div>
       ) : error === "unsupported" ? (
         <EmptyState
-          title={t("auth_files.models_unsupported", { defaultValue: "Current version does not support this feature" })}
+          title={t("auth_files.models_unsupported", {
+            defaultValue: "Current version does not support this feature",
+          })}
           description={t("auth_files.models_unsupported_desc", {
             defaultValue: "Please update CLI Proxy API to the latest version and try again",
           })}
         />
       ) : models.length === 0 ? (
         <EmptyState
-          title={t("auth_files.models_empty", { defaultValue: "No available models for this credential" })}
+          title={t("auth_files.models_empty", {
+            defaultValue: "No available models for this credential",
+          })}
           description={t("auth_files.models_empty_desc", {
-            defaultValue: "This auth credential might not be loaded by the server or bound to any models",
+            defaultValue:
+              "This auth credential might not be loaded by the server or bound to any models",
           })}
         />
       ) : (
@@ -56,7 +61,8 @@ export function AuthFileModelsModal(props: AuthFileModelsModalProps) {
           {models.map((model) => {
             const excludedModel = isModelExcluded(model.id, fileType, excluded);
             return (
-              <div
+              <button
+                type="button"
                 key={model.id}
                 className={`${styles.modelItem} ${excludedModel ? styles.modelItemExcluded : ""}`}
                 onClick={() => {
@@ -80,7 +86,7 @@ export function AuthFileModelsModal(props: AuthFileModelsModalProps) {
                     {t("auth_files.models_excluded_badge", { defaultValue: "Disabled" })}
                   </span>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
