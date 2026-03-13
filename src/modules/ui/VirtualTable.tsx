@@ -48,7 +48,7 @@ export interface VirtualTableProps<T> {
   bottomDebounceMs?: number;
   /** Minimum table width class (default "min-w-[1320px]") */
   minWidth?: string;
-  /** Container height class (default "h-[calc(100vh-260px)]") */
+  /** Container height class (default "h-[calc(100dvh-260px)]") */
   height?: string;
   /** Screen-reader caption */
   caption?: string;
@@ -83,7 +83,7 @@ export function VirtualTable<T>({
   scrollThreshold = DEFAULT_SCROLL_THRESHOLD,
   bottomDebounceMs = DEFAULT_BOTTOM_DEBOUNCE_MS,
   minWidth = "min-w-[1320px]",
-  height = "h-[calc(100vh-260px)]",
+  height = "h-[calc(100dvh-260px)]",
   caption = "data table",
   emptyText = "",
   rowClassName,

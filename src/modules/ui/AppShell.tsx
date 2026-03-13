@@ -42,6 +42,7 @@ interface ShellContextState {
 
 const ShellContext = createContext<ShellContextState | null>(null);
 const STORAGE_KEY_SIDEBAR_COLLAPSED = "cli-proxy-sidebar-collapsed";
+const SIDEBAR_MOBILE_MEDIA = "(max-width: 767px)";
 
 const NAV_ITEMS = [
   { to: "/dashboard", i18nKey: "shell.nav_dashboard", icon: LayoutDashboard },
@@ -78,7 +79,15 @@ function ShellFrame({ children }: PropsWithChildren) {
   return <PageBackground variant="app">{children}</PageBackground>;
 }
 
-function ShellSidebar({ collapsed }: { collapsed: boolean }) {
+function ShellSidebar({
+  collapsed,
+  mode,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  mode: "desktop" | "mobile";
+  onNavigate?: () => void;
+}) {
   const location = useLocation();
   const { t } = useTranslation();
   const activeTo = useMemo(() => {
@@ -89,12 +98,22 @@ function ShellSidebar({ collapsed }: { collapsed: boolean }) {
     );
   }, [location.pathname]);
 
+  const isMobile = mode === "mobile";
+
   return (
     <aside
       className={[
-        "h-screen shrink-0 overflow-hidden bg-white/80 backdrop-blur-xl dark:bg-neutral-950/70",
-        "motion-reduce:transition-none motion-safe:transition-[width] motion-safe:duration-300 motion-safe:ease-out",
-        collapsed ? "w-0 border-r-0" : "w-64 border-r border-slate-200 dark:border-neutral-800",
+        "shrink-0 overflow-hidden bg-white/80 backdrop-blur-xl dark:bg-neutral-950/70",
+        isMobile ? "fixed inset-y-0 left-0 z-40 w-64" : "h-screen",
+        "border-r border-slate-200 dark:border-neutral-800",
+        "motion-reduce:transition-none motion-safe:transition-all motion-safe:duration-300 motion-safe:ease-out",
+        isMobile
+          ? collapsed
+            ? "-translate-x-full"
+            : "translate-x-0"
+          : collapsed
+            ? "w-0 border-r-0"
+            : "w-64",
       ].join(" ")}
       aria-hidden={collapsed}
     >
@@ -118,6 +137,7 @@ function ShellSidebar({ collapsed }: { collapsed: boolean }) {
                 key={item.to}
                 to={item.to}
                 viewTransition
+                onClick={onNavigate}
                 className={
                   active
                     ? "flex min-w-0 items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white dark:bg-white dark:text-neutral-950 whitespace-nowrap"
@@ -209,7 +229,9 @@ export function AppShell({ children }: PropsWithChildren) {
     actions: { logout },
   } = useAuth();
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem(STORAGE_KEY_SIDEBAR_COLLAPSED) === "1";
     } catch {
@@ -218,16 +240,60 @@ export function AppShell({ children }: PropsWithChildren) {
   });
 
   useEffect(() => {
+    const mq = window.matchMedia?.(SIDEBAR_MOBILE_MEDIA);
+    if (!mq) return;
+
+    const update = () => setIsMobile(mq.matches);
+    update();
+
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", update);
+      return () => mq.removeEventListener("change", update);
+    }
+
+    const legacy = mq as unknown as {
+      addListener?: (listener: () => void) => void;
+      removeListener?: (listener: () => void) => void;
+    };
+
+    legacy.addListener?.(update);
+    return () => legacy.removeListener?.(update);
+  }, []);
+
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    setMobileSidebarOpen(false);
+  }, [isMobile, location.pathname]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    if (!mobileSidebarOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isMobile, mobileSidebarOpen]);
+
+  useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_SIDEBAR_COLLAPSED, sidebarCollapsed ? "1" : "0");
+      localStorage.setItem(STORAGE_KEY_SIDEBAR_COLLAPSED, desktopSidebarCollapsed ? "1" : "0");
     } catch {
       // 忽略持久化失败
     }
-  }, [sidebarCollapsed]);
+  }, [desktopSidebarCollapsed]);
 
   const toggleSidebar = useCallback(() => {
-    setSidebarCollapsed((prev) => !prev);
-  }, []);
+    if (isMobile) {
+      setMobileSidebarOpen((prev) => !prev);
+      return;
+    }
+    setDesktopSidebarCollapsed((prev) => !prev);
+  }, [isMobile]);
 
   const value = useMemo<ShellContextState>(
     () => ({
@@ -241,6 +307,8 @@ export function AppShell({ children }: PropsWithChildren) {
     [location.pathname, logout],
   );
 
+  const sidebarCollapsed = isMobile ? !mobileSidebarOpen : desktopSidebarCollapsed;
+
   return (
     <ShellContext value={value}>
       <ShellFrame>
@@ -250,15 +318,42 @@ export function AppShell({ children }: PropsWithChildren) {
         >
           {t("shell.skip_to_content")}
         </a>
-        <div className="flex h-screen overflow-hidden">
-          <ShellSidebar collapsed={sidebarCollapsed} />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <ShellHeader sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
-            <div className="flex-1 overflow-y-auto">
-              <ShellMain>{children}</ShellMain>
+
+        {isMobile ? (
+          <>
+            {mobileSidebarOpen ? (
+              <button
+                type="button"
+                className="fixed inset-0 z-30 bg-black/35 backdrop-blur-[1px]"
+                aria-label={t("common.close")}
+                onClick={() => setMobileSidebarOpen(false)}
+              />
+            ) : null}
+            <ShellSidebar
+              collapsed={!mobileSidebarOpen}
+              mode="mobile"
+              onNavigate={() => setMobileSidebarOpen(false)}
+            />
+            <div className="flex h-screen overflow-hidden">
+              <div className="flex min-w-0 flex-1 flex-col">
+                <ShellHeader sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
+                <div className="flex-1 overflow-y-auto">
+                  <ShellMain>{children}</ShellMain>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex h-screen overflow-hidden">
+            <ShellSidebar collapsed={sidebarCollapsed} mode="desktop" />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <ShellHeader sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
+              <div className="flex-1 overflow-y-auto">
+                <ShellMain>{children}</ShellMain>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </ShellFrame>
     </ShellContext>
   );

@@ -74,7 +74,7 @@ export const createHourlyModelOption = (input: {
     legend: {
       show: false,
     },
-    grid: { left: 74, right: 74, top: 18, bottom: 78 },
+    grid: { left: 74, right: 74, top: 18, bottom: 78, containLabel: true },
     xAxis: {
       type: "category",
       data: x,
@@ -136,5 +136,19 @@ export const createHourlyModelOption = (input: {
     animationEasing: "cubicOut" as const,
     animationDuration: 520,
     animationDurationUpdate: 360,
+    media: [
+      {
+        query: { maxWidth: 480 },
+        option: {
+          grid: { left: 44, right: 16, top: 12, bottom: 54, containLabel: true },
+          xAxis: {
+            axisLabel: { margin: 18, hideOverlap: true, fontSize: 10 },
+          },
+          yAxis: {
+            axisLabel: { margin: 8, width: 44, overflow: "truncate" },
+          },
+        },
+      },
+    ],
   };
 };

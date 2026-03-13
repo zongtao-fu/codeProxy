@@ -222,18 +222,41 @@ function InfoCard({
   link?: boolean;
 }) {
   const { t } = useTranslation();
+  const { notify } = useToast();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
     void navigator.clipboard.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+    notify({ type: "success", message: t("system_page.copied"), duration: 1200 });
   };
 
+  const hasCopy = copyable && value && value !== "--";
+  const hasExternal = link && value && value !== "--";
+
   return (
-    <div className="group relative rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-950/60">
+    <div
+      className={[
+        "group relative min-w-0 rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-950/60 sm:px-4 sm:py-3",
+        hasCopy || hasExternal ? "pr-11" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {hasCopy ? (
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="absolute right-2.5 top-2.5 rounded-md p-1 text-slate-400 opacity-100 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-neutral-800 dark:hover:text-white sm:opacity-0 sm:group-hover:opacity-100"
+          title={t("system_page.copy")}
+        >
+          {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+        </button>
+      ) : null}
+
       <div className="flex items-center gap-2 mb-1.5">
-        <Icon size={13} className="text-slate-400 dark:text-white/35" />
+        <Icon size={13} className="hidden text-slate-400 dark:text-white/35 sm:block" />
         <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/35">
           {label}
         </span>
@@ -255,17 +278,9 @@ function InfoCard({
             {value}
           </span>
         )}
-        {copyable && value && value !== "--" && (
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="shrink-0 rounded-md p-1 text-slate-400 opacity-0 transition group-hover:opacity-100 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-neutral-800 dark:hover:text-white"
-            title={t("system_page.copy")}
-          >
-            {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-          </button>
-        )}
-        {link && <ExternalLink size={11} className="shrink-0 text-indigo-400/50" />}
+        {link ? (
+          <ExternalLink size={11} className="hidden shrink-0 text-indigo-400/50 sm:inline" />
+        ) : null}
       </div>
     </div>
   );
@@ -277,6 +292,7 @@ function InfoCard({
 
 function ModelTag({ id }: { id: string }) {
   const { t } = useTranslation();
+  const { notify } = useToast();
   const [copied, setCopied] = useState(false);
   const vc = getVendorColor(id);
 
@@ -284,6 +300,7 @@ function ModelTag({ id }: { id: string }) {
     void navigator.clipboard.writeText(id);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+    notify({ type: "success", message: t("system_page.copied"), duration: 1200 });
   };
 
   return (
@@ -316,7 +333,6 @@ const AUTO_REFRESH_INTERVAL = 30_000;
 
 export function SystemPage() {
   const { t } = useTranslation();
-  const { notify } = useToast();
   const auth = useAuth();
 
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -371,7 +387,7 @@ export function SystemPage() {
   const apiKeyLookupUrl = `${window.location.origin}/manage/apikey-lookup`;
 
   return (
-    <div className="min-w-0 space-y-6 overflow-hidden">
+    <div className="min-w-0 space-y-6 overflow-x-hidden">
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -382,7 +398,9 @@ export function SystemPage() {
             <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
               {t("system_page.title")}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-white/45">{t("system_page.subtitle")}</p>
+            <p className="hidden text-xs text-slate-500 dark:text-white/45 sm:block">
+              {t("system_page.subtitle")}
+            </p>
           </div>
         </div>
       </div>

@@ -11,9 +11,7 @@ import {
   ArrowDownRight,
   Wifi,
   Activity,
-  AlertTriangle,
   Zap,
-  RefreshCw,
   Layers,
 } from "lucide-react";
 import { useSystemStats, type SystemStats, type ChannelLatency } from "./useSystemStats";
