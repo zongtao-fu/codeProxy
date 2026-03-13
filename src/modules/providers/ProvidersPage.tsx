@@ -1532,9 +1532,10 @@ export function ProvidersPage() {
               </p>
               <TextInput
                 value={openaiDraft.name}
-                onChange={(e) =>
-                  setOpenaiDraft((prev) => ({ ...prev, name: e.currentTarget.value }))
-                }
+                onChange={(e) => {
+                  const value = e.currentTarget.value;
+                  setOpenaiDraft((prev) => ({ ...prev, name: value }));
+                }}
                 placeholder={t("providers.name_placeholder")}
               />
             </div>
@@ -1544,12 +1545,13 @@ export function ProvidersPage() {
               </p>
               <TextInput
                 value={openaiDraft.baseUrl}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = e.currentTarget.value;
                   setOpenaiDraft((prev) => ({
                     ...prev,
-                    baseUrl: e.currentTarget.value,
-                  }))
-                }
+                    baseUrl: value,
+                  }));
+                }}
                 placeholder={t("providers.base_url_placeholder")}
               />
               <p className="text-xs text-slate-500 dark:text-white/55">
@@ -1566,9 +1568,10 @@ export function ProvidersPage() {
               </p>
               <TextInput
                 value={openaiDraft.prefix}
-                onChange={(e) =>
-                  setOpenaiDraft((prev) => ({ ...prev, prefix: e.currentTarget.value }))
-                }
+                onChange={(e) => {
+                  const value = e.currentTarget.value;
+                  setOpenaiDraft((prev) => ({ ...prev, prefix: value }));
+                }}
                 placeholder={t("providers.prefix_placeholder")}
               />
             </div>
@@ -1578,9 +1581,10 @@ export function ProvidersPage() {
               </p>
               <TextInput
                 value={openaiDraft.priorityText}
-                onChange={(e) =>
-                  setOpenaiDraft((prev) => ({ ...prev, priorityText: e.currentTarget.value }))
-                }
+                onChange={(e) => {
+                  const value = e.currentTarget.value;
+                  setOpenaiDraft((prev) => ({ ...prev, priorityText: value }));
+                }}
                 placeholder={t("providers.priority_placeholder")}
                 inputMode="numeric"
               />
@@ -1591,9 +1595,10 @@ export function ProvidersPage() {
               </p>
               <TextInput
                 value={openaiDraft.testModel}
-                onChange={(e) =>
-                  setOpenaiDraft((prev) => ({ ...prev, testModel: e.currentTarget.value }))
-                }
+                onChange={(e) => {
+                  const value = e.currentTarget.value;
+                  setOpenaiDraft((prev) => ({ ...prev, testModel: value }));
+                }}
                 placeholder={t("providers.test_model_placeholder")}
               />
             </div>
