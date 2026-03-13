@@ -753,6 +753,7 @@ export function ApiKeyLookupPage() {
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const fetchIdRef = useRef(0);
+  const paginationInFlightRef = useRef(false);
 
   // ================================================================
   //  Logs fetching (with infinite scroll support)
@@ -762,8 +763,12 @@ export function ApiKeyLookupPage() {
     async (key: string, page: number) => {
       if (!key.trim()) return;
 
-      // Abort any in-flight request to prevent stale data
-      abortControllerRef.current?.abort();
+      // Pagination requests must never cancel themselves; guard against scroll inertia.
+      if (page > 1 && paginationInFlightRef.current) return;
+      if (page > 1) paginationInFlightRef.current = true;
+
+      // Abort only when resetting (page 1), e.g. key/filters/tab changes.
+      if (page === 1) abortControllerRef.current?.abort();
       const controller = new AbortController();
       abortControllerRef.current = controller;
       const myFetchId = ++fetchIdRef.current;
@@ -817,6 +822,7 @@ export function ApiKeyLookupPage() {
           setStats({ total: 0, success_rate: 0, total_tokens: 0, total_cost: 0 });
         }
       } finally {
+        if (page > 1) paginationInFlightRef.current = false;
         if (myFetchId === fetchIdRef.current) {
           setLoading(false);
           setLoadingMore(false);

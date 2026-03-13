@@ -44,6 +44,8 @@ export interface VirtualTableProps<T> {
   overscan?: number;
   /** Distance from bottom to trigger onScrollBottom (default 100) */
   scrollThreshold?: number;
+  /** Debounce ms before triggering onScrollBottom (default 120) */
+  bottomDebounceMs?: number;
   /** Minimum table width class (default "min-w-[1320px]") */
   minWidth?: string;
   /** Container height class (default "h-[calc(100vh-260px)]") */
@@ -62,6 +64,7 @@ export interface VirtualTableProps<T> {
 const DEFAULT_ROW_HEIGHT = 44;
 const DEFAULT_OVERSCAN = 12;
 const DEFAULT_SCROLL_THRESHOLD = 100;
+const DEFAULT_BOTTOM_DEBOUNCE_MS = 120;
 
 // ---------------------------------------------------------------------------
 // Component
@@ -78,6 +81,7 @@ export function VirtualTable<T>({
   rowHeight = DEFAULT_ROW_HEIGHT,
   overscan = DEFAULT_OVERSCAN,
   scrollThreshold = DEFAULT_SCROLL_THRESHOLD,
+  bottomDebounceMs = DEFAULT_BOTTOM_DEBOUNCE_MS,
   minWidth = "min-w-[1320px]",
   height = "h-[calc(100vh-260px)]",
   caption = "data table",
@@ -89,8 +93,36 @@ export function VirtualTable<T>({
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(480);
   const rafRef = useRef<number | null>(null);
+  const bottomTimeoutRef = useRef<number | null>(null);
+  const bottomPendingRef = useRef(false);
+  const prevLoadingMoreRef = useRef(loadingMore);
+  const latestRef = useRef({
+    hasMore,
+    loadingMore,
+    onScrollBottom,
+    scrollThreshold,
+    bottomDebounceMs,
+  });
 
   const colCount = columns.length;
+
+  // Keep latest props for timeout callbacks (avoid stale closures)
+  useEffect(() => {
+    latestRef.current = { hasMore, loadingMore, onScrollBottom, scrollThreshold, bottomDebounceMs };
+  }, [hasMore, loadingMore, onScrollBottom, scrollThreshold, bottomDebounceMs]);
+
+  // Clear the pending gate after a next-page load completes
+  useEffect(() => {
+    if (prevLoadingMoreRef.current && !loadingMore) {
+      bottomPendingRef.current = false;
+    }
+    prevLoadingMoreRef.current = loadingMore;
+  }, [loadingMore]);
+
+  // If there's no more data, never keep a pending gate around
+  useEffect(() => {
+    if (!hasMore) bottomPendingRef.current = false;
+  }, [hasMore]);
 
   // Scroll handler with infinite-scroll detection
   const onScroll = useCallback(() => {
@@ -99,15 +131,42 @@ export function VirtualTable<T>({
     const next = el.scrollTop;
 
     const scrollBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    if (scrollBottom < scrollThreshold && hasMore && !loadingMore && onScrollBottom) {
-      onScrollBottom();
+    const { hasMore: latestHasMore, loadingMore: latestLoadingMore, onScrollBottom: latestCb } =
+      latestRef.current;
+    const threshold = latestRef.current.scrollThreshold;
+
+    const shouldSchedule =
+      scrollBottom <= threshold && latestHasMore && !latestLoadingMore && Boolean(latestCb);
+
+    if (!shouldSchedule) {
+      if (bottomTimeoutRef.current) {
+        window.clearTimeout(bottomTimeoutRef.current);
+        bottomTimeoutRef.current = null;
+      }
+    } else if (!bottomPendingRef.current) {
+      if (bottomTimeoutRef.current) window.clearTimeout(bottomTimeoutRef.current);
+      bottomTimeoutRef.current = window.setTimeout(() => {
+        bottomTimeoutRef.current = null;
+        const node = containerRef.current;
+        if (!node) return;
+
+        const st = latestRef.current;
+        if (!st.hasMore || st.loadingMore || !st.onScrollBottom) return;
+
+        const bottomNow = node.scrollHeight - node.scrollTop - node.clientHeight;
+        if (bottomNow > st.scrollThreshold) return;
+
+        bottomPendingRef.current = true;
+        st.onScrollBottom();
+      }, latestRef.current.bottomDebounceMs);
     }
 
-    if (rafRef.current) return;
-    rafRef.current = window.requestAnimationFrame(() => {
-      rafRef.current = null;
-      setScrollTop(next);
-    });
+    if (!rafRef.current) {
+      rafRef.current = window.requestAnimationFrame(() => {
+        rafRef.current = null;
+        setScrollTop(next);
+      });
+    }
   }, [hasMore, loadingMore, onScrollBottom, scrollThreshold]);
 
   // Track viewport height
@@ -123,6 +182,10 @@ export function VirtualTable<T>({
   // Cleanup rAF
   useEffect(() => {
     return () => {
+      if (bottomTimeoutRef.current) {
+        window.clearTimeout(bottomTimeoutRef.current);
+        bottomTimeoutRef.current = null;
+      }
       if (rafRef.current) {
         window.cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
