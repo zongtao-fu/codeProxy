@@ -35,6 +35,14 @@ function formatRate(bps: number): string {
   return `${(bps / 1024 / 1024).toFixed(2)} MB/s`;
 }
 
+/** 紧凑数字格式：1234 → 1.2k, 1234567 → 1.2m */
+function formatCompactNumber(n: number): string {
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}b`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}m`;
+  if (n >= 10_000) return `${(n / 1_000).toFixed(1)}k`;
+  return n.toLocaleString();
+}
+
 function formatUptime(s: number): string {
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);
@@ -236,7 +244,7 @@ function NetworkCard({ stats }: { stats: SystemStats }) {
         <Wifi size={12} />
         {t("system_monitor.network_traffic")}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
         <div>
           <div className="flex items-center gap-1 text-emerald-500">
             <ArrowUpRight size={14} />
@@ -283,7 +291,7 @@ function ChannelLatencyCard({ data }: { data: ChannelLatency[] }) {
   const maxMs = Math.max(...top5.map((d) => d.avg_ms));
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
       <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/40 mb-2.5">
         <Network size={12} />
         {t("system_monitor.channel_avg_latency")}
@@ -295,20 +303,20 @@ function ChannelLatencyCard({ data }: { data: ChannelLatency[] }) {
         {top5.map((ch) => {
           const pct = maxMs > 0 ? (ch.avg_ms / maxMs) * 100 : 0;
           return (
-            <div key={ch.source} className="flex items-center gap-2">
-              <span className="w-20 shrink-0 truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">
+            <div key={ch.source} className="flex items-center gap-1.5 sm:gap-2">
+              <span className="w-14 sm:w-20 shrink-0 truncate text-[11px] font-medium text-slate-600 dark:text-slate-300">
                 {ch.source}
               </span>
-              <div className="flex-1 h-4 overflow-hidden rounded bg-slate-100 dark:bg-neutral-800">
+              <div className="flex-1 min-w-0 h-4 overflow-hidden rounded bg-slate-100 dark:bg-neutral-800">
                 <div
                   className="h-full rounded bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500"
                   style={{ width: `${Math.max(pct, 3)}%` }}
                 />
               </div>
-              <span className="w-14 shrink-0 text-right text-[11px] font-bold tabular-nums text-slate-600 dark:text-slate-300">
+              <span className="w-12 sm:w-14 shrink-0 text-right text-[11px] font-bold tabular-nums text-slate-600 dark:text-slate-300">
                 {formatMs(ch.avg_ms)}
               </span>
-              <span className="w-10 shrink-0 text-right text-[9px] text-slate-400 tabular-nums">
+              <span className="hidden min-[400px]:inline w-10 shrink-0 text-right text-[9px] text-slate-400 tabular-nums">
                 {t("system_monitor.reqs", { count: ch.count })}
               </span>
             </div>
@@ -353,7 +361,7 @@ function ConcurrencyCard({ stats }: { stats: SystemStats }) {
             RPM
           </div>
           <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
-            {rpm.toLocaleString()}
+            {formatCompactNumber(rpm)}
           </p>
           <p className="mt-0.5 text-[10px] text-slate-400 dark:text-white/35">
             {t("system_monitor.rpm")}
@@ -365,7 +373,7 @@ function ConcurrencyCard({ stats }: { stats: SystemStats }) {
             TPM
           </div>
           <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
-            {tpm.toLocaleString()}
+            {formatCompactNumber(tpm)}
           </p>
           <p className="mt-0.5 text-[10px] text-slate-400 dark:text-white/35">
             {t("system_monitor.tpm")}

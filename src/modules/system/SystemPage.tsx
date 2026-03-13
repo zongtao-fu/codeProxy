@@ -238,13 +238,13 @@ function InfoCard({
           {label}
         </span>
       </div>
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-2 min-w-0 overflow-hidden">
         {link ? (
           <a
             href={value}
             target="_blank"
             rel="noopener noreferrer"
-            className={`truncate text-sm font-medium text-indigo-600 underline decoration-indigo-300/40 underline-offset-2 hover:text-indigo-500 dark:text-indigo-400 dark:decoration-indigo-500/30 ${mono ? "font-mono text-xs" : ""}`}
+            className={`min-w-0 truncate text-sm font-medium text-indigo-600 underline decoration-indigo-300/40 underline-offset-2 hover:text-indigo-500 dark:text-indigo-400 dark:decoration-indigo-500/30 ${mono ? "font-mono text-xs" : ""}`}
           >
             {value}
           </a>
@@ -371,7 +371,7 @@ export function SystemPage() {
   const apiKeyLookupUrl = `${window.location.origin}/manage/apikey-lookup`;
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6 overflow-hidden">
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -455,7 +455,7 @@ export function SystemPage() {
                 value={modelFilter}
                 onChange={(e) => setModelFilter(e.target.value)}
                 placeholder={t("system_page.search_models")}
-                className="!w-48 !rounded-lg !py-1.5 !pl-8 !text-xs"
+                className="!w-32 sm:!w-48 !rounded-lg !py-1.5 !pl-8 !text-xs"
               />
             </div>
             <Button

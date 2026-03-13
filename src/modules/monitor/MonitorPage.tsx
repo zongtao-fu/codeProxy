@@ -652,9 +652,9 @@ export function MonitorPage() {
                 actions={modelActions}
                 loading={isRefreshing}
               >
-                <div className="grid h-72 grid-cols-[minmax(0,1fr)_220px] gap-4">
-                  <EChart option={modelDistributionOption} className="h-72 min-w-0" />
-                  <div className="flex h-72 flex-col justify-center gap-2 overflow-y-auto pr-1">
+                <div className="flex h-auto flex-col gap-4 sm:h-72 sm:grid sm:grid-cols-[minmax(0,1fr)_220px]">
+                  <EChart option={modelDistributionOption} className="h-52 sm:h-72 min-w-0" />
+                  <div className="flex h-auto sm:h-72 flex-col justify-center gap-2 overflow-y-auto pr-1">
                     {modelDistributionLegend.map((item) => (
                       <div
                         key={item.name}
@@ -741,7 +741,8 @@ export function MonitorPage() {
               actions={<HourWindowSelector value={modelHourWindow} onChange={setModelHourWindow} />}
               loading={isRefreshing}
             >
-              <div className="flex h-72 flex-col overflow-hidden">
+              <div className="overflow-x-auto">
+              <div className="flex h-72 min-w-[600px] flex-col overflow-hidden">
                 <EChart
                   option={hourlyModelOption}
                   className="min-h-0 flex-1"
@@ -768,6 +769,7 @@ export function MonitorPage() {
                   ]}
                 />
               </div>
+              </div>
             </Card>
           </Reveal>
 
@@ -778,7 +780,8 @@ export function MonitorPage() {
               actions={<HourWindowSelector value={tokenHourWindow} onChange={setTokenHourWindow} />}
               loading={isRefreshing}
             >
-              <div className="flex h-72 flex-col overflow-hidden">
+              <div className="overflow-x-auto">
+              <div className="flex h-72 min-w-[600px] flex-col overflow-hidden">
                 <EChart
                   option={hourlyTokenOption}
                   className="min-h-0 flex-1"
@@ -804,6 +807,7 @@ export function MonitorPage() {
                     },
                   ]}
                 />
+              </div>
               </div>
             </Card>
           </Reveal>

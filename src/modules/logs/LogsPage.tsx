@@ -722,7 +722,8 @@ export function LogsPage() {
                     {visibleLines.join("\n")}
                   </pre>
                 ) : (
-                  <div className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white/70 dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950/40">
+                  <div className="overflow-x-auto">
+                  <div className="min-w-[640px] divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white/70 dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-950/40">
                     {parsedVisibleLines.map((line, index) => {
                       const levelStyles = line.level ? getLevelStyles(line.level) : null;
                       const rowClassName = [
@@ -793,6 +794,7 @@ export function LogsPage() {
                         </div>
                       );
                     })}
+                  </div>
                   </div>
                 )}
               </div>
