@@ -743,8 +743,8 @@ export function MonitorPage() {
               actions={<HourWindowSelector value={modelHourWindow} onChange={setModelHourWindow} />}
               loading={isRefreshing}
             >
-              <div className="-mx-5 overflow-x-auto sm:mx-0">
-                <div className="min-w-[520px] sm:min-w-[600px] px-5 sm:px-0">
+              <div className="max-w-full overflow-x-auto">
+                <div className="min-w-[520px] sm:min-w-[600px] max-w-full">
                   <EChart
                     option={hourlyModelOption}
                     className="h-64 sm:h-72"
@@ -782,8 +782,8 @@ export function MonitorPage() {
               actions={<HourWindowSelector value={tokenHourWindow} onChange={setTokenHourWindow} />}
               loading={isRefreshing}
             >
-              <div className="-mx-5 overflow-x-auto sm:mx-0">
-                <div className="min-w-[520px] sm:min-w-[600px] px-5 sm:px-0">
+              <div className="max-w-full overflow-x-auto">
+                <div className="min-w-[520px] sm:min-w-[600px] max-w-full">
                   <EChart
                     option={hourlyTokenOption}
                     className="h-64 sm:h-72"

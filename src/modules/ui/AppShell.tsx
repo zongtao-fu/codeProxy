@@ -336,7 +336,7 @@ export function AppShell({ children }: PropsWithChildren) {
             <div className="flex h-[100dvh] overflow-hidden">
               <div className="flex min-w-0 flex-1 flex-col">
                 <ShellHeader sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden">
                   <ShellMain>{children}</ShellMain>
                 </div>
               </div>
@@ -347,7 +347,7 @@ export function AppShell({ children }: PropsWithChildren) {
             <ShellSidebar collapsed={sidebarCollapsed} mode="desktop" />
             <div className="flex min-w-0 flex-1 flex-col">
               <ShellHeader sidebarCollapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden">
                 <ShellMain>{children}</ShellMain>
               </div>
             </div>

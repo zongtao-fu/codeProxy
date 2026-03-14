@@ -41,8 +41,14 @@ export const parseUsageTimestampMs = (value: string): number => {
   let normalized = raw
     .replace(/^(\d{4})\/(\d{2})\/(\d{2})\s+/, "$1-$2-$3T")
     .replace(/^(\d{4})-(\d{2})-(\d{2})\s+/, "$1-$2-$3T")
+    // "...,123" -> "... .123"
+    .replace(/,(\d{1,9})(?=[Z+-]|$)/, ".$1")
     // Truncate >3 fractional second digits (e.g. 2026-03-14T01:02:03.123456Z)
     .replace(/\.(\d{3})\d+(?=[Z+-]|$)/, ".$1")
+    // Remove whitespace before timezone: "...T00:00:00 +08:00" -> "...T00:00:00+08:00"
+    .replace(/\s+([Z+-])/, "$1")
+    // Drop trailing timezone names that Safari can't parse: "...+08:00 CST" -> "...+08:00"
+    .replace(/\s+[A-Za-z]{2,6}$/, "")
     // Normalize timezone offset without colon: +0800 -> +08:00
     .replace(/([+-]\d{2})(\d{2})$/, "$1:$2");
 
