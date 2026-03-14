@@ -138,7 +138,7 @@ export const createHourlyTokenOption = (input: {
     animationDurationUpdate: 360,
     media: [
       {
-        query: { maxWidth: 480 },
+        query: { maxWidth: 700 },
         option: {
           grid: { left: 44, right: 16, top: 12, bottom: 54, containLabel: true },
           xAxis: {

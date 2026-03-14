@@ -471,61 +471,70 @@ export function RequestLogsPage() {
           </div>
         </div>
 
-        {/* 筛选 + 统计（内联一行） */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-5 py-3 dark:border-neutral-800/60">
-          <SearchableSelect
-            value={apiQuery}
-            onChange={setApiQuery}
-            options={keyOptions}
-            placeholder={t("request_logs.all_keys_placeholder")}
-            searchPlaceholder={t("request_logs.search_keys")}
-            aria-label={t("request_logs.filter_key")}
-          />
-          <SearchableSelect
-            value={modelQuery}
-            onChange={setModelQuery}
-            options={modelOptions}
-            placeholder={t("request_logs.all_models_placeholder")}
-            searchPlaceholder={t("request_logs.search_models")}
-            aria-label={t("request_logs.filter_model")}
-          />
-          <Select
-            value={statusFilter}
-            onChange={(v) => setStatusFilter(v as StatusFilter)}
-            options={[
-              { value: "", label: t("request_logs.all_status") },
-              { value: "success", label: t("request_logs.status_success") },
-              { value: "failed", label: t("request_logs.status_failed") },
-            ]}
-            aria-label={t("request_logs.filter_status")}
-            name="statusFilter"
-          />
+        {/* 筛选 + 统计（移动端分行，桌面端单行） */}
+        <div className="border-t border-slate-100 px-5 py-3 dark:border-neutral-800/60">
+          <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-2">
+              <SearchableSelect
+                value={apiQuery}
+                onChange={setApiQuery}
+                options={keyOptions}
+                placeholder={t("request_logs.all_keys_placeholder")}
+                searchPlaceholder={t("request_logs.search_keys")}
+                aria-label={t("request_logs.filter_key")}
+                className="w-full sm:w-[220px]"
+              />
+              <SearchableSelect
+                value={modelQuery}
+                onChange={setModelQuery}
+                options={modelOptions}
+                placeholder={t("request_logs.all_models_placeholder")}
+                searchPlaceholder={t("request_logs.search_models")}
+                aria-label={t("request_logs.filter_model")}
+                className="w-full sm:w-[220px]"
+              />
+              <Select
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v as StatusFilter)}
+                options={[
+                  { value: "", label: t("request_logs.all_status") },
+                  { value: "success", label: t("request_logs.status_success") },
+                  { value: "failed", label: t("request_logs.status_failed") },
+                ]}
+                aria-label={t("request_logs.filter_status")}
+                name="statusFilter"
+                className="w-full sm:w-[160px]"
+              />
+            </div>
 
-          {/* 分隔弹性空间 */}
-          <div className="flex-1" />
+            <div className="hidden sm:flex-1" />
 
-          {/* 统计摘要 */}
-          <span className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-white/55">
-            <Filter size={12} aria-hidden="true" />
-            {t("request_logs.records_count", { count: stats.total.toLocaleString() } as Record<
-              string,
-              string
-            >)}
-            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">
-              ·
-            </span>
-            {t("common.success_rate")}
-            <span className="font-mono tabular-nums">{stats.success_rate.toFixed(1)}%</span>
-            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">
-              ·
-            </span>
-            {t("request_logs.col_total_token")}{" "}
-            <span className="font-mono tabular-nums">{stats.total_tokens.toLocaleString()}</span>
-            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">
-              ·
-            </span>
-            <span className="text-slate-400 dark:text-white/40">{lastUpdatedText}</span>
-          </span>
+            <div className="grid grid-cols-2 items-center gap-x-3 gap-y-1.5 text-xs text-slate-600 dark:text-white/55 sm:flex sm:items-center sm:gap-1.5">
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                <Filter size={12} aria-hidden="true" />
+                {t("request_logs.records_count", { count: stats.total.toLocaleString() } as Record<
+                  string,
+                  string
+                >)}
+              </span>
+
+              <span className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap sm:justify-start">
+                {t("common.success_rate")}
+                <span className="font-mono tabular-nums">{stats.success_rate.toFixed(1)}%</span>
+              </span>
+
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                {t("request_logs.col_total_token")}
+                <span className="font-mono tabular-nums">
+                  {stats.total_tokens.toLocaleString()}
+                </span>
+              </span>
+
+              <span className="col-span-2 text-[11px] text-slate-400 dark:text-white/40 sm:col-span-1 sm:text-xs">
+                {lastUpdatedText}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* 表格 */}

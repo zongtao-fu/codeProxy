@@ -12,7 +12,7 @@ export const createModelDistributionOption = (input: {
     tooltip: {
       trigger: "item",
       renderMode: "html",
-      appendToBody: true,
+      appendToBody: false,
       confine: true,
       borderWidth: 0,
       backgroundColor: "rgba(15, 23, 42, 0.92)",
