@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Filter, RefreshCw, ScrollText } from "lucide-react";
 import { usageApi } from "@/lib/http/apis";
 import type { UsageLogItem, UsageLogsResponse } from "@/lib/http/apis/usage";
+import { parseUsageTimestampMs } from "@/modules/monitor/monitor-utils";
 import { Tabs, TabsList, TabsTrigger } from "@/modules/ui/Tabs";
 import { useToast } from "@/modules/ui/ToastProvider";
 import { OverflowTooltip } from "@/modules/ui/Tooltip";
@@ -45,9 +46,9 @@ const maskApiKey = (value: string): string => {
 };
 
 const formatTimestamp = (value: string): string => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value || "--";
-  return date.toLocaleString();
+  const ms = parseUsageTimestampMs(value);
+  if (!Number.isFinite(ms)) return value || "--";
+  return new Date(ms).toLocaleString();
 };
 
 const formatLatencyMs = (value: number): string => {
@@ -271,7 +272,7 @@ function toLogRow(item: UsageLogItem): LogRow {
   return {
     id: String(item.id),
     timestamp: item.timestamp,
-    timestampMs: new Date(item.timestamp).getTime(),
+    timestampMs: parseUsageTimestampMs(item.timestamp),
     apiKey: item.api_key,
     apiKeyName: item.api_key_name || "",
     channelName: item.channel_name || "",

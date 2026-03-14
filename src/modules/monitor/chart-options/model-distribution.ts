@@ -27,7 +27,7 @@ export const createModelDistributionOption = (input: {
       {
         name: "Model",
         type: "pie",
-        radius: ["50%", "70%"],
+        radius: ["48%", "68%"],
         center: ["50%", "50%"],
         avoidLabelOverlap: true,
         label: { show: false },
@@ -50,8 +50,8 @@ export const createModelDistributionOption = (input: {
         option: {
           series: [
             {
-              radius: ["44%", "62%"],
-              center: ["50%", "48%"],
+              radius: ["40%", "58%"],
+              center: ["50%", "46%"],
               emphasis: { scale: true, scaleSize: 4 },
             },
           ],

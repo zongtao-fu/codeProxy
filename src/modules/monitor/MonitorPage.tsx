@@ -17,6 +17,7 @@ import {
   formatNumber,
   formatRate,
   iterateUsageRecords,
+  parseUsageTimestampMs,
 } from "@/modules/monitor/monitor-utils";
 import { AnimatedNumber } from "@/modules/ui/AnimatedNumber";
 import { TextInput } from "@/modules/ui/Input";
@@ -209,8 +210,9 @@ export function MonitorPage() {
     >();
 
     records.forEach((record) => {
-      const date = new Date(record.timestamp);
-      if (!Number.isFinite(date.getTime())) return;
+      const ms = parseUsageTimestampMs(record.timestamp);
+      if (!Number.isFinite(ms)) return;
+      const date = new Date(ms);
       const key = formatLocalDateKey(date);
       const current = byDay.get(key) ?? { requests: 0, inputTokens: 0, outputTokens: 0 };
       byDay.set(key, {
@@ -253,7 +255,7 @@ export function MonitorPage() {
     >();
 
     records.forEach((record) => {
-      const ts = new Date(record.timestamp).getTime();
+      const ts = parseUsageTimestampMs(record.timestamp);
       if (!Number.isFinite(ts)) return;
       const hour = Math.floor(ts / 3_600_000);
       if (hour < startHour || hour > endHour) return;

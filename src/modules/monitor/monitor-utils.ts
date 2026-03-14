@@ -16,6 +16,47 @@ export interface UsageRecord extends UsageDetail {
   model: string;
 }
 
+export const parseUsageTimestampMs = (value: string): number => {
+  const raw = value.trim();
+  if (!raw) return Number.NaN;
+
+  const direct = Date.parse(raw);
+  if (Number.isFinite(direct)) return direct;
+
+  // Safari/strict parser fallback:
+  // - "YYYY-MM-DD HH:mm:ss" -> "YYYY-MM-DDTHH:mm:ss"
+  // - "YYYY/MM/DD ..." -> "YYYY-MM-DD..."
+  // - "+0800" -> "+08:00"
+  let normalized = raw
+    .replace(/^(\d{4})\/(\d{2})\/(\d{2})\s+/, "$1-$2-$3T")
+    .replace(/^(\d{4})-(\d{2})-(\d{2})\s+/, "$1-$2-$3T")
+    .replace(/([+-]\d{2})(\d{2})$/, "$1:$2");
+
+  const normalizedParsed = Date.parse(normalized);
+  if (Number.isFinite(normalizedParsed)) return normalizedParsed;
+
+  // Manual local-time parse for non-ISO strings.
+  const match =
+    raw.match(
+      /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/,
+    ) ?? null;
+
+  if (!match) return Number.NaN;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4] ?? 0);
+  const minute = Number(match[5] ?? 0);
+  const second = Number(match[6] ?? 0);
+  const msRaw = match[7];
+  const ms = msRaw ? Number(msRaw.padEnd(3, "0").slice(0, 3)) : 0;
+
+  const date = new Date(year, month - 1, day, hour, minute, second, ms);
+  const time = date.getTime();
+  return Number.isFinite(time) ? time : Number.NaN;
+};
+
 export const filterUsageByDays = (data: UsageData, days: number, apiFilter: string): UsageData => {
   const now = Date.now();
   const cutoff = now - days * 24 * 60 * 60 * 1000;
@@ -32,7 +73,7 @@ export const filterUsageByDays = (data: UsageData, days: number, apiFilter: stri
 
     for (const [modelName, modelData] of Object.entries(apiData.models)) {
       const details = modelData.details.filter((detail) => {
-        const timestamp = new Date(detail.timestamp).getTime();
+        const timestamp = parseUsageTimestampMs(detail.timestamp);
         return Number.isFinite(timestamp) ? timestamp >= cutoff : false;
       });
 
