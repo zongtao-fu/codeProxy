@@ -23,10 +23,15 @@ jobs:
       - name: Build production bundle
         run: bunx vite build
 
-      - name: Create GitHub Release with management.html
+      - name: Package panel-dist.zip
+        run: cd dist && zip -r ../panel-dist.zip manage.html assets/
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/management.html
+          files: |
+            panel-dist.zip
+            dist/management.html
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
