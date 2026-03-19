@@ -7,7 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useNavigation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Activity,
@@ -89,14 +89,17 @@ function ShellSidebar({
   onNavigate?: () => void;
 }) {
   const location = useLocation();
+  const navigation = useNavigation();
   const { t } = useTranslation();
+  // Use the pending navigation destination when available so menu highlights
+  // update instantly on click, without waiting for lazy chunks to load.
+  const effectivePathname = navigation.location?.pathname ?? location.pathname;
   const activeTo = useMemo(() => {
-    const pathname = location.pathname;
     const sorted = [...NAV_ITEMS].sort((a, b) => b.to.length - a.to.length);
     return (
-      sorted.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))?.to ?? null
+      sorted.find((item) => effectivePathname === item.to || effectivePathname.startsWith(`${item.to}/`))?.to ?? null
     );
-  }, [location.pathname]);
+  }, [effectivePathname]);
 
   const isMobile = mode === "mobile";
 
