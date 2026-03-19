@@ -120,12 +120,8 @@ export function MonitorPage() {
     setIsRefreshing(true);
     setError(null);
     try {
-      const [usageData, chartResp] = await Promise.all([
-        usageApi.getUsage(),
-        usageApi.getChartData(timeRange, apiFilter)
-      ]);
+      const chartResp = await usageApi.getChartData(timeRange, apiFilter);
       startTransition(() => {
-        setRawUsage(usageData);
         setChartData(chartResp);
       });
     } catch (requestError) {
@@ -137,7 +133,34 @@ export function MonitorPage() {
     }
   }, [t, timeRange, apiFilter]);
 
-  const metrics = useMemo(() => computeKpiMetrics(rawUsage, apiFilter), [rawUsage, apiFilter]);
+  const metrics = useMemo(() => {
+    let requests = 0;
+    let failed = 0;
+    let inputTokens = 0;
+    let outputTokens = 0;
+
+    if (chartData?.daily_series) {
+      for (const pt of chartData.daily_series) {
+        requests += pt.requests || 0;
+        failed += pt.failed_requests || 0;
+        inputTokens += pt.input_tokens || 0;
+        outputTokens += pt.output_tokens || 0;
+      }
+    }
+
+    const success = requests - failed;
+    const rate = requests > 0 ? (success / requests) * 100 : 0;
+
+    return {
+      totalRequests: requests,
+      successCount: success,
+      failureCount: failed,
+      successRate: rate,
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens
+    };
+  }, [chartData]);
 
 
   const applyFilter = useCallback(() => {
@@ -163,7 +186,7 @@ export function MonitorPage() {
     setHourlyTokenSelected((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
   }, []);
 
-  const hasData = metrics.requestCount > 0;
+  const hasData = metrics.totalRequests > 0;
   const isLoading = isRefreshing || isPending;
 
   useEffect(() => {
@@ -574,7 +597,7 @@ export function MonitorPage() {
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
             title={t("monitor.total_requests")}
-            value={<AnimatedNumber value={metrics.requestCount} format={formatNumber} />}
+            value={<AnimatedNumber value={metrics.totalRequests} format={formatNumber} />}
             hint={t("monitor.filtered_by_time")}
             icon={Activity}
           />
@@ -583,7 +606,7 @@ export function MonitorPage() {
             value={<AnimatedNumber value={metrics.successRate} format={formatRate} />}
             hint={t("monitor.success_count", {
               success: formatNumber(metrics.successCount),
-              failed: formatNumber(metrics.failedCount),
+              failed: formatNumber(metrics.failureCount),
             })}
             icon={ShieldCheck}
           />
