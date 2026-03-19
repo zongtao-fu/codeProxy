@@ -41,6 +41,37 @@ export default defineConfig({
         management: path.resolve(__dirname, "management.html"),
         manage: path.resolve(__dirname, "manage.html"),
       },
+      output: {
+        manualChunks: {
+          "vendor-react": [
+            "react",
+            "react-dom",
+            "react-router-dom",
+          ],
+          "vendor-echarts": [
+            "echarts",
+            "echarts-for-react",
+          ],
+          "vendor-codemirror": [
+            "@uiw/react-codemirror",
+            "@codemirror/lang-yaml",
+            "@codemirror/merge",
+          ],
+          "vendor-animation": [
+            "framer-motion",
+            "gsap",
+          ],
+          "vendor-charts": [
+            "chart.js",
+            "react-chartjs-2",
+          ],
+          "vendor-markdown": [
+            "react-markdown",
+            "react-syntax-highlighter",
+            "remark-gfm",
+          ],
+        },
+      },
     },
   },
   server: {
