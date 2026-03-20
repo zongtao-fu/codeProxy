@@ -1486,55 +1486,61 @@ export function ApiKeyLookupPage() {
               <Reveal>
                 <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
                   {/* Filter bar + stats */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-3 sm:px-5 py-3 dark:border-neutral-800/60">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <SearchableSelect
-                        value={statusFilter}
-                        onChange={setStatusFilter}
-                        options={statusOptions}
-                        placeholder={t("apikey_lookup.all_status")}
-                        aria-label={t("apikey_lookup.status_filter")}
-                      />
-                      {modelOptions.length > 0 && (
+                  <div className="border-b border-slate-100 px-3 py-3 sm:px-5 dark:border-neutral-800/60">
+                    <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-2">
                         <SearchableSelect
-                          value={modelQuery}
-                          onChange={setModelQuery}
-                          options={modelFilterOptions}
-                          placeholder={t("request_logs.all_models_placeholder")}
-                          aria-label={t("apikey_lookup.model_filter")}
+                          value={statusFilter}
+                          onChange={setStatusFilter}
+                          options={statusOptions}
+                          placeholder={t("apikey_lookup.all_status")}
+                          aria-label={t("apikey_lookup.status_filter")}
+                          className="w-full sm:w-auto"
                         />
-                      )}
+                        {modelOptions.length > 0 && (
+                          <SearchableSelect
+                            value={modelQuery}
+                            onChange={setModelQuery}
+                            options={modelFilterOptions}
+                            placeholder={t("request_logs.all_models_placeholder")}
+                            aria-label={t("apikey_lookup.model_filter")}
+                            className="w-full sm:w-auto"
+                          />
+                        )}
+                      </div>
+
+                      <div className="hidden sm:block sm:flex-1" />
+
+                      <div className="grid grid-cols-2 items-center gap-x-3 gap-y-1.5 text-xs text-slate-600 dark:text-white/55 sm:flex sm:items-center sm:gap-1.5">
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                          <Filter size={12} aria-hidden="true" />
+                          <span className="font-mono tabular-nums">
+                            {t("request_logs.records_count", { count: stats.total })}
+                          </span>
+                        </span>
+                        <span className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap sm:justify-start">
+                          {t("common.success_rate")}
+                          <span className="font-mono tabular-nums">
+                            {stats.success_rate.toFixed(1)}%
+                          </span>
+                        </span>
+                        <span className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
+                          <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>
+                          {t("apikey_lookup.token")}
+                          <span className="font-mono tabular-nums">
+                            {stats.total_tokens.toLocaleString()}
+                          </span>
+                        </span>
+                        {lastUpdatedText && (
+                          <span className="hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap">
+                            <span className="text-slate-300 dark:text-white/10" aria-hidden="true">·</span>
+                            <span className="text-slate-400 dark:text-white/40">
+                              {t("request_logs.updated_at", { time: lastUpdatedText })}
+                            </span>
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="inline-flex flex-wrap items-center gap-1.5 text-xs text-slate-600 dark:text-white/55">
-                      <Filter size={12} aria-hidden="true" />
-                      <span className="font-mono tabular-nums">
-                        {t("request_logs.records_count", { count: stats.total })}
-                      </span>
-                      <span className="text-slate-300 dark:text-white/10" aria-hidden="true">
-                        ·
-                      </span>
-                      {t("common.success_rate")}
-                      <span className="font-mono tabular-nums">
-                        {stats.success_rate.toFixed(1)}%
-                      </span>
-                      <span className="hidden sm:inline text-slate-300 dark:text-white/10" aria-hidden="true">
-                        ·
-                      </span>
-                      <span className="hidden sm:inline">{t("apikey_lookup.token")}</span>
-                      <span className="hidden sm:inline font-mono tabular-nums">
-                        {stats.total_tokens.toLocaleString()}
-                      </span>
-                      {lastUpdatedText && (
-                        <>
-                          <span className="hidden sm:inline text-slate-300 dark:text-white/10" aria-hidden="true">
-                            ·
-                          </span>
-                          <span className="hidden sm:inline text-slate-400 dark:text-white/40">
-                            {t("request_logs.updated_at", { time: lastUpdatedText })}
-                          </span>
-                        </>
-                      )}
-                    </span>
                   </div>
 
                   {/* Table */}
