@@ -112,6 +112,7 @@ export function MonitorPage() {
   const [modelHourWindow, setModelHourWindow] = useState<HourWindow>(24);
   const [tokenHourWindow, setTokenHourWindow] = useState<HourWindow>(24);
   const [modelMetric, setModelMetric] = useState<"requests" | "tokens">("requests");
+  const [apikeyMetric, setApikeyMetric] = useState<"requests" | "tokens">("requests");
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -388,6 +389,52 @@ export function MonitorPage() {
     [isDark, modelDistributionData],
   );
 
+  // --- API Key Distribution ---
+  const apikeyDistributionData = useMemo(() => {
+    if (!chartData?.apikey_distribution) return [];
+    const sorted = [...chartData.apikey_distribution].sort((a, b) => {
+      const av = apikeyMetric === "requests" ? a.requests : a.tokens;
+      const bv = apikeyMetric === "requests" ? b.requests : b.tokens;
+      return bv - av;
+    });
+    const top = sorted.slice(0, 10);
+    const otherValue = sorted.slice(10).reduce((acc, item) => {
+      return acc + (apikeyMetric === "requests" ? item.requests : item.tokens);
+    }, 0);
+    const data = top.map((item) => ({
+      name: item.name || item.api_key.slice(0, 8) + "…",
+      value: apikeyMetric === "requests" ? item.requests : item.tokens,
+    }));
+    if (otherValue > 0) {
+      data.push({ name: t("common.other"), value: otherValue });
+    }
+    return data;
+  }, [apikeyMetric, chartData, t]);
+
+  const apikeyDistributionOption = useMemo(
+    () => createModelDistributionOption({ isDark, data: apikeyDistributionData }),
+    [isDark, apikeyDistributionData],
+  );
+
+  const apikeyDistributionLegend = useMemo(() => {
+    const total = apikeyDistributionData.reduce(
+      (acc, item) => acc + (Number.isFinite(item.value) ? item.value : 0),
+      0,
+    );
+    return apikeyDistributionData.map((item, index) => {
+      const colorClass =
+        index < CHART_COLOR_CLASSES.length ? CHART_COLOR_CLASSES[index] : "bg-slate-400";
+      const value = Number(item.value ?? 0);
+      const percent = total > 0 ? (value / total) * 100 : 0;
+      return {
+        name: item.name,
+        valueLabel: formatCompact(value),
+        percentLabel: `${percent.toFixed(1)}%`,
+        colorClass,
+      };
+    });
+  }, [apikeyDistributionData]);
+
   const dailyLegendAvailability = useMemo(() => {
     const points = dailySeries.filter(
       (item) => item.requests > 0 || item.inputTokens > 0 || item.outputTokens > 0,
@@ -516,6 +563,18 @@ export function MonitorPage() {
     <Tabs
       value={modelMetric}
       onValueChange={(next) => setModelMetric(next as "requests" | "tokens")}
+    >
+      <TabsList>
+        <TabsTrigger value="requests">{t("monitor.requests")}</TabsTrigger>
+        <TabsTrigger value="tokens">{t("monitor.token")}</TabsTrigger>
+      </TabsList>
+    </Tabs>
+  );
+
+  const apikeyActions = (
+    <Tabs
+      value={apikeyMetric}
+      onValueChange={(next) => setApikeyMetric(next as "requests" | "tokens")}
     >
       <TabsList>
         <TabsTrigger value="requests">{t("monitor.requests")}</TabsTrigger>
@@ -745,6 +804,47 @@ export function MonitorPage() {
               </Card>
             </section>
           </Reveal>
+
+          {apikeyDistributionData.length > 0 && (
+            <Reveal>
+              <Card
+                title={t("monitor.apikey_distribution")}
+                description={t("monitor.apikey_distribution_desc", {
+                  days: timeRange,
+                  metric: apikeyMetric === "requests" ? t("monitor.requests") : t("monitor.token"),
+                })}
+                actions={apikeyActions}
+                loading={isRefreshing}
+              >
+                <div className="flex h-auto flex-col gap-4 md:h-72 md:grid md:grid-cols-[minmax(0,1fr)_220px]">
+                  <EChart option={apikeyDistributionOption} className="h-48 md:h-72 min-w-0" />
+                  <div className="flex h-auto md:h-72 flex-col justify-center gap-2 overflow-y-auto pr-1">
+                    {apikeyDistributionLegend.map((item) => (
+                      <div
+                        key={item.name}
+                        className="grid grid-cols-[minmax(0,120px)_40px_52px] items-center gap-x-1 text-sm"
+                      >
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span
+                            className={`h-3.5 w-3.5 shrink-0 rounded-full ${item.colorClass} opacity-80 ring-1 ring-black/5 dark:ring-white/10`}
+                          />
+                          <span className="min-w-0 truncate text-slate-700 dark:text-white/80">
+                            {item.name}
+                          </span>
+                        </div>
+                        <span className="text-right font-semibold tabular-nums text-slate-900 dark:text-white">
+                          {item.valueLabel}
+                        </span>
+                        <span className="text-right tabular-nums text-slate-500 dark:text-white/55">
+                          {item.percentLabel}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            </Reveal>
+          )}
 
           <Reveal>
             <Card

@@ -1626,6 +1626,8 @@
     "refresh": "刷新",
     "refreshing": "刷新中",
     "model_distribution": "模型分布",
+    "apikey_distribution": "API Key 使用占比",
+    "apikey_distribution_desc": "最近 {{days}} 天 · 按{{metric}} · Top10",
     "daily_usage_trend": "每日使用趋势",
     "last_days_desc": "最近 {{days}} 天 · 按{{metric}} · Top10",
     "daily_desc": "最近 {{days}} 天 · 请求与 Token 用量趋势",

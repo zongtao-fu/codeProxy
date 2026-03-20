@@ -60,6 +60,7 @@ export const usageApi = {
       model_distribution: Array.isArray(resp?.model_distribution) ? resp.model_distribution : [],
       hourly_tokens: Array.isArray(resp?.hourly_tokens) ? resp.hourly_tokens : [],
       hourly_models: Array.isArray(resp?.hourly_models) ? resp.hourly_models : [],
+      apikey_distribution: Array.isArray(resp?.apikey_distribution) ? resp.apikey_distribution : [],
     };
   },
 

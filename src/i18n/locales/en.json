@@ -1611,6 +1611,8 @@
     "refresh": "Refresh",
     "refreshing": "Refreshing",
     "model_distribution": "Model Distribution",
+    "apikey_distribution": "API Key Usage",
+    "apikey_distribution_desc": "Last {{days}} days · by {{metric}} · Top10",
     "daily_usage_trend": "Daily Usage Trend",
     "last_days_desc": "Last {{days}} days · by {{metric}} · Top10",
     "daily_desc": "Last {{days}} days · Requests & Token usage trend",
