@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Link, Loader2 } from "lucide-react";
+import { Loader2, Zap } from "lucide-react";
 import { apiClient } from "@/lib/http/client";
 
 /**
@@ -19,19 +19,20 @@ interface LatencyBadgeProps {
 }
 
 /**
- * Self-contained latency badge component.
- * Displays "--" initially, shows a loading spinner while checking,
- * then shows the latency value. Clicking triggers a new check.
+ * Self-contained latency badge.
+ * Shows a ⚡ icon by default. Click to check latency, then shows the value.
  */
 export function LatencyBadge({ baseUrl }: LatencyBadgeProps) {
     const [latencyMs, setLatencyMs] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
+    const [checked, setChecked] = useState(false);
 
     const check = useCallback(async () => {
         if (!baseUrl || loading) return;
         setLoading(true);
         setError(false);
+        setChecked(true);
 
         const start = performance.now();
         try {
@@ -54,27 +55,27 @@ export function LatencyBadge({ baseUrl }: LatencyBadgeProps) {
         }
     }, [baseUrl, loading]);
 
-    if (!baseUrl) return null;
-
+    // Always render — even without baseUrl, just show disabled state
     return (
-        <span
-            className="inline-flex cursor-pointer select-none items-center gap-0.5 rounded-full border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[11px] tabular-nums text-gray-500 transition-all hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+        <button
+            type="button"
+            disabled={!baseUrl || loading}
+            className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[11px] tabular-nums text-gray-500 transition-all hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 disabled:cursor-default disabled:opacity-40 disabled:hover:border-gray-200 disabled:hover:bg-gray-50 disabled:hover:text-gray-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-400"
             onClick={(e) => {
                 e.stopPropagation();
                 void check();
             }}
-            title={`Check latency: ${baseUrl}`}
+            title={baseUrl ? `Check latency: ${baseUrl}` : "No base URL"}
         >
             {loading ? (
-                <Loader2 size={10} className="animate-spin" />
-            ) : error ? (
-                <span className="font-bold text-red-500">×</span>
-            ) : latencyMs !== null ? (
+                <Loader2 size={12} className="animate-spin" />
+            ) : checked && error ? (
+                <span className="font-bold text-red-500">✕</span>
+            ) : checked && latencyMs !== null ? (
                 <span className="font-semibold">{formatLatency(latencyMs)}</span>
             ) : (
-                <span className="opacity-50">--</span>
+                <Zap size={12} />
             )}
-            <Link size={9} className="opacity-40" />
-        </span>
+        </button>
     );
 }
