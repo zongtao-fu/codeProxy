@@ -44,6 +44,7 @@ import { KeyValueInputList, keyValueEntriesToRecord } from "@/modules/providers/
 import { ModelInputList, createEmptyModelEntry } from "@/modules/providers/ModelInputList";
 import { ProviderStatusBar } from "@/modules/providers/ProviderStatusBar";
 import { ProviderKeyListCard } from "@/modules/providers/ProviderKeyListCard";
+import { useProviderLatency } from "@/modules/providers/hooks/useProviderLatency";
 import {
   buildCandidateUsageSourceIds,
   calculateStatusBarData,
@@ -77,6 +78,7 @@ export function ProvidersPage() {
   const [isPending, startTransition] = useTransition();
   const location = useLocation();
   const navigate = useNavigate();
+  const { getEntry: getLatencyEntry, checkLatency } = useProviderLatency();
 
   const [tab, setTab] = useState<"gemini" | "claude" | "codex" | "vertex" | "openai" | "ampcode">(
     "gemini",
@@ -943,6 +945,8 @@ export function ProvidersPage() {
             onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("gemini", idx, enabled)}
             getStats={getSimpleStats}
             getStatusBar={getSimpleStatusBar}
+            getLatencyEntry={getLatencyEntry}
+            checkLatency={checkLatency}
           />
         </TabsContent>
 
@@ -958,6 +962,8 @@ export function ProvidersPage() {
             onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("claude", idx, enabled)}
             getStats={getSimpleStats}
             getStatusBar={getSimpleStatusBar}
+            getLatencyEntry={getLatencyEntry}
+            checkLatency={checkLatency}
           />
         </TabsContent>
 
@@ -973,6 +979,8 @@ export function ProvidersPage() {
             onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("codex", idx, enabled)}
             getStats={getSimpleStats}
             getStatusBar={getSimpleStatusBar}
+            getLatencyEntry={getLatencyEntry}
+            checkLatency={checkLatency}
           />
         </TabsContent>
 
@@ -987,6 +995,8 @@ export function ProvidersPage() {
             onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "vertex", index: idx })}
             getStats={getSimpleStats}
             getStatusBar={getSimpleStatusBar}
+            getLatencyEntry={getLatencyEntry}
+            checkLatency={checkLatency}
           />
         </TabsContent>
 

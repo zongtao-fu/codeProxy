@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Link, Loader2, Plus, Settings2, Trash2 } from "lucide-react";
+import { Loader2, Plus, Settings2, Trash2, Zap } from "lucide-react";
 import type { ProviderSimpleConfig } from "@/lib/http/types";
 import { Button } from "@/modules/ui/Button";
 import { Card } from "@/modules/ui/Card";
@@ -104,9 +104,8 @@ export function ProviderKeyListCard({
                             ) : entry.latencyMs !== null ? (
                               <span className="font-medium">{formatLatency(entry.latencyMs)}</span>
                             ) : (
-                              <span className="text-slate-400 dark:text-white/30">--</span>
+                              <Zap size={10} />
                             )}
-                            <Link size={9} className="opacity-50" />
                           </span>
                         );
                       })()}
