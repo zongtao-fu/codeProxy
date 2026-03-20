@@ -1949,7 +1949,13 @@
     "not_refreshed": "Not yet refreshed",
     "table_caption": "Request Logs Table",
     "no_data": "No Data",
-    "refresh_failed": "Request Logs refresh failed"
+    "refresh_failed": "Request Logs refresh failed",
+    "page_info": "{{start}}-{{end}} of {{total}}",
+    "first_page": "First page",
+    "prev_page": "Previous page",
+    "next_page": "Next page",
+    "last_page": "Last page",
+    "rows_per_page": "Rows per page"
   },
   "api_keys_page": {
     "title": "API Keys Management",

@@ -1,6 +1,14 @@
 import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Filter, RefreshCw, ScrollText } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Filter,
+  RefreshCw,
+  ScrollText,
+} from "lucide-react";
 import { usageApi } from "@/lib/http/apis";
 import type { UsageLogItem, UsageLogsResponse } from "@/lib/http/apis/usage";
 import { parseUsageTimestampMs } from "@/modules/monitor/monitor-utils";
@@ -34,7 +42,8 @@ interface LogRow {
   hasContent: boolean;
 }
 
-const PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE = 50;
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
 const TIME_RANGES: readonly TimeRange[] = [1, 7, 14, 30] as const;
 
@@ -86,13 +95,24 @@ const TimeRangeSelector = ({
   );
 };
 
-import { VirtualTable, type VirtualTableColumn } from "@/modules/ui/VirtualTable";
+// ---------------------------------------------------------------------------
+// Column definitions (kept as-is)
+// ---------------------------------------------------------------------------
+
+interface TableColumn<T> {
+  key: string;
+  label: string;
+  width?: string;
+  headerClassName?: string;
+  cellClassName?: string;
+  render: (row: T, index: number) => React.ReactNode;
+}
 
 function buildLogColumns(
   t: (key: string) => string,
   onContentClick?: (logId: number, tab: "input" | "output") => void,
   onErrorClick?: (logId: number, model: string) => void,
-): VirtualTableColumn<LogRow>[] {
+): TableColumn<LogRow>[] {
   return [
     {
       key: "id",
@@ -300,6 +320,146 @@ function toLogRow(item: UsageLogItem): LogRow {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Pagination Bar
+// ---------------------------------------------------------------------------
+
+function PaginationBar({
+  currentPage,
+  totalPages,
+  totalCount,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}) {
+  const { t } = useTranslation();
+
+  const start = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const end = Math.min(currentPage * pageSize, totalCount);
+
+  // Build visible page numbers (always max ~7 buttons)
+  const pageNumbers = useMemo(() => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("...");
+      const rangeStart = Math.max(2, currentPage - 1);
+      const rangeEnd = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  }, [currentPage, totalPages]);
+
+  const btnBase =
+    "inline-flex h-8 min-w-[32px] items-center justify-center rounded-lg text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-40";
+  const btnNormal = `${btnBase} text-slate-600 hover:bg-slate-100 dark:text-white/60 dark:hover:bg-white/10`;
+  const btnActive = `${btnBase} bg-slate-900 text-white dark:bg-white dark:text-neutral-950`;
+
+  return (
+    <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-5 py-3 dark:border-neutral-800/60">
+      {/* Left: info */}
+      <span className="text-xs text-slate-500 dark:text-white/50 tabular-nums whitespace-nowrap">
+        {t("request_logs.page_info", { start, end, total: totalCount })}
+      </span>
+
+      {/* Center: page buttons */}
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          className={btnNormal}
+          disabled={currentPage <= 1}
+          onClick={() => onPageChange(1)}
+          title={t("request_logs.first_page")}
+          aria-label={t("request_logs.first_page")}
+        >
+          <ChevronsLeft size={14} />
+        </button>
+        <button
+          type="button"
+          className={btnNormal}
+          disabled={currentPage <= 1}
+          onClick={() => onPageChange(currentPage - 1)}
+          title={t("request_logs.prev_page")}
+          aria-label={t("request_logs.prev_page")}
+        >
+          <ChevronLeft size={14} />
+        </button>
+
+        {pageNumbers.map((p, i) =>
+          p === "..." ? (
+            <span key={`dots-${i}`} className="px-1 text-xs text-slate-400 dark:text-white/30">
+              …
+            </span>
+          ) : (
+            <button
+              key={p}
+              type="button"
+              className={p === currentPage ? btnActive : btnNormal}
+              onClick={() => onPageChange(p)}
+            >
+              {p}
+            </button>
+          ),
+        )}
+
+        <button
+          type="button"
+          className={btnNormal}
+          disabled={currentPage >= totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+          title={t("request_logs.next_page")}
+          aria-label={t("request_logs.next_page")}
+        >
+          <ChevronRight size={14} />
+        </button>
+        <button
+          type="button"
+          className={btnNormal}
+          disabled={currentPage >= totalPages}
+          onClick={() => onPageChange(totalPages)}
+          title={t("request_logs.last_page")}
+          aria-label={t("request_logs.last_page")}
+        >
+          <ChevronsRight size={14} />
+        </button>
+      </div>
+
+      {/* Right: rows per page */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-slate-500 dark:text-white/50 whitespace-nowrap">
+          {t("request_logs.rows_per_page")}
+        </span>
+        <select
+          value={pageSize}
+          onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none transition focus:border-slate-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white/80 dark:focus:border-neutral-500"
+        >
+          {PAGE_SIZE_OPTIONS.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main page
+// ---------------------------------------------------------------------------
+
 export function RequestLogsPage() {
   const { t } = useTranslation();
   const { notify } = useToast();
@@ -332,15 +492,17 @@ export function RequestLogsPage() {
     [t, handleContentClick, handleErrorClick],
   );
 
-  // Accumulated raw items from all loaded pages (name resolution done by backend)
+  // Data state (page-based, no accumulation)
   const [rawItems, setRawItems] = useState<UsageLogItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
 
-  // Backend-provided metadata
+  // Pagination state
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+
+  // Backend-provided metadata
   const [filterOptions, setFilterOptions] = useState<{
     api_keys: string[];
     api_key_names: Record<string, string>;
@@ -362,36 +524,24 @@ export function RequestLogsPage() {
 
   const fetchInFlightRef = useRef(false);
 
-  // Fetch logs from backend (page 1 = reset, page > 1 = append)
+  // Fetch logs from backend (server-side pagination)
   const fetchLogs = useCallback(
-    async (page: number) => {
+    async (page: number, size: number) => {
       if (fetchInFlightRef.current) return;
       fetchInFlightRef.current = true;
-
-      if (page === 1) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
+      setLoading(true);
 
       try {
         const resp: UsageLogsResponse = await usageApi.getUsageLogs({
           page,
-          size: PAGE_SIZE,
+          size,
           days: timeRange,
           api_key: apiQuery || undefined,
           model: modelQuery || undefined,
           status: statusFilter || undefined,
         });
 
-        const newItems = resp.items ?? [];
-
-        if (page === 1) {
-          setRawItems(newItems);
-        } else {
-          setRawItems((prev) => [...prev, ...newItems]);
-        }
-
+        setRawItems(resp.items ?? []);
         setTotalCount(resp.total ?? 0);
         setCurrentPage(page);
         setFilterOptions(resp.filters ?? { api_keys: [], api_key_names: {}, models: [] });
@@ -403,29 +553,38 @@ export function RequestLogsPage() {
       } finally {
         fetchInFlightRef.current = false;
         setLoading(false);
-        setLoadingMore(false);
       }
     },
-    [timeRange, apiQuery, modelQuery, statusFilter, notify],
+    [timeRange, apiQuery, modelQuery, statusFilter, notify, t],
   );
 
-  // Derive display rows from raw items (names already resolved by backend)
+  // Derive display rows from raw items
   const rows = useMemo<LogRow[]>(() => (rawItems ?? []).map((item) => toLogRow(item)), [rawItems]);
 
-  const hasMore = rawItems.length < totalCount;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  const loadNextPage = useCallback(() => {
-    if (hasMore && !loadingMore && !loading) {
-      fetchLogs(currentPage + 1);
-    }
-  }, [hasMore, loadingMore, loading, fetchLogs, currentPage]);
+  const handlePageChange = useCallback(
+    (page: number) => {
+      const clamped = Math.max(1, Math.min(page, totalPages));
+      fetchLogs(clamped, pageSize);
+    },
+    [fetchLogs, pageSize, totalPages],
+  );
 
-  // Fetch page 1 when filters change (single API call, no other fetches needed)
+  const handlePageSizeChange = useCallback(
+    (newSize: number) => {
+      setPageSize(newSize);
+      fetchLogs(1, newSize);
+    },
+    [fetchLogs],
+  );
+
+  // Fetch page 1 when filters change
   useEffect(() => {
-    fetchLogs(1);
+    fetchLogs(1, pageSize);
   }, [timeRange, apiQuery, modelQuery, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Build options from backend filter data (names provided by backend)
+  // Build options from backend filter data
   const keyOptions = useMemo(() => {
     const names = filterOptions.api_key_names ?? {};
     return [
@@ -451,11 +610,13 @@ export function RequestLogsPage() {
     return t("request_logs.updated_at", { time: new Date(lastUpdatedAt).toLocaleTimeString() });
   }, [lastUpdatedAt, loading, t]);
 
+  const colCount = logColumns.length;
+
   return (
     <section className="flex flex-1 flex-col">
       <h1 className="sr-only">{t("request_logs.title")}</h1>
 
-      {/* 单层卡片：标题 + 筛选 + 统计 + 表格 */}
+      {/* 单层卡片：标题 + 筛选 + 统计 + 表格 + 分页 */}
       <div className="flex flex-1 flex-col rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70">
         {/* 标题栏 */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-3">
@@ -467,7 +628,7 @@ export function RequestLogsPage() {
             <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
             <button
               type="button"
-              onClick={() => fetchLogs(1)}
+              onClick={() => fetchLogs(1, pageSize)}
               disabled={loading}
               aria-busy={loading}
               aria-label={t("request_logs.refresh")}
@@ -483,7 +644,7 @@ export function RequestLogsPage() {
           </div>
         </div>
 
-        {/* 筛选 + 统计（移动端分行，桌面端单行） */}
+        {/* 筛选 + 统计 */}
         <div className="border-t border-slate-100 px-5 py-3 dark:border-neutral-800/60">
           <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2">
             <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-2">
@@ -549,20 +710,80 @@ export function RequestLogsPage() {
           </div>
         </div>
 
-        {/* 表格 */}
-        <div className="relative px-5 pb-5">
-          <VirtualTable<LogRow>
-            rows={rows}
-            columns={logColumns}
-            rowKey={(row) => row.id}
-            loading={loading}
-            hasMore={hasMore}
-            loadingMore={loadingMore}
-            onScrollBottom={loadNextPage}
-            rowHeight={44}
-            caption={t("request_logs.table_caption")}
-            emptyText={t("request_logs.no_data")}
-          />
+        {/* 表格区域 — flex-1 + overflow-auto 让它填满可用空间 */}
+        <div className="relative flex-1 overflow-hidden px-5">
+          <div className="h-full overflow-auto">
+            <table className="w-full min-w-[1320px] table-fixed border-separate border-spacing-0 text-sm">
+              <caption className="sr-only">{t("request_logs.table_caption")}</caption>
+
+              {/* 表头 */}
+              <thead className="sticky top-0 z-10">
+                <tr className="text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-white/55">
+                  {logColumns.map((col, i) => {
+                    const isFirst = i === 0;
+                    const isLast = i === logColumns.length - 1;
+                    const roundCls = [
+                      isFirst ? "first:rounded-l-xl" : "",
+                      isLast ? "last:rounded-r-xl" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+                    return (
+                      <th
+                        key={col.key}
+                        className={`whitespace-nowrap bg-slate-100 px-4 py-3 dark:bg-neutral-800 ${col.width ?? ""} ${col.headerClassName ?? ""} ${roundCls}`}
+                      >
+                        {col.label}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+
+              {/* 表体 */}
+              <tbody className="text-slate-900 dark:text-white">
+                {!loading && rows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={colCount}
+                      className="px-4 py-12 text-center text-sm text-slate-600 dark:text-white/70"
+                    >
+                      {t("request_logs.no_data")}
+                    </td>
+                  </tr>
+                ) : (
+                  rows.map((row, idx) => (
+                    <tr
+                      key={row.id}
+                      className="text-sm transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.04]"
+                      style={{ height: 44 }}
+                    >
+                      {logColumns.map((col, colIdx) => {
+                        const isFirst = colIdx === 0;
+                        const isLast = colIdx === logColumns.length - 1;
+                        const roundCls = [
+                          isFirst ? "first:rounded-l-lg" : "",
+                          isLast ? "last:rounded-r-lg" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ");
+                        return (
+                          <td
+                            key={col.key}
+                            className={`px-4 py-2.5 align-middle ${col.cellClassName ?? ""} ${roundCls}`}
+                          >
+                            {col.render(row, idx)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Loading overlay */}
           {loading ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-2xl bg-white/70 backdrop-blur-sm dark:bg-neutral-950/55">
               <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-white/75">
@@ -575,6 +796,16 @@ export function RequestLogsPage() {
             </div>
           ) : null}
         </div>
+
+        {/* 分页控件 — flex-shrink-0 固定在底部 */}
+        <PaginationBar
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalCount={totalCount}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
       </div>
 
       <LogContentModal

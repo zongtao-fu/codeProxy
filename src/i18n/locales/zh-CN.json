@@ -2111,7 +2111,13 @@
     "not_refreshed": "尚未刷新",
     "table_caption": "请求日志表",
     "no_data": "暂无数据",
-    "refresh_failed": "请求日志刷新失败"
+    "refresh_failed": "请求日志刷新失败",
+    "page_info": "第 {{start}}-{{end}} 条，共 {{total}} 条",
+    "first_page": "首页",
+    "prev_page": "上一页",
+    "next_page": "下一页",
+    "last_page": "末页",
+    "rows_per_page": "每页行数"
   },
   "api_keys_page": {
     "title": "API 密钥管理",
