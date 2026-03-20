@@ -367,14 +367,14 @@ function PaginationBar({
   const btnActive = `${btnBase} bg-slate-900 text-white dark:bg-white dark:text-neutral-950`;
 
   return (
-    <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-5 py-3 dark:border-neutral-800/60">
+    <div className="flex flex-shrink-0 flex-col gap-2 border-t border-slate-100 px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5 dark:border-neutral-800/60">
       {/* Left: info */}
       <span className="text-xs text-slate-500 dark:text-white/50 tabular-nums whitespace-nowrap">
         {t("request_logs.page_info", { start, end, total: totalCount })}
       </span>
 
       {/* Center: page buttons */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 overflow-x-auto">
         <button
           type="button"
           className={btnNormal}

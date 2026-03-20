@@ -3,6 +3,10 @@ import { useTranslation } from "react-i18next";
 import {
   Activity,
   Check,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Coins,
   Filter,
   Key,
@@ -18,8 +22,8 @@ import { LanguageSelector } from "@/modules/ui/LanguageSelector";
 import { AnimatedNumber } from "@/modules/ui/AnimatedNumber";
 import { Reveal } from "@/modules/ui/Reveal";
 import { OverflowTooltip } from "@/modules/ui/Tooltip";
-import { VirtualTable, type VirtualTableColumn } from "@/modules/ui/VirtualTable";
 import { SearchableSelect } from "@/modules/ui/SearchableSelect";
+import { Select } from "@/modules/ui/Select";
 import { Tabs, TabsList, TabsTrigger } from "@/modules/ui/Tabs";
 import { EChart } from "@/modules/ui/charts/EChart";
 import { ChartLegend } from "@/modules/ui/charts/ChartLegend";
@@ -321,7 +325,8 @@ const extractModelIds = (payload: V1ModelsResponse): string[] => {
 
 // ── API ─────────────────────────────────────────────────────────────────────
 
-const PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE = 50;
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
 async function fetchPublicLogs(params: {
   apiKey: string;
@@ -421,10 +426,19 @@ function formatLocalDateLabel(dateStr: string): string {
 
 // ── Columns ─────────────────────────────────────────────────────────────────
 
+interface TableColumn<T> {
+  key: string;
+  label: string;
+  width?: string;
+  headerClassName?: string;
+  cellClassName?: string;
+  render: (row: T, index: number) => React.ReactNode;
+}
+
 function buildLogColumns(
   t: (key: string, options?: Record<string, unknown>) => string,
   onContentClick?: (logId: number, tab: "input" | "output") => void,
-): VirtualTableColumn<LogRow>[] {
+): TableColumn<LogRow>[] {
   return [
     {
       key: "timestamp",
@@ -550,6 +564,96 @@ function buildLogColumns(
       render: (row) => <span>${row.cost.toFixed(4)}</span>,
     },
   ];
+}
+
+// ── Pagination Bar ──────────────────────────────────────────────────────────
+
+function PaginationBar({
+  currentPage,
+  totalPages,
+  totalCount,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  t,
+}: {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  t: (key: string, opts?: Record<string, unknown>) => string;
+}) {
+  const start = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const end = Math.min(currentPage * pageSize, totalCount);
+
+  const pageNumbers = useMemo(() => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("...");
+      const rangeStart = Math.max(2, currentPage - 1);
+      const rangeEnd = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  }, [currentPage, totalPages]);
+
+  const btnBase =
+    "inline-flex h-8 min-w-[32px] items-center justify-center rounded-lg text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-40";
+  const btnNormal = `${btnBase} text-slate-600 hover:bg-slate-100 dark:text-white/60 dark:hover:bg-white/10`;
+  const btnActive = `${btnBase} bg-slate-900 text-white dark:bg-white dark:text-neutral-950`;
+
+  return (
+    <div className="flex flex-shrink-0 flex-col gap-2 border-t border-slate-100 px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5 dark:border-neutral-800/60">
+      {/* Info */}
+      <span className="text-xs text-slate-500 dark:text-white/50 tabular-nums whitespace-nowrap">
+        {t("request_logs.page_info", { start, end, total: totalCount })}
+      </span>
+
+      {/* Page nav */}
+      <div className="flex items-center gap-1 overflow-x-auto">
+        <button type="button" className={btnNormal} disabled={currentPage <= 1} onClick={() => onPageChange(1)} aria-label={t("request_logs.first_page")}>
+          <ChevronsLeft size={14} />
+        </button>
+        <button type="button" className={btnNormal} disabled={currentPage <= 1} onClick={() => onPageChange(currentPage - 1)} aria-label={t("request_logs.prev_page")}>
+          <ChevronLeft size={14} />
+        </button>
+        {pageNumbers.map((p, i) =>
+          p === "..." ? (
+            <span key={`dots-${i}`} className="px-1 text-xs text-slate-400 dark:text-white/30">…</span>
+          ) : (
+            <button key={p} type="button" className={p === currentPage ? btnActive : btnNormal} onClick={() => onPageChange(p)}>
+              {p}
+            </button>
+          ),
+        )}
+        <button type="button" className={btnNormal} disabled={currentPage >= totalPages} onClick={() => onPageChange(currentPage + 1)} aria-label={t("request_logs.next_page")}>
+          <ChevronRight size={14} />
+        </button>
+        <button type="button" className={btnNormal} disabled={currentPage >= totalPages} onClick={() => onPageChange(totalPages)} aria-label={t("request_logs.last_page")}>
+          <ChevronsRight size={14} />
+        </button>
+      </div>
+
+      {/* Rows per page */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-slate-500 dark:text-white/50 whitespace-nowrap">{t("request_logs.rows_per_page")}</span>
+        <Select
+          value={String(pageSize)}
+          onChange={(v) => onPageSizeChange(Number(v))}
+          options={PAGE_SIZE_OPTIONS.map((size) => ({ value: String(size), label: String(size) }))}
+          name="pageSize"
+          className="w-auto"
+        />
+      </div>
+    </div>
+  );
 }
 
 // ── Models Tab Content ──────────────────────────────────────────────────────
@@ -718,12 +822,12 @@ export function ApiKeyLookupPage() {
   // ── Tab state ──
   const [activeTab, setActiveTab] = useState<"usage" | "logs" | "models">("usage");
 
-  // ── Logs state (infinite scroll) ──
+  // ── Logs state (server-side pagination) ──
   const [rawItems, setRawItems] = useState<PublicLogItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
 
@@ -769,48 +873,34 @@ export function ApiKeyLookupPage() {
   // ================================================================
 
   const fetchLogs = useCallback(
-    async (key: string, page: number) => {
+    async (key: string, page: number, size?: number) => {
       if (!key.trim()) return;
 
-      // Pagination requests must never cancel themselves; guard against scroll inertia.
-      if (page > 1 && paginationInFlightRef.current) return;
-      if (page > 1) paginationInFlightRef.current = true;
+      if (paginationInFlightRef.current) return;
+      paginationInFlightRef.current = true;
 
-      // Abort only when resetting (page 1), e.g. key/filters/tab changes.
-      if (page === 1) abortControllerRef.current?.abort();
+      abortControllerRef.current?.abort();
       const controller = new AbortController();
       abortControllerRef.current = controller;
       const myFetchId = ++fetchIdRef.current;
 
-      if (page === 1) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
+      setLoading(true);
       setError(null);
 
       try {
         const resp = await fetchPublicLogs({
           apiKey: key.trim(),
           page,
-          size: PAGE_SIZE,
+          size: size ?? pageSize,
           days: timeRange,
           model: modelQuery || undefined,
           status: statusFilter || undefined,
           signal: controller.signal,
         });
 
-        // Discard response if a newer request has been issued
         if (myFetchId !== fetchIdRef.current) return;
 
-        const newItems = resp.items ?? [];
-
-        if (page === 1) {
-          setRawItems(newItems);
-        } else {
-          setRawItems((prev) => [...prev, ...newItems]);
-        }
-
+        setRawItems(resp.items ?? []);
         setTotalCount(resp.total ?? 0);
         setCurrentPage(page);
         setStats(resp.stats ?? { total: 0, success_rate: 0, total_tokens: 0, total_cost: 0 });
@@ -818,27 +908,22 @@ export function ApiKeyLookupPage() {
         setLastUpdatedAt(Date.now());
         setQueriedKey(key.trim());
       } catch (err) {
-        // Ignore aborted requests
         if (err instanceof DOMException && err.name === "AbortError") return;
-        // Ignore stale responses
         if (myFetchId !== fetchIdRef.current) return;
 
         const message = err instanceof Error ? err.message : t("apikey_lookup.query_failed");
         setError(message);
-        if (page === 1) {
-          setRawItems([]);
-          setTotalCount(0);
-          setStats({ total: 0, success_rate: 0, total_tokens: 0, total_cost: 0 });
-        }
+        setRawItems([]);
+        setTotalCount(0);
+        setStats({ total: 0, success_rate: 0, total_tokens: 0, total_cost: 0 });
       } finally {
-        if (page > 1) paginationInFlightRef.current = false;
+        paginationInFlightRef.current = false;
         if (myFetchId === fetchIdRef.current) {
           setLoading(false);
-          setLoadingMore(false);
         }
       }
     },
-    [t, timeRange, modelQuery, statusFilter],
+    [t, timeRange, modelQuery, statusFilter, pageSize],
   );
 
   // ================================================================
@@ -869,13 +954,24 @@ export function ApiKeyLookupPage() {
 
   const rows = useMemo<LogRow[]>(() => rawItems.map((item) => toLogRow(item)), [rawItems]);
 
-  const hasMore = rawItems.length < totalCount;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  const loadNextPage = useCallback(() => {
-    if (hasMore && !loadingMore && !loading && queriedKey) {
-      fetchLogs(queriedKey, currentPage + 1);
-    }
-  }, [hasMore, loadingMore, loading, fetchLogs, currentPage, queriedKey]);
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (!queriedKey) return;
+      const clamped = Math.max(1, Math.min(page, totalPages));
+      fetchLogs(queriedKey, clamped);
+    },
+    [fetchLogs, queriedKey, totalPages],
+  );
+
+  const handlePageSizeChange = useCallback(
+    (newSize: number) => {
+      setPageSize(newSize);
+      if (queriedKey) fetchLogs(queriedKey, 1, newSize);
+    },
+    [fetchLogs, queriedKey],
+  );
 
   // ================================================================
   //  Effects
@@ -1338,38 +1434,38 @@ export function ApiKeyLookupPage() {
                             items={[
                               ...(dailyLegendAvailability.hasInput
                                 ? [
-                                    {
-                                      key: DAILY_LEGEND_KEYS.input,
-                                      label: t("apikey_lookup.input_token"),
-                                      colorClass: "bg-violet-400",
-                                      enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.input] ?? true,
-                                      onToggle: toggleDailyLegend,
-                                    },
-                                  ]
+                                  {
+                                    key: DAILY_LEGEND_KEYS.input,
+                                    label: t("apikey_lookup.input_token"),
+                                    colorClass: "bg-violet-400",
+                                    enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.input] ?? true,
+                                    onToggle: toggleDailyLegend,
+                                  },
+                                ]
                                 : []),
                               ...(dailyLegendAvailability.hasOutput
                                 ? [
-                                    {
-                                      key: DAILY_LEGEND_KEYS.output,
-                                      label: t("apikey_lookup.output_token"),
-                                      colorClass: "bg-emerald-400",
-                                      enabled:
-                                        dailyLegendSelected[DAILY_LEGEND_KEYS.output] ?? true,
-                                      onToggle: toggleDailyLegend,
-                                    },
-                                  ]
+                                  {
+                                    key: DAILY_LEGEND_KEYS.output,
+                                    label: t("apikey_lookup.output_token"),
+                                    colorClass: "bg-emerald-400",
+                                    enabled:
+                                      dailyLegendSelected[DAILY_LEGEND_KEYS.output] ?? true,
+                                    onToggle: toggleDailyLegend,
+                                  },
+                                ]
                                 : []),
                               ...(dailyLegendAvailability.hasRequests
                                 ? [
-                                    {
-                                      key: DAILY_LEGEND_KEYS.requests,
-                                      label: t("apikey_lookup.requests"),
-                                      colorClass: "bg-blue-500",
-                                      enabled:
-                                        dailyLegendSelected[DAILY_LEGEND_KEYS.requests] ?? true,
-                                      onToggle: toggleDailyLegend,
-                                    },
-                                  ]
+                                  {
+                                    key: DAILY_LEGEND_KEYS.requests,
+                                    label: t("apikey_lookup.requests"),
+                                    colorClass: "bg-blue-500",
+                                    enabled:
+                                      dailyLegendSelected[DAILY_LEGEND_KEYS.requests] ?? true,
+                                    onToggle: toggleDailyLegend,
+                                  },
+                                ]
                                 : []),
                             ]}
                           />
@@ -1441,34 +1537,67 @@ export function ApiKeyLookupPage() {
                     </span>
                   </div>
 
-                  {/* VirtualTable */}
-                  <div className="relative px-3 sm:px-5 pb-5 overflow-x-auto">
-                    <VirtualTable<LogRow>
-                      rows={rows}
-                      columns={logColumns}
-                      rowKey={(row) => row.id}
-                      loading={loading}
-                      hasMore={hasMore}
-                      loadingMore={loadingMore}
-                      onScrollBottom={loadNextPage}
-                      rowHeight={44}
-                      height="h-[calc(100vh-500px)]"
-                      minWidth="min-w-[900px]"
-                      caption={t("request_logs.table_caption")}
-                      emptyText={t("request_logs.no_data")}
-                    />
+                  {/* Table */}
+                  <div className="relative min-h-[300px] h-[calc(100vh-500px)] overflow-hidden px-3 sm:px-5">
+                    <div className="h-full overflow-auto">
+                      <table className="w-full min-w-[900px] table-fixed border-separate border-spacing-0 text-sm">
+                        <caption className="sr-only">{t("request_logs.table_caption")}</caption>
+                        <thead className="sticky top-0 z-10">
+                          <tr className="text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-white/55">
+                            {logColumns.map((col, i) => (
+                              <th
+                                key={col.key}
+                                className={`whitespace-nowrap bg-slate-100 px-4 py-3 dark:bg-neutral-800 ${col.width ?? ""} ${col.headerClassName ?? ""} ${i === 0 ? "first:rounded-l-xl" : ""} ${i === logColumns.length - 1 ? "last:rounded-r-xl" : ""}`}
+                              >
+                                {col.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="text-slate-900 dark:text-white">
+                          {!loading && rows.length === 0 ? (
+                            <tr>
+                              <td colSpan={logColumns.length} className="px-4 py-12 text-center text-sm text-slate-600 dark:text-white/70">
+                                {t("request_logs.no_data")}
+                              </td>
+                            </tr>
+                          ) : (
+                            rows.map((row, idx) => (
+                              <tr key={row.id} className="text-sm transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.04]" style={{ height: 44 }}>
+                                {logColumns.map((col, colIdx) => (
+                                  <td
+                                    key={col.key}
+                                    className={`px-4 py-2.5 align-middle ${col.cellClassName ?? ""} ${colIdx === 0 ? "first:rounded-l-lg" : ""} ${colIdx === logColumns.length - 1 ? "last:rounded-r-lg" : ""}`}
+                                  >
+                                    {col.render(row, idx)}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                     {loading ? (
                       <div className="absolute inset-0 z-10 flex items-center justify-center rounded-b-2xl bg-white/70 backdrop-blur-sm dark:bg-neutral-950/55">
                         <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/85 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-white/75">
-                          <span
-                            className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-slate-900 motion-reduce:animate-none motion-safe:animate-spin dark:border-white/20 dark:border-t-white/80"
-                            aria-hidden="true"
-                          />
+                          <span className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-slate-900 motion-reduce:animate-none motion-safe:animate-spin dark:border-white/20 dark:border-t-white/80" aria-hidden="true" />
                           <span role="status">{t("common.loading_ellipsis")}</span>
                         </div>
                       </div>
                     ) : null}
                   </div>
+
+                  {/* Pagination */}
+                  <PaginationBar
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalCount={totalCount}
+                    pageSize={pageSize}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handlePageSizeChange}
+                    t={t}
+                  />
                 </section>
               </Reveal>
             )}
@@ -1497,15 +1626,15 @@ export function ApiKeyLookupPage() {
           fetchFn={
             queriedKey
               ? async (id: number) => {
-                  const base = detectApiBaseFromLocation();
-                  const url = `${base}${MANAGEMENT_API_PREFIX}/public/usage/logs/${id}/content?api_key=${encodeURIComponent(queriedKey)}`;
-                  const resp = await fetch(url);
-                  if (!resp.ok) {
-                    const text = await resp.text().catch(() => "");
-                    throw new Error(text || `Request failed (${resp.status})`);
-                  }
-                  return resp.json();
+                const base = detectApiBaseFromLocation();
+                const url = `${base}${MANAGEMENT_API_PREFIX}/public/usage/logs/${id}/content?api_key=${encodeURIComponent(queriedKey)}`;
+                const resp = await fetch(url);
+                if (!resp.ok) {
+                  const text = await resp.text().catch(() => "");
+                  throw new Error(text || `Request failed (${resp.status})`);
                 }
+                return resp.json();
+              }
               : undefined
           }
         />
