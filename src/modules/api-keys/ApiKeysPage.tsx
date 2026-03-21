@@ -378,11 +378,14 @@ export function ApiKeysPage() {
       notify({ type: "error", message: t("api_keys_page.name_required") });
       return;
     }
+    const originalKey = entries[editIndex].key;
+    const newKey = form.key.trim();
     setSaving(true);
     try {
       await apiKeyEntriesApi.update({
         index: editIndex,
         value: {
+          ...(newKey !== originalKey ? { key: newKey } : {}),
           name: form.name.trim(),
           "daily-limit": form.dailyLimit ? parseInt(form.dailyLimit, 10) || 0 : 0,
           "total-quota": form.totalQuota ? parseInt(form.totalQuota, 10) || 0 : 0,
@@ -789,18 +792,16 @@ export function ApiKeysPage() {
             onChange={(e) => setForm((p) => ({ ...p, key: e.target.value }))}
             placeholder={t("api_keys_page.form_key_placeholder")}
             className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-sm outline-none transition-all focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:focus:border-indigo-500"
-            readOnly={editIndex !== null}
+            readOnly
           />
-          {editIndex === null && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setForm((p) => ({ ...p, key: generateKey() }))}
-            >
-              <RefreshCw size={14} />
-              {t("api_keys_page.form_regenerate")}
-            </Button>
-          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setForm((p) => ({ ...p, key: generateKey() }))}
+          >
+            <RefreshCw size={14} />
+            {editIndex !== null ? t("api_keys_page.form_refresh_key") : t("api_keys_page.form_regenerate")}
+          </Button>
         </div>
       </div>
 

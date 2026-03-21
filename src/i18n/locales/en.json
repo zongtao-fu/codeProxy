@@ -2020,6 +2020,7 @@
     "form_key_label": "API key",
     "form_key_placeholder": "Enter API key",
     "form_regenerate": "Regenerate",
+    "form_refresh_key": "Refresh Key",
     "form_daily_limit": "Daily request limit",
     "form_total_quota": "Total request quota",
     "form_concurrency_limit": "Concurrent request limit",

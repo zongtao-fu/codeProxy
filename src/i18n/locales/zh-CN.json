@@ -2182,6 +2182,7 @@
     "form_key_label": "API 密钥",
     "form_key_placeholder": "输入 API 密钥",
     "form_regenerate": "重新生成",
+    "form_refresh_key": "刷新密钥",
     "form_daily_limit": "每日请求限额",
     "form_total_quota": "总请求配额",
     "form_concurrency_limit": "并发请求限制",
