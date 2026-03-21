@@ -26,10 +26,13 @@ export function ToastProvider({ children }: PropsWithChildren) {
         warning: "Warning",
         info: "Info",
       };
-      const title = input.title ?? defaultTitles[type];
-      const options: Record<string, unknown> = { description: input.message };
-      if (input.duration) {
-        options.timing = { displayDuration: input.duration };
+      // Use message as the pill title; only set description when a separate title is provided
+      const title = input.title ?? input.message;
+      const options: Record<string, unknown> = {
+        duration: input.duration ?? 1500,
+      };
+      if (input.title) {
+        options.description = input.message;
       }
 
       switch (type) {
