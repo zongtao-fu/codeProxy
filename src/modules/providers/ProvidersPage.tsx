@@ -327,6 +327,9 @@ export function ProvidersPage() {
       ...(headers ? { headers } : {}),
       ...(excludedModels ? { excludedModels } : {}),
       ...(modelCommit.models ? { models: modelCommit.models } : {}),
+      ...(editKeyType === "claude" && keyDraft.skipAnthropicProcessing
+        ? { skipAnthropicProcessing: true }
+        : {}),
     };
 
     setKeyDraftError(null);
@@ -1553,6 +1556,30 @@ export function ProvidersPage() {
               {t("providers.excluded_count_hint", { count: editKeyExcludedCount })}
             </p>
           </div>
+
+          {editKeyType === "claude" && (
+            <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {t("providers.anthropic_processing_label")}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-white/55">
+                    {t("providers.anthropic_processing_hint")}
+                  </p>
+                </div>
+                <ToggleSwitch
+                  checked={!keyDraft.skipAnthropicProcessing}
+                  onCheckedChange={(checked: boolean) =>
+                    setKeyDraft((prev) => ({
+                      ...prev,
+                      skipAnthropicProcessing: !checked,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
 

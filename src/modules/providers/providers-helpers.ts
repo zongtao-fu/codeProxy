@@ -88,6 +88,7 @@ export type ProviderKeyDraft = {
   excludedModelsText: string;
   headersEntries: KeyValueEntry[];
   modelEntries: ModelEntryDraft[];
+  skipAnthropicProcessing: boolean;
 };
 
 export const buildModelEntries = (models?: ProviderModel[]): ModelEntryDraft[] => {
@@ -143,6 +144,7 @@ export const buildProviderKeyDraft = (input?: ProviderSimpleConfig | null): Prov
   excludedModelsText: excludedModelsToText(input?.excludedModels),
   headersEntries: recordToKeyValueEntries(input?.headers),
   modelEntries: buildModelEntries(input?.models),
+  skipAnthropicProcessing: input?.skipAnthropicProcessing ?? false,
 });
 
 export type OpenAIDraft = {
@@ -171,11 +173,11 @@ export const buildOpenAIDraft = (input?: OpenAIProvider | null): OpenAIDraft => 
   apiKeyEntries:
     Array.isArray(input?.apiKeyEntries) && input.apiKeyEntries.length
       ? input.apiKeyEntries.map((entry, idx) => ({
-          id: `key-${idx}-${entry.apiKey}`,
-          apiKey: entry.apiKey ?? "",
-          proxyUrl: entry.proxyUrl ?? "",
-          headersEntries: recordToKeyValueEntries(entry.headers),
-        }))
+        id: `key-${idx}-${entry.apiKey}`,
+        apiKey: entry.apiKey ?? "",
+        proxyUrl: entry.proxyUrl ?? "",
+        headersEntries: recordToKeyValueEntries(entry.headers),
+      }))
       : [{ id: `key-${Date.now()}`, apiKey: "", proxyUrl: "", headersEntries: [] }],
   modelEntries: buildModelEntries(input?.models),
 });

@@ -132,6 +132,7 @@ export interface ProviderSimpleConfig {
   headers?: Record<string, string>;
   models?: ProviderModel[];
   excludedModels?: string[];
+  skipAnthropicProcessing?: boolean;
 }
 
 export type OAuthProvider = "codex" | "anthropic" | "antigravity" | "gemini-cli" | "kimi" | "qwen";
