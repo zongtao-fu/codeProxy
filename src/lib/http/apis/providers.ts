@@ -109,6 +109,9 @@ export const providersApi = {
         const excludedModels = normalizeExcludedModels(
           item["excluded-models"] ?? item.excludedModels,
         );
+        const skipAnthropicProcessing =
+          item["skip-anthropic-processing"] === true ||
+          item.skipAnthropicProcessing === true;
         return {
           apiKey,
           ...(name ? { name } : {}),
@@ -118,6 +121,7 @@ export const providersApi = {
           ...(headers ? { headers } : {}),
           ...(models ? { models } : {}),
           ...(excludedModels ? { excludedModels } : {}),
+          ...(skipAnthropicProcessing ? { skipAnthropicProcessing } : {}),
         };
       })
       .filter(Boolean) as ProviderSimpleConfig[];
