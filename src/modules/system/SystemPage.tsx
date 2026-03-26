@@ -419,7 +419,7 @@ export function SystemPage() {
         />
         <InfoCard
           icon={GitBranch}
-          label={t("system_page.server_version")}
+          label={t("system_page.version")}
           value={auth.state.serverVersion ?? "--"}
         />
         <InfoCard
@@ -430,7 +430,7 @@ export function SystemPage() {
         />
         <InfoCard
           icon={MonitorSmartphone}
-          label={t("system_page.frontend_version")}
+          label={t("system_page.ui_version")}
           value={__APP_VERSION__ || "--"}
         />
         <InfoCard
