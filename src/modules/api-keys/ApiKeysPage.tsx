@@ -221,9 +221,12 @@ export function ApiKeysPage() {
 
   /* ─── load models ─── */
 
-  const loadModels = useCallback(async () => {
+  const loadModels = useCallback(async (channels?: string[]) => {
     try {
-      const data = await apiClient.get<{ data?: Array<{ id?: string }> }>("/models");
+      const raw = Array.isArray(channels) ? channels : [];
+      const normalized = raw.map((c) => String(c ?? "").trim()).filter(Boolean);
+      const qs = normalized.length > 0 ? `?allowed_channels=${encodeURIComponent(normalized.join(","))}` : "";
+      const data = await apiClient.get<{ data?: Array<{ id?: string }> }>(`/models${qs}`);
       if (data?.data) {
         const opts: MultiSelectOption[] = data.data
           .filter((m) => m.id)
@@ -234,6 +237,11 @@ export function ApiKeysPage() {
           }))
           .sort((a, b) => a.label.localeCompare(b.label));
         setAvailableModels(opts);
+        const allowedSet = new Set(opts.map((o) => o.value));
+        setForm((p) => ({
+          ...p,
+          allowedModels: p.allowedModels.filter((m) => allowedSet.has(m)),
+        }));
       }
     } catch {
       // silent — models list is supplementary
@@ -365,7 +373,7 @@ export function ApiKeysPage() {
   /* ─── create ─── */
 
   const handleOpenCreate = () => {
-    setForm({
+    const next = {
       name: "",
       key: generateKey(),
       dailyLimit: "",
@@ -376,7 +384,9 @@ export function ApiKeysPage() {
       allowedModels: [],
       allowedChannels: [],
       systemPrompt: "",
-    });
+    };
+    setForm(next);
+    void loadModels(next.allowedChannels);
     setShowCreate(true);
   };
 
@@ -424,7 +434,7 @@ export function ApiKeysPage() {
 
   const handleOpenEdit = (index: number) => {
     const entry = entries[index];
-    setForm({
+    const next = {
       name: entry.name || "",
       key: entry.key,
       dailyLimit: entry["daily-limit"]?.toString() || "",
@@ -435,7 +445,9 @@ export function ApiKeysPage() {
       allowedModels: entry["allowed-models"] || [],
       allowedChannels: entry["allowed-channels"] || [],
       systemPrompt: entry["system-prompt"] || "",
-    });
+    };
+    setForm(next);
+    void loadModels(next.allowedChannels);
     setEditIndex(index);
   };
 
