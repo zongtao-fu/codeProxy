@@ -2070,9 +2070,10 @@ export function AuthFilesPage() {
             </label>
             <TextInput
               value={channelEditor.label}
-              onChange={(e) =>
-                setChannelEditor((prev) => ({ ...prev, label: e.currentTarget.value, error: null }))
-              }
+              onChange={(e) => {
+                const value = e.currentTarget.value;
+                setChannelEditor((prev) => ({ ...prev, label: value, error: null }));
+              }}
               placeholder={t("auth_files.channel_name_placeholder")}
             />
           </div>
@@ -2254,9 +2255,10 @@ export function AuthFilesPage() {
               <div className="mt-2">
                 <TextInput
                   value={prefixProxyEditor.prefix}
-                  onChange={(e) =>
-                    setPrefixProxyEditor((prev) => ({ ...prev, prefix: e.currentTarget.value }))
-                  }
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setPrefixProxyEditor((prev) => ({ ...prev, prefix: value }));
+                  }}
                   placeholder={t("auth_files.prefix_placeholder")}
                 />
               </div>
@@ -2272,9 +2274,10 @@ export function AuthFilesPage() {
               <div className="mt-2">
                 <TextInput
                   value={prefixProxyEditor.proxyUrl}
-                  onChange={(e) =>
-                    setPrefixProxyEditor((prev) => ({ ...prev, proxyUrl: e.currentTarget.value }))
-                  }
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setPrefixProxyEditor((prev) => ({ ...prev, proxyUrl: value }));
+                  }}
                   placeholder={t("auth_files.proxy_url_placeholder")}
                 />
               </div>
