@@ -1454,6 +1454,9 @@ export function AuthFilesPage() {
                         .trim()
                         .toLowerCase() === "oauth";
                     const channelName = readAuthFileChannelName(file);
+                    const displayTitle = isOauthFile && channelName ? channelName : file.name;
+                    const showFileNameSecondary =
+                      isOauthFile && channelName && channelName.trim() !== String(file.name || "").trim();
 
                     const stats = resolveAuthFileStats(file, usageIndex);
                     const statusData = resolveAuthFileStatusBar(file, usageIndex);
@@ -1474,7 +1477,7 @@ export function AuthFilesPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="flex items-center gap-2 truncate font-mono text-xs text-slate-900 dark:text-white">
-                              <span className="truncate">{file.name}</span>
+                              <span className="truncate">{displayTitle}</span>
                               {(() => {
                                 const cs = connectivityState.get(file.name);
                                 return (
@@ -1501,6 +1504,11 @@ export function AuthFilesPage() {
                                 );
                               })()}
                             </p>
+                            {showFileNameSecondary ? (
+                              <p className="mt-1 truncate font-mono text-[11px] text-slate-500 dark:text-white/45">
+                                {file.name}
+                              </p>
+                            ) : null}
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                               <span
                                 className={`inline-flex rounded-lg px-2 py-1 text-xs font-semibold ${badgeClass}`}
