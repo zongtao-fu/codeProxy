@@ -20,6 +20,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Compute UI version
+        run: |
+          set -euo pipefail
+          # Tag name like vX.Y.Z
+          echo "VITE_APP_VERSION=${{ github.ref_name }}" >> "$GITHUB_ENV"
+
       - name: Build production bundle
         run: bunx vite build
 

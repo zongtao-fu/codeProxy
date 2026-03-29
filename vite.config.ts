@@ -7,7 +7,10 @@ export default defineConfig({
   base: "/manage/",
   plugins: [react(), tailwindcss()],
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version ?? "dev"),
+    // Prefer CI-provided build version (branch+sha/tag) so UI version auto-refreshes on deploy.
+    __APP_VERSION__: JSON.stringify(
+      process.env.VITE_APP_VERSION ?? process.env.APP_VERSION ?? process.env.npm_package_version ?? "dev",
+    ),
   },
   test: {
     environment: "jsdom",

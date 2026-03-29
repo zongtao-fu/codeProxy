@@ -16,6 +16,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Compute UI version
+        run: |
+          set -euo pipefail
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          echo "VITE_APP_VERSION=${{ github.ref_name }}-${SHORT_SHA}" >> "$GITHUB_ENV"
+
       - name: Build production bundle
         run: bunx vite build
 
