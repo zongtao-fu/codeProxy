@@ -1864,6 +1864,7 @@
     "codex_desc": "5 小时 / 周限额与代码审查",
     "gemini_cli_desc": "按模型组聚合剩余额度",
     "kiro_desc": "AWS CodeWhisperer 额度",
+    "refresh_due": "即将刷新",
     "minutes_later": "{{minutes}} 分钟后",
     "hours_later": "{{hours}} 小时后",
     "hours_minutes_later": "{{hours}} 小时 {{minutes}} 分钟后",

@@ -45,7 +45,7 @@ export type QuotaStatus = "idle" | "loading" | "success" | "error";
 export type QuotaItem = {
   label: string;
   percent: number | null;
-  resetLabel?: string;
+  resetAtMs?: number;
   meta?: string;
 };
 
@@ -142,16 +142,34 @@ export const isDisabledAuthFile = (file: AuthFileItem): boolean => {
   return false;
 };
 
-export const formatResetTime = (value?: string): string => {
-  if (!value) return "--";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+export const parseResetTimeToMs = (value?: string | null): number | undefined => {
+  const normalized = normalizeStringValue(value);
+  if (!normalized) return undefined;
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? undefined : date.getTime();
 };
 
-export const formatUnixSeconds = (seconds?: number | null): string => {
-  if (!seconds) return "--";
-  const date = new Date(seconds * 1000);
-  return Number.isNaN(date.getTime()) ? "--" : date.toLocaleString();
+export const unixSecondsToMs = (seconds?: number | null): number | undefined => {
+  const normalized = normalizeNumberValue(seconds);
+  if (normalized === null || normalized <= 0) return undefined;
+  return Math.round(normalized * 1000);
+};
+
+export const formatRelativeResetLabel = (
+  resetAtMs?: number,
+  nowMs = Date.now(),
+): string | undefined => {
+  if (typeof resetAtMs !== "number" || !Number.isFinite(resetAtMs)) return undefined;
+
+  const diffMs = resetAtMs - nowMs;
+  if (diffMs <= 0) return "m_quota.refresh_due";
+
+  const minutes = Math.max(1, Math.ceil(diffMs / 60000));
+  if (minutes < 60) return `m_quota.minutes_later::${minutes}`;
+
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `m_quota.hours_minutes_later::${hours}::${rest}` : `m_quota.hours_later::${hours}`;
 };
 
 export const clampPercent = (value: number): number => Math.max(0, Math.min(100, value));
@@ -604,17 +622,13 @@ export const parseCodexUsagePayload = (payload: unknown): CodexUsagePayload | nu
   return null;
 };
 
-const formatCodexResetLabel = (window?: CodexUsageWindow | null): string => {
-  if (!window) return "--";
+const resolveCodexResetAtMs = (window?: CodexUsageWindow | null): number | undefined => {
+  if (!window) return undefined;
   const resetAt = normalizeNumberValue(window.reset_at ?? window.resetAt);
-  if (resetAt !== null) return formatUnixSeconds(resetAt);
+  if (resetAt !== null && resetAt > 0) return unixSecondsToMs(resetAt);
   const after = normalizeNumberValue(window.reset_after_seconds ?? window.resetAfterSeconds);
-  if (after === null) return "--";
-  const minutes = Math.max(0, Math.round(after / 60));
-  if (minutes < 60) return `m_quota.minutes_later::${minutes}`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest ? `m_quota.hours_minutes_later::${hours}::${rest}` : `m_quota.hours_later::${hours}`;
+  if (after === null || after <= 0) return undefined;
+  return Date.now() + after * 1000;
 };
 
 export const buildCodexItems = (payload: CodexUsagePayload): QuotaItem[] => {
@@ -660,7 +674,7 @@ export const buildCodexItems = (payload: CodexUsagePayload): QuotaItem[] => {
     items.push({
       label,
       percent: remaining,
-      resetLabel: formatCodexResetLabel(window),
+      resetAtMs: resolveCodexResetAtMs(window),
     });
   };
 
@@ -719,7 +733,7 @@ export const buildKiroItems = (payload: KiroQuotaPayload): QuotaItem[] => {
       items.push({
         label: "m_quota.base_quota",
         percent,
-        resetLabel: resetTime !== null ? formatUnixSeconds(resetTime) : "--",
+        resetAtMs: unixSecondsToMs(resetTime),
         meta: `used ${Math.round(used).toLocaleString()} / limit ${Math.round(limit).toLocaleString()}`,
       });
     }
@@ -735,7 +749,7 @@ export const buildKiroItems = (payload: KiroQuotaPayload): QuotaItem[] => {
         items.push({
           label: "m_quota.trial_quota",
           percent,
-          resetLabel: trialExpiry !== null ? formatUnixSeconds(trialExpiry) : "--",
+          resetAtMs: unixSecondsToMs(trialExpiry),
           meta: `${status ?? "trial"} · used ${Math.round(trialUsed).toLocaleString()} / limit ${Math.round(trialLimit).toLocaleString()}`,
         });
       }

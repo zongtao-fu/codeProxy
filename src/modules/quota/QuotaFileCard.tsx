@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { RefreshCw, ShieldAlert } from "lucide-react";
 import type { AuthFileItem } from "@/lib/http/types";
-import { Button } from "@/modules/ui/Button";
 import type { QuotaState } from "@/modules/quota/quota-helpers";
 import {
   clampPercent,
+  formatRelativeResetLabel,
   isDisabledAuthFile,
   resolveAuthProvider,
 } from "@/modules/quota/quota-helpers";
@@ -75,10 +75,12 @@ const PROVIDER_ICON: Record<string, { light: string; dark: string }> = {
 export function QuotaFileCard({
   file,
   state,
+  nowMs,
   onRefresh,
 }: {
   file: AuthFileItem;
   state: QuotaState;
+  nowMs: number;
   onRefresh: () => void;
 }) {
   const { t } = useTranslation();
@@ -89,8 +91,9 @@ export function QuotaFileCard({
   /* Translate i18n-key labels returned by quota-helpers */
   const tl = (text: string) => (text.startsWith("m_quota.") ? t(text) : text);
 
-  /* Translate resetLabel with embedded params (e.g. 'm_quota.minutes_later::5') */
-  const trl = (text: string) => {
+  /* Translate reset label with embedded params (e.g. 'm_quota.minutes_later::5') */
+  const trl = (text?: string) => {
+    if (!text) return null;
     if (!text.startsWith("m_quota.")) return text;
     const parts = text.split("::");
     const key = parts[0];
@@ -143,6 +146,8 @@ export function QuotaFileCard({
           type="button"
           onClick={onRefresh}
           disabled={state.status === "loading"}
+          aria-label={`${t("common.refresh")} ${file.name}`}
+          title={`${t("common.refresh")} ${file.name}`}
           className="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40 dark:hover:bg-neutral-800 dark:hover:text-white"
         >
           <RefreshCw size={12} className={state.status === "loading" ? "animate-spin" : ""} />
@@ -164,31 +169,35 @@ export function QuotaFileCard({
           </p>
         ) : (
           <div className="space-y-2">
-            {state.items.map((item) => (
-              <div key={item.label}>
-                <div className="flex items-center justify-between gap-1.5">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <ModelIcon label={tl(item.label)} size={12} />
-                    <span className="truncate text-[11px] font-medium text-slate-700 dark:text-white/80">
-                      {tl(item.label)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0 text-[10px] tabular-nums">
-                    <span className="font-semibold text-slate-800 dark:text-white">
-                      {item.percent === null ? "--" : `${Math.round(clampPercent(item.percent))}%`}
-                    </span>
-                    {item.resetLabel && item.resetLabel !== "--" && (
-                      <span className="hidden text-slate-400 dark:text-white/30 sm:inline">
-                        {trl(item.resetLabel)}
+            {state.items.map((item) => {
+              const relativeResetLabel = trl(formatRelativeResetLabel(item.resetAtMs, nowMs));
+
+              return (
+                <div key={item.label}>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <ModelIcon label={tl(item.label)} size={12} />
+                      <span className="truncate text-[11px] font-medium text-slate-700 dark:text-white/80">
+                        {tl(item.label)}
                       </span>
-                    )}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 text-[10px] tabular-nums">
+                      <span className="font-semibold text-slate-800 dark:text-white">
+                        {item.percent === null ? "--" : `${Math.round(clampPercent(item.percent))}%`}
+                      </span>
+                      {relativeResetLabel && (
+                        <span className="hidden text-slate-400 dark:text-white/30 sm:inline">
+                          {relativeResetLabel}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-1">
+                    <QuotaBar percent={item.percent} />
                   </div>
                 </div>
-                <div className="mt-1">
-                  <QuotaBar percent={item.percent} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

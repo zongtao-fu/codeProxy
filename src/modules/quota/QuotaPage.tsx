@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { useTranslation } from "react-i18next";
 import { RefreshCw } from "lucide-react";
 import { apiCallApi, authFilesApi, getApiCallErrorMessage } from "@/lib/http/apis";
+import { useInterval } from "@/hooks/useInterval";
 import type { ApiCallResult, AuthFileItem } from "@/lib/http/types";
 import { Button } from "@/modules/ui/Button";
 import { useToast } from "@/modules/ui/ToastProvider";
@@ -22,13 +23,13 @@ import {
   buildGeminiCliBuckets,
   buildKiroItems,
   clampPercent,
-  formatResetTime,
   isRecord,
   normalizeAuthIndexValue,
   normalizeGeminiCliModelId,
   normalizeNumberValue,
   normalizeQuotaFraction,
   normalizeStringValue,
+  parseResetTimeToMs,
   parseAntigravityPayload,
   parseCodexUsagePayload,
   parseGeminiCliQuotaPayload,
@@ -129,7 +130,7 @@ const fetchQuota = async (
         return groups.map((g) => ({
           label: g.label,
           percent: Math.round(clampPercent(g.remainingFraction * 100)),
-          resetLabel: g.resetTime ? formatResetTime(g.resetTime) : "--",
+          resetAtMs: parseResetTimeToMs(g.resetTime),
         }));
       }
     }
@@ -210,7 +211,7 @@ const fetchQuota = async (
       return {
         label: b.label,
         percent,
-        resetLabel: b.resetTime ? formatResetTime(b.resetTime) : "--",
+        resetAtMs: parseResetTimeToMs(b.resetTime),
         meta: meta || undefined,
       };
     });
@@ -243,7 +244,12 @@ export function QuotaPage() {
   const [codex, setCodex] = useState<Record<string, QuotaState>>({});
   const [geminiCli, setGeminiCli] = useState<Record<string, QuotaState>>({});
   const [kiro, setKiro] = useState<Record<string, QuotaState>>({});
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const hasAutoRefreshed = useRef(false);
+
+  useInterval(() => {
+    setNowMs(Date.now());
+  }, 30000);
 
   const loadFiles = useCallback(async () => {
     setLoadingFiles(true);
@@ -292,7 +298,11 @@ export function QuotaPage() {
               : setKiro;
       setMap((prev) => ({
         ...prev,
-        [name]: { status: "loading", items: [], updatedAt: Date.now() },
+        [name]: {
+          status: "loading",
+          items: prev[name]?.items ?? [],
+          updatedAt: prev[name]?.updatedAt,
+        },
       }));
       try {
         const items = await fetchQuota(type, file);
@@ -304,7 +314,12 @@ export function QuotaPage() {
         const message = err instanceof Error ? err.message : t("m_quota.quota_query_failed");
         setMap((prev) => ({
           ...prev,
-          [name]: { status: "error", items: [], error: message, updatedAt: Date.now() },
+          [name]: {
+            status: "error",
+            items: prev[name]?.items ?? [],
+            error: message,
+            updatedAt: prev[name]?.updatedAt,
+          },
         }));
       }
     },
@@ -387,6 +402,7 @@ export function QuotaPage() {
                 key={file.name}
                 file={file}
                 state={stateMap[file.name] ?? { status: "idle", items: [] }}
+                nowMs={nowMs}
                 onRefresh={() => void refreshOne(type, file)}
               />
             ))}

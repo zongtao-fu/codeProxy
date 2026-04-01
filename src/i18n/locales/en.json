@@ -1849,6 +1849,7 @@
     "codex_desc": "5-hour / weekly limits & code review",
     "gemini_cli_desc": "Aggregated remaining by model group",
     "kiro_desc": "AWS CodeWhisperer quota",
+    "refresh_due": "Refresh due",
     "minutes_later": "in {{minutes}} minutes",
     "hours_later": "in {{hours}} hours",
     "hours_minutes_later": "in {{hours}} hours {{minutes}} minutes",
