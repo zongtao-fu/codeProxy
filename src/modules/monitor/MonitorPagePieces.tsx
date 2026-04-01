@@ -109,7 +109,7 @@ export const MonitorCard = ({
       <div className="relative mt-4 min-w-0">
         {children}
         {loading ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/65 backdrop-blur-sm dark:bg-neutral-950/45">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/65 backdrop-blur-sm dark:bg-neutral-950/45">
             <div
               role="status"
               aria-live="polite"

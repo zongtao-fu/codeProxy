@@ -723,13 +723,13 @@ export function MonitorPage() {
                 actions={modelActions}
                 loading={isRefreshing}
               >
-                <div className="flex h-auto flex-col gap-4 md:h-72 md:grid md:grid-cols-[minmax(0,1fr)_220px]">
-                  <EChart option={modelDistributionOption} className="h-48 md:h-72 min-w-0" />
-                  <div className="flex h-auto md:h-72 flex-col justify-center gap-2 overflow-y-auto pr-1">
+                <div className="flex h-auto flex-col gap-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] md:items-center">
+                  <EChart option={modelDistributionOption} className="h-56 min-w-0 md:h-[22rem]" />
+                  <div className="flex h-auto flex-col justify-start gap-2 overflow-y-auto pr-2 md:max-h-[22rem]">
                     {modelDistributionLegend.map((item) => (
                       <div
                         key={item.name}
-                        className="grid grid-cols-[minmax(0,120px)_40px_52px] items-center gap-x-1 text-sm"
+                        className="grid grid-cols-[minmax(0,1fr)_max-content_max-content] items-center gap-x-3 text-sm"
                       >
                         <div className="flex min-w-0 items-center gap-2">
                           <span
@@ -739,10 +739,10 @@ export function MonitorPage() {
                             {item.name}
                           </span>
                         </div>
-                        <span className="text-right font-semibold tabular-nums text-slate-900 dark:text-white">
+                        <span className="min-w-[3.5rem] whitespace-nowrap text-right font-semibold tabular-nums text-slate-900 dark:text-white">
                           {item.valueLabel}
                         </span>
-                        <span className="text-right tabular-nums text-slate-500 dark:text-white/55">
+                        <span className="min-w-[4.25rem] whitespace-nowrap text-right tabular-nums text-slate-500 dark:text-white/55">
                           {item.percentLabel}
                         </span>
                       </div>
@@ -816,13 +816,13 @@ export function MonitorPage() {
                 actions={apikeyActions}
                 loading={isRefreshing}
               >
-                <div className="flex h-auto flex-col gap-4 md:h-72 md:grid md:grid-cols-[minmax(0,1fr)_220px]">
-                  <EChart option={apikeyDistributionOption} className="h-48 md:h-72 min-w-0" />
-                  <div className="flex h-auto md:h-72 flex-col justify-center gap-2 overflow-y-auto pr-1">
+                <div className="flex h-auto flex-col gap-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] md:items-center">
+                  <EChart option={apikeyDistributionOption} className="h-56 min-w-0 md:h-[22rem]" />
+                  <div className="flex h-auto flex-col justify-start gap-2 overflow-y-auto pr-2 md:max-h-[22rem]">
                     {apikeyDistributionLegend.map((item) => (
                       <div
                         key={item.name}
-                        className="grid grid-cols-[minmax(0,120px)_40px_52px] items-center gap-x-1 text-sm"
+                        className="grid grid-cols-[minmax(0,1fr)_max-content_max-content] items-center gap-x-3 text-sm"
                       >
                         <div className="flex min-w-0 items-center gap-2">
                           <span
@@ -832,10 +832,10 @@ export function MonitorPage() {
                             {item.name}
                           </span>
                         </div>
-                        <span className="text-right font-semibold tabular-nums text-slate-900 dark:text-white">
+                        <span className="min-w-[3.5rem] whitespace-nowrap text-right font-semibold tabular-nums text-slate-900 dark:text-white">
                           {item.valueLabel}
                         </span>
-                        <span className="text-right tabular-nums text-slate-500 dark:text-white/55">
+                        <span className="min-w-[4.25rem] whitespace-nowrap text-right tabular-nums text-slate-500 dark:text-white/55">
                           {item.percentLabel}
                         </span>
                       </div>
