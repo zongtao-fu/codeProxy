@@ -1,4 +1,5 @@
 import { Trash2, AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/modules/ui/Button";
 import { Modal } from "@/modules/ui/Modal";
 
@@ -25,7 +26,9 @@ export function ConfirmModal({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const isDanger = variant === "danger";
+  const resolvedCancelText = cancelText || t("common.cancel");
 
   return (
     <Modal
@@ -36,7 +39,7 @@ export function ConfirmModal({
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={busy}>
-            {cancelText}
+            {resolvedCancelText}
           </Button>
           <Button variant={isDanger ? "danger" : "primary"} onClick={onConfirm} disabled={busy}>
             {confirmText}
