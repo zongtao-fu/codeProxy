@@ -113,6 +113,8 @@ export function MonitorPage() {
   const [tokenHourWindow, setTokenHourWindow] = useState<HourWindow>(24);
   const [modelMetric, setModelMetric] = useState<"requests" | "tokens">("requests");
   const [apikeyMetric, setApikeyMetric] = useState<"requests" | "tokens">("requests");
+  const [modelDistributionSelected, setModelDistributionSelected] = useState<Record<string, boolean>>({});
+  const [apikeyDistributionSelected, setApikeyDistributionSelected] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -232,6 +234,21 @@ export function MonitorPage() {
     }
     return data;
   }, [modelMetric, sortedModelsByMetric, t]);
+
+  useEffect(() => {
+    setModelDistributionSelected((prev) => {
+      const next = { ...prev };
+      for (const item of modelDistributionData) {
+        if (!(item.name in next)) next[item.name] = true;
+      }
+      return next;
+    });
+  }, [modelDistributionData]);
+
+  const visibleModelDistributionData = useMemo(
+    () => modelDistributionData.filter((item) => modelDistributionSelected[item.name] ?? true),
+    [modelDistributionData, modelDistributionSelected],
+  );
 
   const dailySeries = useMemo(() => {
     if (!chartData?.daily_series) return [];
@@ -385,8 +402,8 @@ export function MonitorPage() {
   }, [hourlySeries.tokenKeys]);
 
   const modelDistributionOption = useMemo(
-    () => createModelDistributionOption({ isDark, data: modelDistributionData }),
-    [isDark, modelDistributionData],
+    () => createModelDistributionOption({ isDark, data: visibleModelDistributionData }),
+    [isDark, visibleModelDistributionData],
   );
 
   // --- API Key Distribution ---
@@ -411,9 +428,24 @@ export function MonitorPage() {
     return data;
   }, [apikeyMetric, chartData, t]);
 
+  useEffect(() => {
+    setApikeyDistributionSelected((prev) => {
+      const next = { ...prev };
+      for (const item of apikeyDistributionData) {
+        if (!(item.name in next)) next[item.name] = true;
+      }
+      return next;
+    });
+  }, [apikeyDistributionData]);
+
+  const visibleApikeyDistributionData = useMemo(
+    () => apikeyDistributionData.filter((item) => apikeyDistributionSelected[item.name] ?? true),
+    [apikeyDistributionData, apikeyDistributionSelected],
+  );
+
   const apikeyDistributionOption = useMemo(
-    () => createModelDistributionOption({ isDark, data: apikeyDistributionData }),
-    [isDark, apikeyDistributionData],
+    () => createModelDistributionOption({ isDark, data: visibleApikeyDistributionData }),
+    [isDark, visibleApikeyDistributionData],
   );
 
   const apikeyDistributionLegend = useMemo(() => {
@@ -431,9 +463,10 @@ export function MonitorPage() {
         valueLabel: formatCompact(value),
         percentLabel: `${percent.toFixed(1)}%`,
         colorClass,
+        enabled: apikeyDistributionSelected[item.name] ?? true,
       };
     });
-  }, [apikeyDistributionData]);
+  }, [apikeyDistributionData, apikeyDistributionSelected]);
 
   const dailyLegendAvailability = useMemo(() => {
     const points = dailySeries.filter(
@@ -468,9 +501,18 @@ export function MonitorPage() {
         valueLabel: formatCompact(value),
         percentLabel: `${percent.toFixed(1)}%`,
         colorClass,
+        enabled: modelDistributionSelected[item.name] ?? true,
       };
     });
-  }, [modelDistributionData]);
+  }, [modelDistributionData, modelDistributionSelected]);
+
+  const toggleModelDistributionLegend = useCallback((name: string) => {
+    setModelDistributionSelected((prev) => ({ ...prev, [name]: !(prev[name] ?? true) }));
+  }, []);
+
+  const toggleApikeyDistributionLegend = useCallback((name: string) => {
+    setApikeyDistributionSelected((prev) => ({ ...prev, [name]: !(prev[name] ?? true) }));
+  }, []);
 
   const dailyTrendOption = useMemo(
     () =>
@@ -727,9 +769,17 @@ export function MonitorPage() {
                   <EChart option={modelDistributionOption} className="h-56 min-w-0 md:h-[22rem]" />
                   <div className="flex h-auto flex-col justify-start gap-2 overflow-y-auto pr-2 md:max-h-[22rem]">
                     {modelDistributionLegend.map((item) => (
-                      <div
+                      <button
                         key={item.name}
-                        className="grid grid-cols-[minmax(0,1fr)_max-content_max-content] items-center gap-x-3 text-sm"
+                        type="button"
+                        aria-pressed={item.enabled}
+                        onClick={() => toggleModelDistributionLegend(item.name)}
+                        className={[
+                          "grid w-full grid-cols-[minmax(0,1fr)_max-content_max-content] items-center gap-x-3 rounded-xl px-2 py-1.5 text-left text-sm transition",
+                          item.enabled
+                            ? "text-slate-900 hover:bg-slate-100 dark:text-white dark:hover:bg-white/10"
+                            : "text-slate-400 opacity-60 hover:bg-slate-50 dark:text-white/35 dark:hover:bg-white/5",
+                        ].join(" ")}
                       >
                         <div className="flex min-w-0 items-center gap-2">
                           <span
@@ -745,7 +795,7 @@ export function MonitorPage() {
                         <span className="min-w-[4.25rem] whitespace-nowrap text-right tabular-nums text-slate-500 dark:text-white/55">
                           {item.percentLabel}
                         </span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -820,9 +870,17 @@ export function MonitorPage() {
                   <EChart option={apikeyDistributionOption} className="h-56 min-w-0 md:h-[22rem]" />
                   <div className="flex h-auto flex-col justify-start gap-2 overflow-y-auto pr-2 md:max-h-[22rem]">
                     {apikeyDistributionLegend.map((item) => (
-                      <div
+                      <button
                         key={item.name}
-                        className="grid grid-cols-[minmax(0,1fr)_max-content_max-content] items-center gap-x-3 text-sm"
+                        type="button"
+                        aria-pressed={item.enabled}
+                        onClick={() => toggleApikeyDistributionLegend(item.name)}
+                        className={[
+                          "grid w-full grid-cols-[minmax(0,1fr)_max-content_max-content] items-center gap-x-3 rounded-xl px-2 py-1.5 text-left text-sm transition",
+                          item.enabled
+                            ? "text-slate-900 hover:bg-slate-100 dark:text-white dark:hover:bg-white/10"
+                            : "text-slate-400 opacity-60 hover:bg-slate-50 dark:text-white/35 dark:hover:bg-white/5",
+                        ].join(" ")}
                       >
                         <div className="flex min-w-0 items-center gap-2">
                           <span
@@ -838,7 +896,7 @@ export function MonitorPage() {
                         <span className="min-w-[4.25rem] whitespace-nowrap text-right tabular-nums text-slate-500 dark:text-white/55">
                           {item.percentLabel}
                         </span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -896,13 +954,15 @@ export function MonitorPage() {
               <ChartLegend
                 className="pt-4 max-h-32 overflow-y-auto justify-start sm:justify-center sm:max-h-none"
                 items={[
-                  ...hourlySeries.tokenKeys.map((key) => ({
+                  ...hourlySeries.tokenKeys
+                    .filter((key) => key !== HOURLY_TOKEN_KEYS.total)
+                    .map((key) => ({
                     key,
                     label: hourlyTokenLabels[key] ?? key,
                     colorClass: hourlyTokenPalette.classByKey[key] ?? "bg-slate-400",
                     enabled: hourlyTokenSelected[key] ?? true,
                     onToggle: toggleHourlyTokenLegend,
-                  })),
+                    })),
                   {
                     key: HOURLY_TOKEN_KEYS.total,
                     label: hourlyTokenLabels[HOURLY_TOKEN_KEYS.total],
