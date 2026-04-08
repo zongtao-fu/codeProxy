@@ -34,7 +34,13 @@ import { ProviderStatusBar } from "@/modules/providers/ProviderStatusBar";
 import { OAuthLoginDialog } from "@/modules/oauth/OAuthLoginDialog";
 import { normalizeUsageSourceId, type KeyStatBucket } from "@/modules/providers/provider-usage";
 import { fetchQuota, resolveQuotaProvider, type QuotaProvider } from "@/modules/quota/quota-fetch";
-import { clampPercent, type QuotaItem, type QuotaState } from "@/modules/quota/quota-helpers";
+import { useInterval } from "@/hooks/useInterval";
+import {
+  clampPercent,
+  formatRelativeResetLabel,
+  type QuotaItem,
+  type QuotaState,
+} from "@/modules/quota/quota-helpers";
 
 type AuthFileModelItem = { id: string; display_name?: string; type?: string; owned_by?: string };
 type OAuthDialogTab =
@@ -417,6 +423,14 @@ export function AuthFilesPage() {
   const [quotaByFileName, setQuotaByFileName] = useState<Record<string, QuotaState>>({});
   const quotaAutoRefreshedRef = useRef<Set<string>>(new Set());
   const quotaInFlightRef = useRef<Set<string>>(new Set());
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useInterval(
+    () => {
+      setNowMs(Date.now());
+    },
+    tab === "files" ? 30_000 : null,
+  );
 
   const translateQuotaText = useCallback(
     (text: string) => {
@@ -435,6 +449,23 @@ export function AuthFilesPage() {
       return text;
     },
     [t],
+  );
+
+  const translateRelativeResetLabel = useCallback(
+    (resetAtMs?: number) => {
+      const raw = formatRelativeResetLabel(resetAtMs, nowMs);
+      if (!raw) return null;
+      if (!raw.startsWith("m_quota.")) return raw;
+
+      const parts = raw.split("::");
+      const key = parts[0];
+      if (key === "m_quota.minutes_later") return t(key, { minutes: parts[1] });
+      if (key === "m_quota.hours_later") return t(key, { hours: parts[1] });
+      if (key === "m_quota.hours_minutes_later")
+        return t(key, { hours: parts[1], minutes: parts[2] });
+      return t(key);
+    },
+    [nowMs, t],
   );
 
   const refreshQuota = useCallback(
@@ -1576,22 +1607,32 @@ export function AuthFilesPage() {
             </div>
           ) : items.length > 0 ? (
             <div className="max-h-64 w-80 overflow-auto space-y-2">
-              {items.map((item) => (
-                <div key={item.label} className="space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-xs font-medium">
-                      {translateQuotaText(item.label)}
-                    </span>
-                    <span className="shrink-0 text-xs font-semibold tabular-nums">
-                      {item.percent === null ? "--" : `${Math.round(clampPercent(item.percent))}%`}
-                    </span>
+              {items.map((item) => {
+                const percentText =
+                  item.percent === null ? "--" : `${Math.round(clampPercent(item.percent))}%`;
+                const resetText = translateRelativeResetLabel(item.resetAtMs);
+                return (
+                  <div key={item.label} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-16 shrink-0 truncate text-[11px] font-medium text-slate-700 dark:text-white/80">
+                        {translateQuotaText(item.label)}
+                      </span>
+                      <div className="min-w-0 flex-1">{bar(item.percent)}</div>
+                      <span className="w-12 shrink-0 text-right text-[11px] font-semibold tabular-nums text-slate-800 dark:text-white/85">
+                        {percentText}
+                      </span>
+                      {resetText ? (
+                        <span className="w-20 shrink-0 text-right text-[10px] tabular-nums text-slate-400 dark:text-white/35">
+                          {resetText}
+                        </span>
+                      ) : null}
+                    </div>
+                    {item.meta ? (
+                      <p className="text-[11px] text-slate-600 dark:text-white/65">{item.meta}</p>
+                    ) : null}
                   </div>
-                  {bar(item.percent)}
-                  {item.meta ? (
-                    <p className="text-[11px] text-slate-600 dark:text-white/65">{item.meta}</p>
-                  ) : null}
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : null;
 
@@ -1614,22 +1655,28 @@ export function AuthFilesPage() {
                   ) : summaryItems.length === 0 ? (
                     <span className="text-xs text-slate-400 dark:text-white/40">--</span>
                   ) : (
-                    <div className="space-y-1">
-                      {summaryItems.map((item) => (
-                        <div key={item.label} className="space-y-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="truncate text-[11px] font-medium text-slate-700 dark:text-white/70">
+                    <div className="space-y-1.5">
+                      {summaryItems.map((item) => {
+                        const percentText =
+                          item.percent === null ? "--" : `${Math.round(clampPercent(item.percent))}%`;
+                        const resetText = translateRelativeResetLabel(item.resetAtMs);
+                        return (
+                          <div key={item.label} className="flex items-center gap-2">
+                            <span className="w-16 shrink-0 truncate text-[11px] font-medium text-slate-700 dark:text-white/70">
                               {translateQuotaText(item.label)}
                             </span>
-                            <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-800 dark:text-white/80">
-                              {item.percent === null
-                                ? "--"
-                                : `${Math.round(clampPercent(item.percent))}%`}
+                            <div className="min-w-0 flex-1">{bar(item.percent)}</div>
+                            <span className="w-12 shrink-0 text-right text-[11px] font-semibold tabular-nums text-slate-800 dark:text-white/80">
+                              {percentText}
                             </span>
+                            {resetText ? (
+                              <span className="w-20 shrink-0 text-right text-[10px] tabular-nums text-slate-400 dark:text-white/35">
+                                {resetText}
+                              </span>
+                            ) : null}
                           </div>
-                          {bar(item.percent)}
-                        </div>
-                      ))}
+                        );
+                      })}
                       {moreCount ? (
                         <p className="text-[11px] text-slate-400 dark:text-white/35">
                           +{moreCount}
@@ -1805,6 +1852,7 @@ export function AuthFilesPage() {
     statusUpdating,
     t,
     translateQuotaText,
+    translateRelativeResetLabel,
     usageIndex,
   ]);
 
