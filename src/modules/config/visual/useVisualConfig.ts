@@ -455,15 +455,18 @@ export function useVisualConfig() {
         setIntFromString(parsed, "nonstream-keepalive-interval", nonstreamKeepaliveInterval);
 
         // Handle kimi-header-defaults
-        const kimiUserAgent = typeof values.kimiHeaderDefaults?.userAgent === "string"
-          ? values.kimiHeaderDefaults.userAgent
-          : "";
-        const kimiPlatform = typeof values.kimiHeaderDefaults?.platform === "string"
-          ? values.kimiHeaderDefaults.platform
-          : "";
-        const kimiVersion = typeof values.kimiHeaderDefaults?.version === "string"
-          ? values.kimiHeaderDefaults.version
-          : "";
+        const kimiUserAgent =
+          typeof values.kimiHeaderDefaults?.userAgent === "string"
+            ? values.kimiHeaderDefaults.userAgent
+            : "";
+        const kimiPlatform =
+          typeof values.kimiHeaderDefaults?.platform === "string"
+            ? values.kimiHeaderDefaults.platform
+            : "";
+        const kimiVersion =
+          typeof values.kimiHeaderDefaults?.version === "string"
+            ? values.kimiHeaderDefaults.version
+            : "";
 
         if (
           hasOwn(parsed, "kimi-header-defaults") ||

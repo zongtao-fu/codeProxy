@@ -186,8 +186,8 @@ export function MultiSelect({
                   ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
                   : "text-slate-700 hover:bg-slate-50 dark:text-white/70 dark:hover:bg-white/5"
               }`}
-              >
-                <div
+            >
+              <div
                 className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${
                   value.length === 0
                     ? "border-green-500 bg-green-500 dark:border-green-400 dark:bg-green-400"

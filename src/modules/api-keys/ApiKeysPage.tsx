@@ -226,7 +226,10 @@ export function ApiKeysPage() {
     try {
       const raw = Array.isArray(channels) ? channels : [];
       const normalized = raw.map((c) => String(c ?? "").trim()).filter(Boolean);
-      const qs = normalized.length > 0 ? `?allowed_channels=${encodeURIComponent(normalized.join(","))}` : "";
+      const qs =
+        normalized.length > 0
+          ? `?allowed_channels=${encodeURIComponent(normalized.join(","))}`
+          : "";
       const data = await apiClient.get<{ data?: Array<{ id?: string }> }>(`/models${qs}`);
       if (data?.data) {
         const opts: MultiSelectOption[] = data.data
@@ -285,7 +288,12 @@ export function ApiKeysPage() {
       vertexKeys.forEach((item) => push(item.name || "", "API"));
       openaiProviders.forEach((item) => push(item.name || "", "API"));
       (authFiles.files || []).forEach((file) => {
-        if (String(file.account_type || "").trim().toLowerCase() !== "oauth") return;
+        if (
+          String(file.account_type || "")
+            .trim()
+            .toLowerCase() !== "oauth"
+        )
+          return;
         push(readAuthFileChannelName(file), "OAuth");
       });
 
@@ -537,7 +545,7 @@ export function ApiKeysPage() {
         latencyText: formatLatencyMs(r.latency_ms || 0),
         inputTokens: r.input_tokens || 0,
         outputTokens: r.output_tokens || 0,
-        totalTokens: r.total_tokens || ((r.input_tokens || 0) + (r.output_tokens || 0))
+        totalTokens: r.total_tokens || (r.input_tokens || 0) + (r.output_tokens || 0),
       }));
       setUsageRows(rows);
     } catch {
@@ -563,10 +571,11 @@ export function ApiKeysPage() {
             title={
               row.disabled ? t("api_keys_page.click_enable") : t("api_keys_page.click_disable")
             }
-            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${row.disabled
-              ? "text-slate-400 hover:bg-red-50 hover:text-red-500 dark:text-white/30 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-              : "text-emerald-500 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
-              }`}
+            className={`inline-flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+              row.disabled
+                ? "text-slate-400 hover:bg-red-50 hover:text-red-500 dark:text-white/30 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                : "text-emerald-500 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+            }`}
           >
             <Power size={15} />
           </button>
@@ -917,7 +926,9 @@ export function ApiKeysPage() {
             onClick={() => setForm((p) => ({ ...p, key: generateKey() }))}
           >
             <RefreshCw size={14} />
-            {editIndex !== null ? t("api_keys_page.form_refresh_key") : t("api_keys_page.form_regenerate")}
+            {editIndex !== null
+              ? t("api_keys_page.form_refresh_key")
+              : t("api_keys_page.form_regenerate")}
           </Button>
         </div>
       </div>

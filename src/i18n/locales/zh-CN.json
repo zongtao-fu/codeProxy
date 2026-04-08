@@ -646,7 +646,11 @@
     "load_alias_failed": "加载 OAuth 模型别名失败",
     "count_items": "共 {{count}} 条",
     "file_too_large_detail": "文件过大（{{size}}）：{{name}}（最大 {{maxSize}}）",
-    "check_connectivity": "检查连通性"
+    "check_connectivity": "检查连通性",
+    "table_caption": "认证文件表格",
+    "col_name": "名称",
+    "col_type": "类型",
+    "col_connectivity": "连通性"
   },
   "antigravity_quota": {
     "title": "Antigravity 额度",
@@ -2338,6 +2342,9 @@
     "alias_tab": "OAuth 模型别名",
     "title": "认证文件",
     "description": "管理认证文件的上传/启用/下载，OAuth 模型禁用和模型别名。",
+    "add_oauth": "增加 OAuth 登录",
+    "add_oauth_title": "增加 OAuth 登录",
+    "add_oauth_desc": "通过浏览器授权生成 OAuth 认证文件，或导入 iFlow/Vertex 凭证。",
     "count_info": "计数信息",
     "filename_hint": "文件名 / 提供商 / 类型",
     "per_page": "每页",

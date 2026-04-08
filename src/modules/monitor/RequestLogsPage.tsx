@@ -566,7 +566,9 @@ export function RequestLogsPage() {
         setRawItems(resp.items ?? []);
         setTotalCount(resp.total ?? 0);
         setCurrentPage(page);
-        setFilterOptions(resp.filters ?? { api_keys: [], api_key_names: {}, models: [], channels: [] });
+        setFilterOptions(
+          resp.filters ?? { api_keys: [], api_key_names: {}, models: [], channels: [] },
+        );
         setStats(resp.stats ?? { total: 0, success_rate: 0, total_tokens: 0 });
         setLastUpdatedAt(Date.now());
       } catch (err) {

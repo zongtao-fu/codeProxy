@@ -83,9 +83,22 @@ export interface UsageData {
 }
 
 export interface ChartDataResponse {
-  daily_series: { date: string; requests: number; failed_requests: number; input_tokens: number; output_tokens: number }[];
+  daily_series: {
+    date: string;
+    requests: number;
+    failed_requests: number;
+    input_tokens: number;
+    output_tokens: number;
+  }[];
   model_distribution: { model: string; requests: number; tokens: number }[];
-  hourly_tokens: { hour: string; input_tokens: number; output_tokens: number; reasoning_tokens: number; cached_tokens: number; total_tokens: number }[];
+  hourly_tokens: {
+    hour: string;
+    input_tokens: number;
+    output_tokens: number;
+    reasoning_tokens: number;
+    cached_tokens: number;
+    total_tokens: number;
+  }[];
   hourly_models: { hour: string; model: string; requests: number }[];
   apikey_distribution: { api_key: string; name: string; requests: number; tokens: number }[];
 }

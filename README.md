@@ -54,21 +54,21 @@ This dashboard provides a complete management interface for your AI proxy infras
 
 The gallery below uses the latest 13 management-panel screenshots and maps each screen to its operational role.
 
-| Screen | What it shows |
-| :----- | :------------ |
+| Screen             | What it shows                                                                             |
+| :----------------- | :---------------------------------------------------------------------------------------- |
 | Dashboard Overview | KPI cards, health score, live system monitor, throughput, resource usage, latency ranking |
-| Monitor Center | Request KPIs, model distribution, daily token trends, API Key usage share |
-| Request Logs | Multi-filter log table, time range selector, status/channel/model filtering |
-| Request Details | Input/output viewer with Markdown rendering and instruction block inspection |
-| AI Providers | Multi-provider tabs, per-channel success rate, model tags, enable/edit/delete controls |
-| Auth Files | Saved auth file inventory with model inspection, proxy prefix controls, and download |
-| OAuth Login | Authorization launcher plus remote callback submission workflow |
-| API Keys | Keys, quotas, RPM/TPM, model permissions, channel bindings, quick actions |
-| Models | Pricing table for input/output/cache cost accounting |
-| Quota | Remaining refresh time and current usage bars for provider-specific quotas |
-| Config | YAML source editor with search and runtime mode switching |
-| System | API base, management endpoint, version metadata, API Key lookup link, model tags |
-| Logs | Live log console with search, download, clear, and toggleable filters |
+| Monitor Center     | Request KPIs, model distribution, daily token trends, API Key usage share                 |
+| Request Logs       | Multi-filter log table, time range selector, status/channel/model filtering               |
+| Request Details    | Input/output viewer with Markdown rendering and instruction block inspection              |
+| AI Providers       | Multi-provider tabs, per-channel success rate, model tags, enable/edit/delete controls    |
+| Auth Files         | Saved auth file inventory with model inspection, proxy prefix controls, and download      |
+| OAuth Login        | Authorization launcher plus remote callback submission workflow                           |
+| API Keys           | Keys, quotas, RPM/TPM, model permissions, channel bindings, quick actions                 |
+| Models             | Pricing table for input/output/cache cost accounting                                      |
+| Quota              | Remaining refresh time and current usage bars for provider-specific quotas                |
+| Config             | YAML source editor with search and runtime mode switching                                 |
+| System             | API base, management endpoint, version metadata, API Key lookup link, model tags          |
+| Logs               | Live log console with search, download, clear, and toggleable filters                     |
 
 ### 1. Dashboard Overview
 

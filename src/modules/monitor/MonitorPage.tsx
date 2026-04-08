@@ -11,11 +11,7 @@ import {
 } from "lucide-react";
 import { usageApi } from "@/lib/http/apis";
 import type { UsageData } from "@/lib/http/types";
-import {
-  computeKpiMetrics,
-  formatNumber,
-  formatRate,
-} from "@/modules/monitor/monitor-utils";
+import { computeKpiMetrics, formatNumber, formatRate } from "@/modules/monitor/monitor-utils";
 import { AnimatedNumber } from "@/modules/ui/AnimatedNumber";
 import { TextInput } from "@/modules/ui/Input";
 import { Reveal } from "@/modules/ui/Reveal";
@@ -105,7 +101,9 @@ export function MonitorPage() {
   });
 
   const [rawUsage, setRawUsage] = useState<UsageData>(createEmptyUsage);
-  const [chartData, setChartData] = useState<import("@/lib/http/types").ChartDataResponse | null>(null);
+  const [chartData, setChartData] = useState<import("@/lib/http/types").ChartDataResponse | null>(
+    null,
+  );
   const [timeRange, setTimeRange] = useState<TimeRange>(7);
   const [apiFilterInput, setApiFilterInput] = useState("");
   const [apiFilter, setApiFilter] = useState("");
@@ -113,8 +111,12 @@ export function MonitorPage() {
   const [tokenHourWindow, setTokenHourWindow] = useState<HourWindow>(24);
   const [modelMetric, setModelMetric] = useState<"requests" | "tokens">("requests");
   const [apikeyMetric, setApikeyMetric] = useState<"requests" | "tokens">("requests");
-  const [modelDistributionSelected, setModelDistributionSelected] = useState<Record<string, boolean>>({});
-  const [apikeyDistributionSelected, setApikeyDistributionSelected] = useState<Record<string, boolean>>({});
+  const [modelDistributionSelected, setModelDistributionSelected] = useState<
+    Record<string, boolean>
+  >({});
+  const [apikeyDistributionSelected, setApikeyDistributionSelected] = useState<
+    Record<string, boolean>
+  >({});
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -161,10 +163,9 @@ export function MonitorPage() {
       successRate: rate,
       inputTokens,
       outputTokens,
-      totalTokens: inputTokens + outputTokens
+      totalTokens: inputTokens + outputTokens,
     };
   }, [chartData]);
-
 
   const applyFilter = useCallback(() => {
     setApiFilter(apiFilterInput);
@@ -199,7 +200,7 @@ export function MonitorPage() {
   const modelTotals = useMemo(() => {
     if (!chartData?.model_distribution) return [];
     return chartData.model_distribution.sort(
-      (left, right) => right.requests - left.requests || left.model.localeCompare(right.model)
+      (left, right) => right.requests - left.requests || left.model.localeCompare(right.model),
     );
   }, [chartData]);
 
@@ -255,7 +256,7 @@ export function MonitorPage() {
 
     // Parse backend date strings ("YYYY-MM-DD") to Date objects and format label
     // Using UTC parsing trick to match backend day strings consistently
-    return chartData.daily_series.map(pt => {
+    return chartData.daily_series.map((pt) => {
       // Create a date assuming noon UTC so boundary issues don't push it across
       // local day boundaries.
       const match = pt.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -278,34 +279,39 @@ export function MonitorPage() {
   const hourlySeries = useMemo(() => {
     const modelKeys = [...topModelKeys, HOURLY_MODEL_OTHER_KEY];
 
-    const modelPoints = (chartData?.hourly_models || []).reduce((acc, pt) => {
-      const [datePart, timePart] = pt.hour.split(' '); // "2023-10-10 15:00"
-      const label = timePart || pt.hour;
+    const modelPoints = (chartData?.hourly_models || [])
+      .reduce(
+        (acc, pt) => {
+          const [datePart, timePart] = pt.hour.split(" "); // "2023-10-10 15:00"
+          const label = timePart || pt.hour;
 
-      let bucket = acc.find(x => x.label === label);
-      if (!bucket) {
-        bucket = { label, stacksMap: new Map<string, number>() };
-        acc.push(bucket);
-      }
-      const current = bucket.stacksMap.get(pt.model) || 0;
-      bucket.stacksMap.set(pt.model, current + pt.requests);
-      return acc;
-    }, [] as { label: string, stacksMap: Map<string, number> }[]).map(bucket => {
-      const stacks = modelKeys.map(key => {
-        if (key === HOURLY_MODEL_OTHER_KEY) {
-          let sum = 0;
-          for (const [m, v] of bucket.stacksMap.entries()) {
-            if (!topModelKeys.includes(m)) sum += v;
+          let bucket = acc.find((x) => x.label === label);
+          if (!bucket) {
+            bucket = { label, stacksMap: new Map<string, number>() };
+            acc.push(bucket);
           }
-          return { key, value: sum };
-        }
-        return { key, value: bucket.stacksMap.get(key) || 0 };
+          const current = bucket.stacksMap.get(pt.model) || 0;
+          bucket.stacksMap.set(pt.model, current + pt.requests);
+          return acc;
+        },
+        [] as { label: string; stacksMap: Map<string, number> }[],
+      )
+      .map((bucket) => {
+        const stacks = modelKeys.map((key) => {
+          if (key === HOURLY_MODEL_OTHER_KEY) {
+            let sum = 0;
+            for (const [m, v] of bucket.stacksMap.entries()) {
+              if (!topModelKeys.includes(m)) sum += v;
+            }
+            return { key, value: sum };
+          }
+          return { key, value: bucket.stacksMap.get(key) || 0 };
+        });
+        return { label: bucket.label, stacks };
       });
-      return { label: bucket.label, stacks };
-    });
 
-    const tokenPoints = (chartData?.hourly_tokens || []).map(pt => {
-      const [datePart, timePart] = pt.hour.split(' ');
+    const tokenPoints = (chartData?.hourly_tokens || []).map((pt) => {
+      const [datePart, timePart] = pt.hour.split(" ");
       const label = timePart || pt.hour;
       return {
         label,
@@ -315,7 +321,7 @@ export function MonitorPage() {
           { key: HOURLY_TOKEN_KEYS.reasoning, value: pt.reasoning_tokens },
           { key: HOURLY_TOKEN_KEYS.cached, value: pt.cached_tokens },
           { key: HOURLY_TOKEN_KEYS.total, value: pt.total_tokens },
-        ]
+        ],
       };
     });
 
@@ -817,36 +823,36 @@ export function MonitorPage() {
                     items={[
                       ...(dailyLegendAvailability.hasInput
                         ? [
-                          {
-                            key: DAILY_LEGEND_KEYS.input,
-                            label: t("monitor.input_token"),
-                            colorClass: "bg-violet-400",
-                            enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.input] ?? true,
-                            onToggle: toggleDailyLegend,
-                          },
-                        ]
+                            {
+                              key: DAILY_LEGEND_KEYS.input,
+                              label: t("monitor.input_token"),
+                              colorClass: "bg-violet-400",
+                              enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.input] ?? true,
+                              onToggle: toggleDailyLegend,
+                            },
+                          ]
                         : []),
                       ...(dailyLegendAvailability.hasOutput
                         ? [
-                          {
-                            key: DAILY_LEGEND_KEYS.output,
-                            label: t("monitor.output_token_legend"),
-                            colorClass: "bg-emerald-400",
-                            enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.output] ?? true,
-                            onToggle: toggleDailyLegend,
-                          },
-                        ]
+                            {
+                              key: DAILY_LEGEND_KEYS.output,
+                              label: t("monitor.output_token_legend"),
+                              colorClass: "bg-emerald-400",
+                              enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.output] ?? true,
+                              onToggle: toggleDailyLegend,
+                            },
+                          ]
                         : []),
                       ...(dailyLegendAvailability.hasRequests
                         ? [
-                          {
-                            key: DAILY_LEGEND_KEYS.requests,
-                            label: t("monitor.requests"),
-                            colorClass: "bg-blue-500",
-                            enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.requests] ?? true,
-                            onToggle: toggleDailyLegend,
-                          },
-                        ]
+                            {
+                              key: DAILY_LEGEND_KEYS.requests,
+                              label: t("monitor.requests"),
+                              colorClass: "bg-blue-500",
+                              enabled: dailyLegendSelected[DAILY_LEGEND_KEYS.requests] ?? true,
+                              onToggle: toggleDailyLegend,
+                            },
+                          ]
                         : []),
                     ]}
                   />
@@ -911,11 +917,7 @@ export function MonitorPage() {
               actions={<HourWindowSelector value={modelHourWindow} onChange={setModelHourWindow} />}
               loading={isRefreshing}
             >
-              <EChart
-                option={hourlyModelOption}
-                className="h-64 sm:h-72"
-                replaceMerge="series"
-              />
+              <EChart option={hourlyModelOption} className="h-64 sm:h-72" replaceMerge="series" />
               <ChartLegend
                 className="pt-4 max-h-32 overflow-y-auto justify-start sm:justify-center sm:max-h-none"
                 items={[
@@ -946,22 +948,18 @@ export function MonitorPage() {
               actions={<HourWindowSelector value={tokenHourWindow} onChange={setTokenHourWindow} />}
               loading={isRefreshing}
             >
-              <EChart
-                option={hourlyTokenOption}
-                className="h-64 sm:h-72"
-                replaceMerge="series"
-              />
+              <EChart option={hourlyTokenOption} className="h-64 sm:h-72" replaceMerge="series" />
               <ChartLegend
                 className="pt-4 max-h-32 overflow-y-auto justify-start sm:justify-center sm:max-h-none"
                 items={[
                   ...hourlySeries.tokenKeys
                     .filter((key) => key !== HOURLY_TOKEN_KEYS.total)
                     .map((key) => ({
-                    key,
-                    label: hourlyTokenLabels[key] ?? key,
-                    colorClass: hourlyTokenPalette.classByKey[key] ?? "bg-slate-400",
-                    enabled: hourlyTokenSelected[key] ?? true,
-                    onToggle: toggleHourlyTokenLegend,
+                      key,
+                      label: hourlyTokenLabels[key] ?? key,
+                      colorClass: hourlyTokenPalette.classByKey[key] ?? "bg-slate-400",
+                      enabled: hourlyTokenSelected[key] ?? true,
+                      onToggle: toggleHourlyTokenLegend,
                     })),
                   {
                     key: HOURLY_TOKEN_KEYS.total,

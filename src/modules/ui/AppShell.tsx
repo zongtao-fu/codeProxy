@@ -18,7 +18,6 @@ import {
   FileKey,
   FileText,
   Info,
-  KeyRound,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -50,7 +49,6 @@ const NAV_ITEMS = [
   { to: "/monitor/request-logs", i18nKey: "shell.nav_request_logs", icon: ScrollText },
   { to: "/ai-providers", i18nKey: "shell.nav_ai_providers", icon: Bot },
   { to: "/auth-files", i18nKey: "shell.nav_auth_files", icon: FileKey },
-  { to: "/oauth", i18nKey: "shell.nav_oauth", icon: KeyRound },
   { to: "/api-keys", i18nKey: "shell.nav_api_keys", icon: Sparkles },
   { to: "/models", i18nKey: "shell.nav_models", icon: Cpu },
   { to: "/quota", i18nKey: "shell.nav_quota", icon: Coins },
@@ -65,7 +63,6 @@ const getPageTitleKey = (pathname: string): string => {
   if (pathname.startsWith("/monitor")) return "shell.nav_monitor";
   if (pathname.startsWith("/ai-providers")) return "shell.nav_ai_providers";
   if (pathname.startsWith("/auth-files")) return "shell.nav_auth_files";
-  if (pathname.startsWith("/oauth")) return "shell.nav_oauth";
   if (pathname.startsWith("/quota")) return "shell.nav_quota";
   if (pathname.startsWith("/api-keys")) return "shell.page_api_keys";
   if (pathname.startsWith("/models")) return "shell.nav_models";

@@ -7,20 +7,45 @@ import { ThemeProvider } from "@/modules/ui/ThemeProvider";
 import { ToastProvider } from "@/modules/ui/ToastProvider";
 
 // Lazy-loaded page components for route-level code splitting
-const LoginPage = lazy(() => import("@/modules/login/LoginPage").then(m => ({ default: m.LoginPage })));
-const DashboardPage = lazy(() => import("@/modules/dashboard/DashboardPage").then(m => ({ default: m.DashboardPage })));
-const MonitorPage = lazy(() => import("@/modules/monitor/MonitorPage").then(m => ({ default: m.MonitorPage })));
-const RequestLogsPage = lazy(() => import("@/modules/monitor/RequestLogsPage").then(m => ({ default: m.RequestLogsPage })));
-const ProvidersPage = lazy(() => import("@/modules/providers/ProvidersPage").then(m => ({ default: m.ProvidersPage })));
-const AuthFilesPage = lazy(() => import("@/modules/auth-files/AuthFilesPage").then(m => ({ default: m.AuthFilesPage })));
-const OAuthPage = lazy(() => import("@/modules/oauth/OAuthPage").then(m => ({ default: m.OAuthPage })));
-const QuotaPage = lazy(() => import("@/modules/quota/QuotaPage").then(m => ({ default: m.QuotaPage })));
-const ConfigPage = lazy(() => import("@/modules/config/ConfigPage").then(m => ({ default: m.ConfigPage })));
-const LogsPage = lazy(() => import("@/modules/logs/LogsPage").then(m => ({ default: m.LogsPage })));
-const SystemPage = lazy(() => import("@/modules/system/SystemPage").then(m => ({ default: m.SystemPage })));
-const ApiKeysPage = lazy(() => import("@/modules/api-keys/ApiKeysPage").then(m => ({ default: m.ApiKeysPage })));
-const ModelsPage = lazy(() => import("@/modules/models/ModelsPage").then(m => ({ default: m.ModelsPage })));
-const ApiKeyLookupPage = lazy(() => import("@/modules/apikey-lookup/ApiKeyLookupPage").then(m => ({ default: m.ApiKeyLookupPage })));
+const LoginPage = lazy(() =>
+  import("@/modules/login/LoginPage").then((m) => ({ default: m.LoginPage })),
+);
+const DashboardPage = lazy(() =>
+  import("@/modules/dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage })),
+);
+const MonitorPage = lazy(() =>
+  import("@/modules/monitor/MonitorPage").then((m) => ({ default: m.MonitorPage })),
+);
+const RequestLogsPage = lazy(() =>
+  import("@/modules/monitor/RequestLogsPage").then((m) => ({ default: m.RequestLogsPage })),
+);
+const ProvidersPage = lazy(() =>
+  import("@/modules/providers/ProvidersPage").then((m) => ({ default: m.ProvidersPage })),
+);
+const AuthFilesPage = lazy(() =>
+  import("@/modules/auth-files/AuthFilesPage").then((m) => ({ default: m.AuthFilesPage })),
+);
+const QuotaPage = lazy(() =>
+  import("@/modules/quota/QuotaPage").then((m) => ({ default: m.QuotaPage })),
+);
+const ConfigPage = lazy(() =>
+  import("@/modules/config/ConfigPage").then((m) => ({ default: m.ConfigPage })),
+);
+const LogsPage = lazy(() =>
+  import("@/modules/logs/LogsPage").then((m) => ({ default: m.LogsPage })),
+);
+const SystemPage = lazy(() =>
+  import("@/modules/system/SystemPage").then((m) => ({ default: m.SystemPage })),
+);
+const ApiKeysPage = lazy(() =>
+  import("@/modules/api-keys/ApiKeysPage").then((m) => ({ default: m.ApiKeysPage })),
+);
+const ModelsPage = lazy(() =>
+  import("@/modules/models/ModelsPage").then((m) => ({ default: m.ModelsPage })),
+);
+const ApiKeyLookupPage = lazy(() =>
+  import("@/modules/apikey-lookup/ApiKeyLookupPage").then((m) => ({ default: m.ApiKeyLookupPage })),
+);
 
 export function AppRouter() {
   return (
@@ -56,7 +81,6 @@ export function AppRouter() {
                               path="/auth-files/oauth-model-alias"
                               element={<Navigate to="/auth-files?tab=alias" replace />}
                             />
-                            <Route path="/oauth" element={<OAuthPage />} />
                             <Route path="/quota" element={<QuotaPage />} />
                             <Route path="/usage" element={<Navigate to="/monitor" replace />} />
                             <Route path="/config" element={<ConfigPage />} />

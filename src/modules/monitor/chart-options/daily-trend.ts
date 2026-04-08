@@ -198,8 +198,19 @@ export const createDailyTrendOption = (input: {
         min: 0,
         max: tokenAxisMax,
         axisLabel: compact
-          ? { formatter: (value: number) => formatTokenCompact(value), margin: 4, width: 36, overflow: "truncate", fontSize: 10 }
-          : { formatter: (value: number) => formatTokenCompact(value), margin: 6, width: 56, overflow: "truncate" },
+          ? {
+              formatter: (value: number) => formatTokenCompact(value),
+              margin: 4,
+              width: 36,
+              overflow: "truncate",
+              fontSize: 10,
+            }
+          : {
+              formatter: (value: number) => formatTokenCompact(value),
+              margin: 6,
+              width: 56,
+              overflow: "truncate",
+            },
         splitNumber: 4,
         splitLine: {
           lineStyle: {
@@ -212,8 +223,19 @@ export const createDailyTrendOption = (input: {
         min: 0,
         max: requestAxisMax,
         axisLabel: compact
-          ? { formatter: (value: number) => formatNumber(value), margin: 4, width: 36, overflow: "truncate", fontSize: 10 }
-          : { formatter: (value: number) => formatNumber(value), margin: 6, width: 56, overflow: "truncate" },
+          ? {
+              formatter: (value: number) => formatNumber(value),
+              margin: 4,
+              width: 36,
+              overflow: "truncate",
+              fontSize: 10,
+            }
+          : {
+              formatter: (value: number) => formatNumber(value),
+              margin: 6,
+              width: 56,
+              overflow: "truncate",
+            },
         splitNumber: 4,
         splitLine: { show: false },
       },

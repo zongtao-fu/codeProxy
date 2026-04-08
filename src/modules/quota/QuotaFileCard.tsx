@@ -183,7 +183,9 @@ export function QuotaFileCard({
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 text-[10px] tabular-nums">
                       <span className="font-semibold text-slate-800 dark:text-white">
-                        {item.percent === null ? "--" : `${Math.round(clampPercent(item.percent))}%`}
+                        {item.percent === null
+                          ? "--"
+                          : `${Math.round(clampPercent(item.percent))}%`}
                       </span>
                       {relativeResetLabel && (
                         <span className="hidden text-slate-400 dark:text-white/30 sm:inline">

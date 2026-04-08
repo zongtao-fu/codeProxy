@@ -110,8 +110,7 @@ export const providersApi = {
           item["excluded-models"] ?? item.excludedModels,
         );
         const skipAnthropicProcessing =
-          item["skip-anthropic-processing"] === true ||
-          item.skipAnthropicProcessing === true;
+          item["skip-anthropic-processing"] === true || item.skipAnthropicProcessing === true;
         return {
           apiKey,
           ...(name ? { name } : {}),

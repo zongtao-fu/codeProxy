@@ -77,8 +77,6 @@ export const parseUsageTimestampMs = (value: string): number => {
   return Number.isFinite(time) ? time : Number.NaN;
 };
 
-
-
 export const computeKpiMetrics = (data: UsageData, apiFilter: string): KpiMetrics => {
   const normalizedFilter = apiFilter.trim().toLowerCase();
 
@@ -88,7 +86,8 @@ export const computeKpiMetrics = (data: UsageData, apiFilter: string): KpiMetric
       requestCount: data.total_requests || 0,
       successCount: data.success_count || 0,
       failedCount: data.failure_count || 0,
-      successRate: data.total_requests > 0 ? ((data.success_count || 0) / data.total_requests) * 100 : 0,
+      successRate:
+        data.total_requests > 0 ? ((data.success_count || 0) / data.total_requests) * 100 : 0,
       totalTokens: data.total_tokens || 0,
       inputTokens: 0,
       outputTokens: 0,

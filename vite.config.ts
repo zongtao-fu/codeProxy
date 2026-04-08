@@ -9,7 +9,10 @@ export default defineConfig({
   define: {
     // Prefer CI-provided build version (branch+sha/tag) so UI version auto-refreshes on deploy.
     __APP_VERSION__: JSON.stringify(
-      process.env.VITE_APP_VERSION ?? process.env.APP_VERSION ?? process.env.npm_package_version ?? "dev",
+      process.env.VITE_APP_VERSION ??
+        process.env.APP_VERSION ??
+        process.env.npm_package_version ??
+        "dev",
     ),
   },
   test: {
@@ -45,33 +48,16 @@ export default defineConfig({
       },
       output: {
         manualChunks: {
-          "vendor-react": [
-            "react",
-            "react-dom",
-            "react-router-dom",
-          ],
-          "vendor-echarts": [
-            "echarts",
-            "echarts-for-react",
-          ],
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-echarts": ["echarts", "echarts-for-react"],
           "vendor-codemirror": [
             "@uiw/react-codemirror",
             "@codemirror/lang-yaml",
             "@codemirror/merge",
           ],
-          "vendor-animation": [
-            "framer-motion",
-            "gsap",
-          ],
-          "vendor-charts": [
-            "chart.js",
-            "react-chartjs-2",
-          ],
-          "vendor-markdown": [
-            "react-markdown",
-            "react-syntax-highlighter",
-            "remark-gfm",
-          ],
+          "vendor-animation": ["framer-motion", "gsap"],
+          "vendor-charts": ["chart.js", "react-chartjs-2"],
+          "vendor-markdown": ["react-markdown", "react-syntax-highlighter", "remark-gfm"],
         },
       },
     },

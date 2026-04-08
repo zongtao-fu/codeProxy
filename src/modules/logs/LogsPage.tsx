@@ -889,8 +889,8 @@ export function LogsPage() {
                               ·{" "}
                               {typeof file.modified === "number"
                                 ? new Date(
-                                  file.modified < 1e12 ? file.modified * 1000 : file.modified,
-                                ).toLocaleString()
+                                    file.modified < 1e12 ? file.modified * 1000 : file.modified,
+                                  ).toLocaleString()
                                 : "--"}
                             </p>
                           </div>

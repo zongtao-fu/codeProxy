@@ -638,7 +638,11 @@
     "load_alias_failed": "Failed to load OAuth model aliases",
     "count_items": "{{count}} items",
     "file_too_large_detail": "File too large ({{size}}): {{name}} (max {{maxSize}})",
-    "check_connectivity": "Check connectivity"
+    "check_connectivity": "Check connectivity",
+    "table_caption": "Auth files table",
+    "col_name": "Name",
+    "col_type": "Type",
+    "col_connectivity": "Connectivity"
   },
   "antigravity_quota": {
     "title": "Antigravity Quota",
@@ -2113,6 +2117,9 @@
     "alias_tab": "OAuth Model Aliases",
     "title": "Auth Files",
     "description": "Manage auth file upload/enable/download, OAuth excluded models & model aliases.",
+    "add_oauth": "Add OAuth Login",
+    "add_oauth_title": "Add OAuth Login",
+    "add_oauth_desc": "Authorize providers in the browser to generate OAuth auth files, or import iFlow/Vertex credentials.",
     "count_info": "Count info",
     "filename_hint": "Filename / provider / type",
     "per_page": "Per page",

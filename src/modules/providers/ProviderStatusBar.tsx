@@ -7,7 +7,15 @@ const blockClass = (state: StatusBarData["blocks"][number]) => {
   return "bg-slate-200 dark:bg-white/10";
 };
 
-export function ProviderStatusBar({ data }: { data: StatusBarData }) {
+export function ProviderStatusBar({
+  data,
+  compact = false,
+  className,
+}: {
+  data: StatusBarData;
+  compact?: boolean;
+  className?: string;
+}) {
   const hasData = data.totalSuccess + data.totalFailure > 0;
   const rateText = hasData ? `${data.successRate.toFixed(1)}%` : "--";
 
@@ -19,18 +27,26 @@ export function ProviderStatusBar({ data }: { data: StatusBarData }) {
         ? "text-amber-600 dark:text-amber-300"
         : "text-rose-600 dark:text-rose-300";
 
+  const barHeight = compact ? "h-1.5" : "h-2";
+  const containerCls = compact ? "flex items-center gap-2" : "mt-3 flex items-center gap-2";
+  const rateWidth = compact ? "w-12" : "w-14";
+
   return (
-    <div className="mt-3 flex items-center gap-2">
+    <div className={[containerCls, className].filter(Boolean).join(" ")}>
       <div className="flex flex-1 items-center gap-0.5">
         {data.blocks.map((state, idx) => (
           <div
             key={idx}
-            className={"h-2 w-full rounded-sm " + blockClass(state) + " opacity-90 dark:opacity-95"}
+            className={
+              barHeight + " w-full rounded-sm " + blockClass(state) + " opacity-90 dark:opacity-95"
+            }
             aria-hidden="true"
           />
         ))}
       </div>
-      <span className={`w-14 shrink-0 text-right text-xs font-semibold tabular-nums ${rateClass}`}>
+      <span
+        className={`${rateWidth} shrink-0 text-right text-xs font-semibold tabular-nums ${rateClass}`}
+      >
         {rateText}
       </span>
     </div>

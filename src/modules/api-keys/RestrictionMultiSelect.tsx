@@ -30,7 +30,9 @@ function normalizeSelection(options: MultiSelectOption[], selected: string[]): s
   if (selected.length === 0) return [];
 
   const allowed = new Set(options.map((option) => option.value));
-  const next = selected.filter((item, index) => allowed.has(item) && selected.indexOf(item) === index);
+  const next = selected.filter(
+    (item, index) => allowed.has(item) && selected.indexOf(item) === index,
+  );
   if (next.length === 0 || next.length === options.length) {
     return [];
   }
@@ -127,7 +129,8 @@ export function RestrictionMultiSelect({
     const keyword = search.toLowerCase();
     return options.filter(
       (option) =>
-        option.label.toLowerCase().includes(keyword) || option.value.toLowerCase().includes(keyword),
+        option.label.toLowerCase().includes(keyword) ||
+        option.value.toLowerCase().includes(keyword),
     );
   }, [options, search]);
 

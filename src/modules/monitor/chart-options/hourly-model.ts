@@ -99,8 +99,19 @@ export const createHourlyModelOption = (input: {
       max: yAxisMax,
       splitNumber: 4,
       axisLabel: compact
-        ? { formatter: (value: number) => formatNumber(value), margin: 4, width: 36, overflow: "truncate", fontSize: 10 }
-        : { formatter: (value: number) => formatNumber(value), margin: 6, width: 56, overflow: "truncate" },
+        ? {
+            formatter: (value: number) => formatNumber(value),
+            margin: 4,
+            width: 36,
+            overflow: "truncate",
+            fontSize: 10,
+          }
+        : {
+            formatter: (value: number) => formatNumber(value),
+            margin: 6,
+            width: 56,
+            overflow: "truncate",
+          },
       splitLine: {
         lineStyle: {
           color: input.isDark ? "rgba(255,255,255,0.08)" : "rgba(148, 163, 184, 0.25)",

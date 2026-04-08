@@ -773,49 +773,52 @@ export function ProvidersPage() {
     [usageStatsBySource],
   );
 
-  const mockStatusBarData = useCallback((stats: KeyStatBucket): import("@/utils/usage").StatusBarData => {
-    if (stats.success === 0 && stats.failure === 0) {
-      return { blocks: [], blockDetails: [], successRate: 100, totalSuccess: 0, totalFailure: 0 };
-    }
-    const BLOCK_COUNT = 20;
-    const blocks: import("@/utils/usage").StatusBlockState[] = [];
-    const blockDetails: import("@/utils/usage").StatusBlockDetail[] = [];
-    const total = stats.success + stats.failure;
-    let tempFail = stats.failure;
-    let tempSuccess = stats.success;
-
-    for (let i = 0; i < BLOCK_COUNT; i++) {
-      const failPart = Math.floor(tempFail / (BLOCK_COUNT - i));
-      const successPart = Math.floor(tempSuccess / (BLOCK_COUNT - i));
-      tempFail -= failPart;
-      tempSuccess -= successPart;
-
-      if (failPart === 0 && successPart === 0) {
-        blocks.push("idle");
-      } else if (failPart === 0) {
-        blocks.push("success");
-      } else if (successPart === 0) {
-        blocks.push("failure");
-      } else {
-        blocks.push("mixed");
+  const mockStatusBarData = useCallback(
+    (stats: KeyStatBucket): import("@/utils/usage").StatusBarData => {
+      if (stats.success === 0 && stats.failure === 0) {
+        return { blocks: [], blockDetails: [], successRate: 100, totalSuccess: 0, totalFailure: 0 };
       }
-      blockDetails.push({
-        success: successPart,
-        failure: failPart,
-        rate: (successPart + failPart) > 0 ? (successPart / (successPart + failPart)) : -1,
-        startTime: 0,
-        endTime: 0,
-      });
-    }
+      const BLOCK_COUNT = 20;
+      const blocks: import("@/utils/usage").StatusBlockState[] = [];
+      const blockDetails: import("@/utils/usage").StatusBlockDetail[] = [];
+      const total = stats.success + stats.failure;
+      let tempFail = stats.failure;
+      let tempSuccess = stats.success;
 
-    return {
-      blocks,
-      blockDetails,
-      successRate: (stats.success / total) * 100,
-      totalSuccess: stats.success,
-      totalFailure: stats.failure,
-    };
-  }, []);
+      for (let i = 0; i < BLOCK_COUNT; i++) {
+        const failPart = Math.floor(tempFail / (BLOCK_COUNT - i));
+        const successPart = Math.floor(tempSuccess / (BLOCK_COUNT - i));
+        tempFail -= failPart;
+        tempSuccess -= successPart;
+
+        if (failPart === 0 && successPart === 0) {
+          blocks.push("idle");
+        } else if (failPart === 0) {
+          blocks.push("success");
+        } else if (successPart === 0) {
+          blocks.push("failure");
+        } else {
+          blocks.push("mixed");
+        }
+        blockDetails.push({
+          success: successPart,
+          failure: failPart,
+          rate: successPart + failPart > 0 ? successPart / (successPart + failPart) : -1,
+          startTime: 0,
+          endTime: 0,
+        });
+      }
+
+      return {
+        blocks,
+        blockDetails,
+        successRate: (stats.success / total) * 100,
+        totalSuccess: stats.success,
+        totalFailure: stats.failure,
+      };
+    },
+    [],
+  );
 
   const getSimpleStatusBar = useCallback(
     (config: ProviderSimpleConfig): import("@/utils/usage").StatusBarData => {
@@ -1947,8 +1950,8 @@ export function ProvidersPage() {
         description={
           confirm?.type === "deleteOpenAI"
             ? t("providers.confirm_delete_openai", {
-              name: openaiProviders[confirm.index]?.name ?? "",
-            })
+                name: openaiProviders[confirm.index]?.name ?? "",
+              })
             : confirm?.type === "deleteKey"
               ? t("providers.confirm_delete_config")
               : t("providers.confirm_delete_generic")

@@ -85,6 +85,7 @@
 - 应用入口：`src/main.tsx`
 - 历史多入口脚本：`src/management.tsx`（默认不再构建产物）
 - 主要模块目录：`src/`
+- OAuth 登录弹窗：`src/modules/oauth/OAuthLoginDialog.tsx`
 - 关键配置文件：`package.json`, `tsconfig.json`, `vite.config.ts`
 - 入口文件：`index.html`（默认构建）
 

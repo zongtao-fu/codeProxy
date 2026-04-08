@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, test, vi } from "vitest";
 import { ToastProvider } from "@/modules/ui/ToastProvider";
@@ -7,18 +8,14 @@ import { AuthFilesPage } from "@/modules/auth-files/AuthFilesPage";
 
 const mocks = vi.hoisted(() => ({
   list: vi.fn(async () => ({ files: [] })),
-  getOauthExcludedModels: vi.fn(async () => ({})),
-  getUsage: vi.fn(async () => ({ apis: {} })),
   getEntityStats: vi.fn(async () => ({ source: [], auth_index: [] })),
 }));
 
 vi.mock("@/lib/http/apis", () => ({
   authFilesApi: {
     list: mocks.list,
-    getOauthExcludedModels: mocks.getOauthExcludedModels,
   },
   usageApi: {
-    getUsage: mocks.getUsage,
     getEntityStats: mocks.getEntityStats,
   },
   oauthApi: {
@@ -32,10 +29,11 @@ vi.mock("@/lib/http/apis", () => ({
   },
 }));
 
-describe("AuthFilesPage OAuth excluded models", () => {
-  test("does not refetch endlessly when excluded models map is empty", async () => {
+describe("AuthFilesPage OAuth login dialog", () => {
+  test("opens OAuth dialog with provider/iFlow/Vertex tabs", async () => {
+    const user = userEvent.setup();
     render(
-      <MemoryRouter initialEntries={["/auth-files?tab=excluded"]}>
+      <MemoryRouter initialEntries={["/auth-files"]}>
         <ThemeProvider>
           <ToastProvider>
             <Routes>
@@ -46,13 +44,16 @@ describe("AuthFilesPage OAuth excluded models", () => {
       </MemoryRouter>,
     );
 
-    await waitFor(() => {
-      expect(mocks.getOauthExcludedModels).toHaveBeenCalledTimes(1);
-    });
+    const openBtn = await screen.findByRole("button", { name: "Add OAuth Login" });
+    await user.click(openBtn);
 
-    expect(await screen.findByText("No config")).toBeInTheDocument();
+    const dialog = await screen.findByRole("dialog");
+    const scoped = within(dialog);
 
-    await new Promise((r) => setTimeout(r, 30));
-    expect(mocks.getOauthExcludedModels).toHaveBeenCalledTimes(1);
+    expect(scoped.getByText("Add OAuth Login")).toBeInTheDocument();
+    expect(scoped.getByRole("button", { name: "Codex OAuth" })).toBeInTheDocument();
+    expect(scoped.getByRole("button", { name: "Anthropic OAuth" })).toBeInTheDocument();
+    expect(scoped.getByRole("button", { name: "iFlow Cookie Auth" })).toBeInTheDocument();
+    expect(scoped.getByRole("button", { name: "Vertex Credential Import" })).toBeInTheDocument();
   });
 });

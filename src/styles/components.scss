@@ -180,7 +180,7 @@ textarea {
   margin-bottom: $spacing-md;
 
   // 确保后续内容换行显示
-  +* {
+  + * {
     display: block;
   }
 
@@ -342,11 +342,11 @@ textarea {
     transition: transform $transition-fast;
   }
 
-  input:checked+.track {
+  input:checked + .track {
     background: var(--primary-color);
   }
 
-  input:checked+.track .thumb {
+  input:checked + .track .thumb {
     transform: translateX(20px);
   }
 

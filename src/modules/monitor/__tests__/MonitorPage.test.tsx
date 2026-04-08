@@ -42,9 +42,7 @@ describe("MonitorPage distribution legends", () => {
         { model: "gpt-4.1", requests: 10, tokens: 500 },
         { model: "claude-sonnet", requests: 4, tokens: 200 },
       ],
-      apikey_distribution: [
-        { api_key: "sk-test-1", name: "Alice", requests: 7, tokens: 300 },
-      ],
+      apikey_distribution: [{ api_key: "sk-test-1", name: "Alice", requests: 7, tokens: 300 }],
       hourly_tokens: [],
       hourly_models: [],
     });

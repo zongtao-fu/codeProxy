@@ -11,7 +11,9 @@ const mocks = vi.hoisted(() => ({
   downloadText: vi.fn(),
   request: vi.fn(),
   reconcile: vi.fn(),
-  getApiCallErrorMessage: vi.fn((result: { statusCode?: number }) => `HTTP ${result.statusCode ?? 0}`),
+  getApiCallErrorMessage: vi.fn(
+    (result: { statusCode?: number }) => `HTTP ${result.statusCode ?? 0}`,
+  ),
 }));
 
 vi.mock("@/lib/http/apis", () => ({

@@ -19,9 +19,8 @@ import {
 } from "lucide-react";
 import { authFilesApi, usageApi } from "@/lib/http/apis";
 import { formatLatency } from "@/modules/providers/hooks/useProviderLatency";
-import type { AuthFileItem, OAuthModelAliasEntry, UsageData } from "@/lib/http/types";
+import type { AuthFileItem, OAuthModelAliasEntry } from "@/lib/http/types";
 import { Button } from "@/modules/ui/Button";
-import { Card } from "@/modules/ui/Card";
 import { ConfirmModal } from "@/modules/ui/ConfirmModal";
 import { EmptyState } from "@/modules/ui/EmptyState";
 import { TextInput } from "@/modules/ui/Input";
@@ -30,15 +29,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/modules/ui/Tabs";
 import { ToggleSwitch } from "@/modules/ui/ToggleSwitch";
 import { useToast } from "@/modules/ui/ToastProvider";
 import { HoverTooltip } from "@/modules/ui/Tooltip";
+import { VirtualTable, type VirtualTableColumn } from "@/modules/ui/VirtualTable";
 import { ProviderStatusBar } from "@/modules/providers/ProviderStatusBar";
-import {
-  calculateStatusBarData,
-  normalizeUsageSourceId,
-  type KeyStatBucket,
-  type StatusBarData,
-} from "@/modules/providers/provider-usage";
+import { OAuthLoginDialog } from "@/modules/oauth/OAuthLoginDialog";
+import { normalizeUsageSourceId, type KeyStatBucket } from "@/modules/providers/provider-usage";
 
 type AuthFileModelItem = { id: string; display_name?: string; type?: string; owned_by?: string };
+type OAuthDialogTab =
+  | "codex"
+  | "anthropic"
+  | "antigravity"
+  | "gemini-cli"
+  | "kimi"
+  | "qwen"
+  | "iflow"
+  | "vertex";
 
 const MIN_PAGE_SIZE = 6;
 const MAX_PAGE_SIZE = 30;
@@ -183,13 +188,15 @@ type UsageIndex = {
   statsByAuthIndex: Record<string, KeyStatBucket>;
 };
 
-const buildUsageIndex = (usage: import("@/lib/http/types").EntityStatsResponse | null): { index: UsageIndex } => {
+const buildUsageIndex = (
+  usage: import("@/lib/http/types").EntityStatsResponse | null,
+): { index: UsageIndex } => {
   const statsBySource: Record<string, KeyStatBucket> = {};
   const statsByAuthIndex: Record<string, KeyStatBucket> = {};
 
   if (usage?.source) {
-    usage.source.forEach(pt => {
-      const src = normalizeUsageSourceId(pt.entity_name, v => v);
+    usage.source.forEach((pt) => {
+      const src = normalizeUsageSourceId(pt.entity_name, (v) => v);
       if (src) {
         statsBySource[src] = { success: pt.requests - pt.failed, failure: pt.failed };
       }
@@ -197,7 +204,7 @@ const buildUsageIndex = (usage: import("@/lib/http/types").EntityStatsResponse |
   }
 
   if (usage?.auth_index) {
-    usage.auth_index.forEach(pt => {
+    usage.auth_index.forEach((pt) => {
       const idx = normalizeAuthIndexValue(pt.entity_name);
       if (idx) {
         statsByAuthIndex[idx] = { success: pt.requests - pt.failed, failure: pt.failed };
@@ -237,7 +244,10 @@ const resolveAuthFileStats = (file: AuthFileItem, index: UsageIndex): KeyStatBuc
   return bucket;
 };
 
-const resolveAuthFileStatusBar = (file: AuthFileItem, index: UsageIndex): import("@/utils/usage").StatusBarData => {
+const resolveAuthFileStatusBar = (
+  file: AuthFileItem,
+  index: UsageIndex,
+): import("@/utils/usage").StatusBarData => {
   const stats = resolveAuthFileStats(file, index);
   if (stats.success === 0 && stats.failure === 0) {
     return { blocks: [], blockDetails: [], successRate: 100, totalSuccess: 0, totalFailure: 0 };
@@ -270,7 +280,7 @@ const resolveAuthFileStatusBar = (file: AuthFileItem, index: UsageIndex): import
     blockDetails.push({
       success: successPart,
       failure: failPart,
-      rate: (successPart + failPart) > 0 ? (successPart / (successPart + failPart)) : -1,
+      rate: successPart + failPart > 0 ? successPart / (successPart + failPart) : -1,
       startTime: 0,
       endTime: 0,
     });
@@ -334,6 +344,9 @@ export function AuthFilesPage() {
     null | { type: "deleteAll" } | { type: "deleteFile"; name: string }
   >(null);
 
+  const [oauthDialogOpen, setOauthDialogOpen] = useState(false);
+  const [oauthDialogDefaultTab, setOauthDialogDefaultTab] = useState<OAuthDialogTab>("codex");
+
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -344,7 +357,9 @@ export function AuthFilesPage() {
   const modelsCacheRef = useRef<Map<string, AuthFileModelItem[]>>(new Map());
 
   const [usageLoading, setUsageLoading] = useState(false);
-  const [usageData, setUsageData] = useState<import("@/lib/http/types").EntityStatsResponse | null>(null);
+  const [usageData, setUsageData] = useState<import("@/lib/http/types").EntityStatsResponse | null>(
+    null,
+  );
 
   const { index: usageIndex } = useMemo(() => buildUsageIndex(usageData), [usageData]);
 
@@ -589,6 +604,21 @@ export function AuthFilesPage() {
         notify({ type: "error", message: message || t("auth_files.failed_get_models") });
       } finally {
         setModelsLoading(false);
+      }
+    },
+    [notify, t],
+  );
+
+  const downloadAuthFile = useCallback(
+    async (file: AuthFileItem) => {
+      try {
+        const text = await authFilesApi.downloadText(file.name);
+        downloadTextAsFile(text, file.name);
+      } catch (err: unknown) {
+        notify({
+          type: "error",
+          message: err instanceof Error ? err.message : t("auth_files.download_failed"),
+        });
       }
     },
     [notify, t],
@@ -1248,6 +1278,312 @@ export function AuthFilesPage() {
 
   const filterChips = useMemo(() => ["all", ...providerOptions], [providerOptions]);
 
+  const fileColumns = useMemo<VirtualTableColumn<AuthFileItem>[]>(() => {
+    return [
+      {
+        key: "name",
+        label: t("auth_files.col_name"),
+        width: "w-96",
+        render: (file) => {
+          const isOauthFile =
+            String(file.account_type || "")
+              .trim()
+              .toLowerCase() === "oauth";
+          const channelName = readAuthFileChannelName(file);
+          const displayTitle = isOauthFile && channelName ? channelName : file.name;
+          const showFileNameSecondary =
+            isOauthFile && channelName && channelName.trim() !== String(file.name || "").trim();
+
+          return (
+            <div className="min-w-0">
+              <p className="truncate font-mono text-xs text-slate-900 dark:text-white">
+                {displayTitle}
+              </p>
+              {showFileNameSecondary ? (
+                <p className="mt-1 truncate font-mono text-[11px] text-slate-500 dark:text-white/45">
+                  {file.name}
+                </p>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        key: "type",
+        label: t("auth_files.col_type"),
+        width: "w-44",
+        render: (file) => {
+          const typeKey = resolveFileType(file);
+          const badgeClass = TYPE_BADGE_CLASSES[typeKey] ?? TYPE_BADGE_CLASSES.unknown;
+          const runtimeOnly = isRuntimeOnlyAuthFile(file);
+          const authIndexKey = normalizeAuthIndexValue(file.auth_index ?? file.authIndex);
+
+          return (
+            <div className="flex flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex rounded-lg px-2 py-1 text-xs font-semibold ${badgeClass}`}
+                >
+                  {typeKey}
+                </span>
+                {authIndexKey ? (
+                  <span className="inline-flex rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700 dark:bg-white/10 dark:text-white/70">
+                    auth_index {authIndexKey}
+                  </span>
+                ) : null}
+              </div>
+              {runtimeOnly ? (
+                <span className="inline-flex w-fit rounded-lg bg-slate-900 px-2 py-1 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950">
+                  {t("auth_files.virtual_auth_file")}
+                </span>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        key: "channel",
+        label: t("auth_files.channel_name"),
+        width: "w-52",
+        render: (file) => {
+          const isOauthFile =
+            String(file.account_type || "")
+              .trim()
+              .toLowerCase() === "oauth";
+          const channelName = readAuthFileChannelName(file);
+          if (!isOauthFile)
+            return <span className="text-xs text-slate-400 dark:text-white/40">--</span>;
+          return (
+            <span className="truncate text-xs font-medium text-slate-900 dark:text-white/80">
+              {channelName || "--"}
+            </span>
+          );
+        },
+      },
+      {
+        key: "size",
+        label: t("auth_files.file_size"),
+        width: "w-28",
+        render: (file) => (
+          <span className="text-xs tabular-nums text-slate-700 dark:text-white/70">
+            {formatFileSize(file.size)}
+          </span>
+        ),
+      },
+      {
+        key: "modified",
+        label: t("auth_files.file_modified"),
+        width: "w-48",
+        render: (file) => (
+          <span className="text-xs tabular-nums text-slate-700 dark:text-white/70">
+            {formatModified(file)}
+          </span>
+        ),
+      },
+      {
+        key: "connectivity",
+        label: t("auth_files.col_connectivity"),
+        width: "w-32",
+        render: (file) => {
+          const cs = connectivityState.get(file.name);
+          return (
+            <button
+              type="button"
+              disabled={cs?.loading}
+              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] tabular-nums text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-default disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white/60 dark:hover:border-blue-600 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+              onClick={() => void checkAuthFileConnectivity(file.name)}
+              title={t("auth_files.check_connectivity")}
+              aria-label={t("auth_files.check_connectivity")}
+            >
+              {cs?.loading ? (
+                <Loader2 size={10} className="animate-spin" />
+              ) : cs?.error ? (
+                <span className="font-bold text-rose-500">✕</span>
+              ) : cs?.latencyMs != null ? (
+                <span className="font-medium">{formatLatency(cs.latencyMs)}</span>
+              ) : (
+                <Zap size={10} />
+              )}
+            </button>
+          );
+        },
+      },
+      {
+        key: "success",
+        label: t("common.success"),
+        width: "w-24",
+        headerClassName: "text-right",
+        cellClassName: "text-right",
+        render: (file) => {
+          const stats = resolveAuthFileStats(file, usageIndex);
+          return (
+            <span className="text-xs font-semibold tabular-nums text-emerald-700 dark:text-emerald-200">
+              {stats.success}
+            </span>
+          );
+        },
+      },
+      {
+        key: "failure",
+        label: t("common.failure"),
+        width: "w-24",
+        headerClassName: "text-right",
+        cellClassName: "text-right",
+        render: (file) => {
+          const stats = resolveAuthFileStats(file, usageIndex);
+          return (
+            <span className="text-xs font-semibold tabular-nums text-rose-700 dark:text-rose-200">
+              {stats.failure}
+            </span>
+          );
+        },
+      },
+      {
+        key: "rate",
+        label: t("common.success_rate"),
+        width: "w-64",
+        render: (file) => {
+          const statusData = resolveAuthFileStatusBar(file, usageIndex);
+          return <ProviderStatusBar data={statusData} compact />;
+        },
+      },
+      {
+        key: "enabled",
+        label: t("auth_files.enable"),
+        width: "w-28",
+        headerClassName: "text-center",
+        cellClassName: "text-center",
+        render: (file) => {
+          const runtimeOnly = isRuntimeOnlyAuthFile(file);
+          if (runtimeOnly)
+            return <span className="text-xs text-slate-400 dark:text-white/40">--</span>;
+          const disabled = Boolean(file.disabled);
+          const switching = Boolean(statusUpdating[file.name]);
+          return (
+            <ToggleSwitch
+              ariaLabel={t("auth_files.enable_disable")}
+              checked={!disabled}
+              onCheckedChange={(enabled) => void setFileEnabled(file, enabled)}
+              disabled={switching}
+            />
+          );
+        },
+      },
+      {
+        key: "actions",
+        label: t("common.action"),
+        width: "w-72",
+        headerClassName: "text-right",
+        cellClassName: "text-right",
+        render: (file) => {
+          const runtimeOnly = isRuntimeOnlyAuthFile(file);
+          const typeKey = resolveFileType(file);
+          const isOauthFile =
+            String(file.account_type || "")
+              .trim()
+              .toLowerCase() === "oauth";
+          const showModels = !runtimeOnly || typeKey === "aistudio";
+
+          if (runtimeOnly && !showModels) {
+            return (
+              <span className="text-xs text-slate-500 dark:text-white/55">
+                {t("auth_files.virtual_hint")}
+              </span>
+            );
+          }
+
+          const iconBtnCls = "h-9 w-9 px-0";
+          return (
+            <div className="inline-flex flex-wrap items-center justify-end gap-1">
+              {showModels ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={iconBtnCls}
+                  onClick={() => void openModels(file)}
+                  title={t("auth_files.models")}
+                  aria-label={t("auth_files.models")}
+                >
+                  <ShieldCheck size={16} />
+                </Button>
+              ) : null}
+
+              {runtimeOnly ? null : (
+                <>
+                  {isOauthFile ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={iconBtnCls}
+                      onClick={() => openChannelEditor(file)}
+                      title={t("auth_files.edit_channel_name")}
+                      aria-label={t("auth_files.edit_channel_name")}
+                    >
+                      <Settings2 size={16} />
+                    </Button>
+                  ) : null}
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={iconBtnCls}
+                    onClick={() => void openDetail(file)}
+                    title={t("auth_files.view")}
+                    aria-label={t("auth_files.view")}
+                  >
+                    <Eye size={16} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={iconBtnCls}
+                    onClick={() => void openPrefixProxyEditor(file)}
+                    title={t("auth_files.prefix_proxy")}
+                    aria-label={t("auth_files.prefix_proxy")}
+                  >
+                    <Settings2 size={16} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={iconBtnCls}
+                    onClick={() => void downloadAuthFile(file)}
+                    title={t("auth_files.download")}
+                    aria-label={t("auth_files.download")}
+                  >
+                    <Download size={16} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`${iconBtnCls} text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-500/10 dark:hover:text-rose-200`}
+                    onClick={() => setConfirm({ type: "deleteFile", name: file.name })}
+                    title={t("common.delete")}
+                    aria-label={t("common.delete")}
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </>
+              )}
+            </div>
+          );
+        },
+      },
+    ];
+  }, [
+    checkAuthFileConnectivity,
+    connectivityState,
+    downloadAuthFile,
+    openChannelEditor,
+    openDetail,
+    openModels,
+    openPrefixProxyEditor,
+    setFileEnabled,
+    statusUpdating,
+    t,
+    usageIndex,
+  ]);
+
   const importFilteredModels = useMemo(() => {
     const q = importSearch.trim().toLowerCase();
     if (!q) return importModels;
@@ -1303,6 +1639,27 @@ export function AuthFilesPage() {
               >
                 <Upload size={14} />
                 {t("auth_files.upload")}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const normalized = normalizeProviderKey(filter);
+                  const tab =
+                    normalized === "codex" ||
+                    normalized === "anthropic" ||
+                    normalized === "antigravity" ||
+                    normalized === "gemini-cli" ||
+                    normalized === "kimi" ||
+                    normalized === "qwen"
+                      ? (normalized as OAuthDialogTab)
+                      : "codex";
+                  setOauthDialogDefaultTab(tab);
+                  setOauthDialogOpen(true);
+                }}
+              >
+                <Plus size={14} />
+                {t("auth_files_page.add_oauth")}
               </Button>
               <Button
                 variant="danger"
@@ -1433,229 +1790,36 @@ export function AuthFilesPage() {
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {pageItems.length === 0 ? (
-                  <div className="md:col-span-2 xl:col-span-3">
-                    <EmptyState
-                      title={t("auth_files_page.no_files")}
-                      description={t("auth_files_page.no_files_desc")}
-                    />
-                  </div>
-                ) : (
-                  pageItems.map((file) => {
-                    const typeKey = resolveFileType(file);
-                    const badgeClass = TYPE_BADGE_CLASSES[typeKey] ?? TYPE_BADGE_CLASSES.unknown;
-                    const disabled = Boolean(file.disabled);
-                    const switching = Boolean(statusUpdating[file.name]);
-                    const runtimeOnly = isRuntimeOnlyAuthFile(file);
-                    const authIndexKey = normalizeAuthIndexValue(file.auth_index ?? file.authIndex);
-                    const isOauthFile =
-                      String(file.account_type || "")
-                        .trim()
-                        .toLowerCase() === "oauth";
-                    const channelName = readAuthFileChannelName(file);
-                    const displayTitle = isOauthFile && channelName ? channelName : file.name;
-                    const showFileNameSecondary =
-                      isOauthFile && channelName && channelName.trim() !== String(file.name || "").trim();
-
-                    const stats = resolveAuthFileStats(file, usageIndex);
-                    const statusData = resolveAuthFileStatusBar(file, usageIndex);
-
-                    const showModels = !runtimeOnly || typeKey === "aistudio";
-
-                    return (
-                      <article
-                        key={file.name}
-                        className={[
-                          "rounded-2xl border border-slate-200 p-4 shadow-sm dark:border-neutral-800",
-                          runtimeOnly
-                            ? "bg-slate-50/80 dark:bg-neutral-950/55"
-                            : "bg-white dark:bg-neutral-950/70",
-                          disabled ? " opacity-85" : "",
-                        ].join(" ")}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="flex items-center gap-2 truncate font-mono text-xs text-slate-900 dark:text-white">
-                              <span className="truncate">{displayTitle}</span>
-                              {(() => {
-                                const cs = connectivityState.get(file.name);
-                                return (
-                                  <button
-                                    type="button"
-                                    disabled={cs?.loading}
-                                    className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[11px] tabular-nums text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-default disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white/60 dark:hover:border-blue-600 dark:hover:bg-blue-950 dark:hover:text-blue-300"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      void checkAuthFileConnectivity(file.name);
-                                    }}
-                                    title={t("auth_files.check_connectivity")}
-                                  >
-                                    {cs?.loading ? (
-                                      <Loader2 size={10} className="animate-spin" />
-                                    ) : cs?.error ? (
-                                      <span className="font-bold text-rose-500">✕</span>
-                                    ) : cs?.latencyMs != null ? (
-                                      <span className="font-medium">{formatLatency(cs.latencyMs)}</span>
-                                    ) : (
-                                      <Zap size={10} />
-                                    )}
-                                  </button>
-                                );
-                              })()}
-                            </p>
-                            {showFileNameSecondary ? (
-                              <p className="mt-1 truncate font-mono text-[11px] text-slate-500 dark:text-white/45">
-                                {file.name}
-                              </p>
-                            ) : null}
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                              <span
-                                className={`inline-flex rounded-lg px-2 py-1 text-xs font-semibold ${badgeClass}`}
-                              >
-                                {typeKey}
-                              </span>
-                              {runtimeOnly ? (
-                                <span className="inline-flex rounded-lg bg-slate-900 px-2 py-1 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950">
-                                  {t("auth_files.virtual_auth_file")}
-                                </span>
-                              ) : null}
-                              {authIndexKey ? (
-                                <span className="inline-flex rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700 dark:bg-white/10 dark:text-white/70">
-                                  auth_index {authIndexKey}
-                                </span>
-                              ) : null}
-                              {runtimeOnly ? null : disabled ? (
-                                <span className="inline-flex rounded-lg bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
-                                  {t("auth_files.disabled")}
-                                </span>
-                              ) : (
-                                <span className="inline-flex rounded-lg bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
-                                  {t("auth_files.enabled")}
-                                </span>
-                              )}
-                            </div>
-                            <p className="mt-2 text-xs text-slate-600 dark:text-white/65">
-                              {formatFileSize(file.size)} · {formatModified(file)}
-                            </p>
-                            {isOauthFile && channelName ? (
-                              <p className="mt-2 text-xs text-slate-600 dark:text-white/65">
-                                {t("auth_files.channel_name")}:{" "}
-                                <span className="font-medium text-slate-800 dark:text-white/80">
-                                  {channelName}
-                                </span>
-                              </p>
-                            ) : null}
-                            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs tabular-nums">
-                              <span className="rounded-full bg-emerald-600/10 px-2 py-0.5 font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">
-                                {t("auth_files.success_count", { count: stats.success })}
-                              </span>
-                              <span className="rounded-full bg-rose-600/10 px-2 py-0.5 font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-200">
-                                {t("auth_files.failed_count", { count: stats.failure })}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="shrink-0">
-                            {runtimeOnly ? null : (
-                              <div className="inline-flex items-center gap-2">
-                                <span className="text-sm font-semibold leading-none text-slate-900 dark:text-white">
-                                  {t("auth_files.enable")}
-                                </span>
-                                <ToggleSwitch
-                                  ariaLabel={t("auth_files.enable_disable")}
-                                  checked={!disabled}
-                                  onCheckedChange={(enabled) => void setFileEnabled(file, enabled)}
-                                  disabled={switching}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <ProviderStatusBar data={statusData} />
-
-                        <div className="mt-4 flex flex-wrap items-center gap-2">
-                          {showModels ? (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => void openModels(file)}
-                            >
-                              <ShieldCheck size={14} />
-                              {t("auth_files.models")}
-                            </Button>
-                          ) : null}
-
-                          {runtimeOnly ? (
-                            <p className="text-xs text-slate-600 dark:text-white/55">
-                              {t("auth_files.virtual_hint")}
-                            </p>
-                          ) : (
-                            <>
-                              {isOauthFile && !runtimeOnly ? (
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => openChannelEditor(file)}
-                                >
-                                  <Settings2 size={14} />
-                                  {t("auth_files.edit_channel_name")}
-                                </Button>
-                              ) : null}
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => void openDetail(file)}
-                              >
-                                <Eye size={14} />
-                                {t("auth_files.view")}
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => void openPrefixProxyEditor(file)}
-                              >
-                                <Settings2 size={14} />
-                                {t("auth_files.prefix_proxy")}
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={async () => {
-                                  try {
-                                    const text = await authFilesApi.downloadText(file.name);
-                                    downloadTextAsFile(text, file.name);
-                                  } catch (err: unknown) {
-                                    notify({
-                                      type: "error",
-                                      message:
-                                        err instanceof Error
-                                          ? err.message
-                                          : t("auth_files.download_failed"),
-                                    });
-                                  }
-                                }}
-                              >
-                                <Download size={14} />
-                                {t("auth_files.download")}
-                              </Button>
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={() => setConfirm({ type: "deleteFile", name: file.name })}
-                              >
-                                <Trash2 size={14} />
-                                {t("common.delete")}
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </article>
-                    );
-                  })
-                )}
-              </div>
+              {pageItems.length === 0 ? (
+                <EmptyState
+                  title={t("auth_files_page.no_files")}
+                  description={t("auth_files_page.no_files_desc")}
+                />
+              ) : (
+                <div className="relative">
+                  <VirtualTable<AuthFileItem>
+                    rows={pageItems}
+                    columns={fileColumns}
+                    rowKey={(row) => row.name}
+                    loading={false}
+                    rowHeight={68}
+                    caption={t("auth_files.table_caption")}
+                    emptyText={t("auth_files_page.no_files_desc")}
+                    minWidth="min-w-[1800px]"
+                    height="h-[calc(100dvh-420px)]"
+                    rowClassName={(row) => {
+                      const runtimeOnly = isRuntimeOnlyAuthFile(row);
+                      const disabled = Boolean(row.disabled);
+                      return [
+                        runtimeOnly ? "bg-slate-50/80 dark:bg-neutral-950/55" : "",
+                        disabled ? "opacity-85" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+                    }}
+                  />
+                </div>
+              )}
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-slate-600 dark:text-white/65 tabular-nums">
@@ -2064,7 +2228,11 @@ export function AuthFilesPage() {
             >
               {t("auth_files.cancel")}
             </Button>
-            <Button variant="primary" onClick={() => void saveChannelEditor()} disabled={channelEditor.saving}>
+            <Button
+              variant="primary"
+              onClick={() => void saveChannelEditor()}
+              disabled={channelEditor.saving}
+            >
               <ShieldCheck size={14} />
               {t("auth_files.save")}
             </Button>
@@ -2395,6 +2563,13 @@ export function AuthFilesPage() {
         )}
       </Modal>
 
+      <OAuthLoginDialog
+        open={oauthDialogOpen}
+        defaultTab={oauthDialogDefaultTab}
+        onClose={() => setOauthDialogOpen(false)}
+        onAuthorized={() => void loadAll()}
+      />
+
       <ConfirmModal
         open={confirm !== null}
         title={
@@ -2410,8 +2585,8 @@ export function AuthFilesPage() {
               ? t("auth_files.confirm_delete_all")
               : t("auth_files.confirm_delete_filter", { filter })
             : t("auth_files.confirm_delete_file", {
-              name: confirm?.type === "deleteFile" ? confirm.name : "",
-            })
+                name: confirm?.type === "deleteFile" ? confirm.name : "",
+              })
         }
         confirmText={t("common.delete")}
         cancelText={t("common.cancel")}

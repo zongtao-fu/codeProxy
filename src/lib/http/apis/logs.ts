@@ -6,7 +6,10 @@ export const logsApi = {
     const params: Record<string, number> = {};
     if (after) params.after = after;
     if (limit) params.limit = limit;
-    return apiClient.get("/logs", { params: Object.keys(params).length ? params : undefined, timeoutMs: 60000 });
+    return apiClient.get("/logs", {
+      params: Object.keys(params).length ? params : undefined,
+      timeoutMs: 60000,
+    });
   },
   clearLogs: (): Promise<void> => apiClient.delete("/logs"),
   fetchErrorLogs: (): Promise<ErrorLogsResponse> =>

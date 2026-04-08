@@ -87,28 +87,42 @@ export function ProviderKeyListCard({
                           {t("providers.enabled")}
                         </span>
                       )}
-                      {checkLatency && (() => {
-                        const latencyKey = item.apiKey;
-                        const entry = getLatencyEntry?.(latencyKey) ?? { latencyMs: null, loading: false, error: false };
-                        const providerBaseUrl = item.baseUrl || "";
-                        return (
-                          <span
-                            className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[11px] tabular-nums text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white/60 dark:hover:border-blue-600 dark:hover:bg-blue-950 dark:hover:text-blue-300"
-                            onClick={(e) => { e.stopPropagation(); if (providerBaseUrl) checkLatency(latencyKey, providerBaseUrl); }}
-                            title={providerBaseUrl ? `Check latency: ${providerBaseUrl}` : "No base URL configured"}
-                          >
-                            {entry.loading ? (
-                              <Loader2 size={10} className="animate-spin" />
-                            ) : entry.error ? (
-                              <span className="text-rose-500">×</span>
-                            ) : entry.latencyMs !== null ? (
-                              <span className="font-medium">{formatLatency(entry.latencyMs)}</span>
-                            ) : (
-                              <Zap size={10} />
-                            )}
-                          </span>
-                        );
-                      })()}
+                      {checkLatency &&
+                        (() => {
+                          const latencyKey = item.apiKey;
+                          const entry = getLatencyEntry?.(latencyKey) ?? {
+                            latencyMs: null,
+                            loading: false,
+                            error: false,
+                          };
+                          const providerBaseUrl = item.baseUrl || "";
+                          return (
+                            <span
+                              className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[11px] tabular-nums text-slate-600 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white/60 dark:hover:border-blue-600 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (providerBaseUrl) checkLatency(latencyKey, providerBaseUrl);
+                              }}
+                              title={
+                                providerBaseUrl
+                                  ? `Check latency: ${providerBaseUrl}`
+                                  : "No base URL configured"
+                              }
+                            >
+                              {entry.loading ? (
+                                <Loader2 size={10} className="animate-spin" />
+                              ) : entry.error ? (
+                                <span className="text-rose-500">×</span>
+                              ) : entry.latencyMs !== null ? (
+                                <span className="font-medium">
+                                  {formatLatency(entry.latencyMs)}
+                                </span>
+                              ) : (
+                                <Zap size={10} />
+                              )}
+                            </span>
+                          );
+                        })()}
                     </p>
 
                     <div className="mt-1 space-y-1 text-xs text-slate-600 dark:text-white/65">
