@@ -468,6 +468,7 @@ export function OAuthLoginDialog({
       title={t("auth_files_page.add_oauth_title")}
       description={t("auth_files_page.add_oauth_desc")}
       maxWidth="max-w-5xl"
+      bodyHeightClassName="h-[70vh]"
       footer={
         <Button variant="secondary" onClick={onClose}>
           {t("common.close")}

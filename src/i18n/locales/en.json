@@ -642,7 +642,8 @@
     "table_caption": "Auth files table",
     "col_name": "Name",
     "col_type": "Type",
-    "col_connectivity": "Connectivity"
+    "col_connectivity": "Connectivity",
+    "col_quota": "Quota"
   },
   "antigravity_quota": {
     "title": "Antigravity Quota",

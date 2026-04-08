@@ -10,6 +10,7 @@ export function Modal({
   description,
   footer,
   maxWidth = "max-w-3xl",
+  bodyHeightClassName,
   onClose,
   children,
 }: PropsWithChildren<{
@@ -18,6 +19,7 @@ export function Modal({
   description?: string;
   footer?: ReactNode;
   maxWidth?: string;
+  bodyHeightClassName?: string;
   onClose: () => void;
 }>) {
   const [mounted, setMounted] = useState(open);
@@ -65,6 +67,8 @@ export function Modal({
 
   if (!mounted) return null;
 
+  const bodyHeightCls = bodyHeightClassName ?? "max-h-[70vh]";
+
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <button
@@ -110,7 +114,9 @@ export function Modal({
           </button>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
+        <div className={`${bodyHeightCls} overflow-y-auto overscroll-contain px-5 py-4`}>
+          {children}
+        </div>
 
         {footer ? (
           <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-5 py-4 dark:border-neutral-800">

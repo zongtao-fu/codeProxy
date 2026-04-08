@@ -17,7 +17,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { authFilesApi, usageApi } from "@/lib/http/apis";
+import { authFilesApi, quotaApi, usageApi } from "@/lib/http/apis";
 import { formatLatency } from "@/modules/providers/hooks/useProviderLatency";
 import type { AuthFileItem, OAuthModelAliasEntry } from "@/lib/http/types";
 import { Button } from "@/modules/ui/Button";
@@ -33,6 +33,8 @@ import { VirtualTable, type VirtualTableColumn } from "@/modules/ui/VirtualTable
 import { ProviderStatusBar } from "@/modules/providers/ProviderStatusBar";
 import { OAuthLoginDialog } from "@/modules/oauth/OAuthLoginDialog";
 import { normalizeUsageSourceId, type KeyStatBucket } from "@/modules/providers/provider-usage";
+import { fetchQuota, resolveQuotaProvider, type QuotaProvider } from "@/modules/quota/quota-fetch";
+import { clampPercent, type QuotaItem, type QuotaState } from "@/modules/quota/quota-helpers";
 
 type AuthFileModelItem = { id: string; display_name?: string; type?: string; owned_by?: string };
 type OAuthDialogTab =
@@ -45,18 +47,16 @@ type OAuthDialogTab =
   | "iflow"
   | "vertex";
 
-const MIN_PAGE_SIZE = 6;
-const MAX_PAGE_SIZE = 30;
+const AUTH_FILES_PAGE_SIZE = 9;
 const MAX_AUTH_FILE_SIZE = 50 * 1024;
 
-const AUTH_FILES_UI_STATE_KEY = "authFilesPage.uiState.v2";
+const AUTH_FILES_UI_STATE_KEY = "authFilesPage.uiState.v3";
 
 type AuthFilesUiState = {
   tab?: "files" | "excluded" | "alias";
   filter?: string;
   search?: string;
   page?: number;
-  pageSize?: number;
 };
 
 const readAuthFilesUiState = (): AuthFilesUiState | null => {
@@ -79,9 +79,6 @@ const writeAuthFilesUiState = (state: AuthFilesUiState) => {
     // ignore
   }
 };
-
-const clampPageSize = (value: number) =>
-  Math.min(MAX_PAGE_SIZE, Math.max(MIN_PAGE_SIZE, Math.round(value)));
 
 const formatFileSize = (bytes?: number): string => {
   const value = typeof bytes === "number" && Number.isFinite(bytes) ? bytes : 0;
@@ -350,8 +347,6 @@ export function AuthFilesPage() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(9);
-  const [pageSizeInput, setPageSizeInput] = useState("9");
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const modelsCacheRef = useRef<Map<string, AuthFileModelItem[]>>(new Map());
@@ -418,6 +413,73 @@ export function AuthFilesPage() {
   const [connectivityState, setConnectivityState] = useState<
     Map<string, { loading: boolean; latencyMs: number | null; error: boolean }>
   >(new Map());
+
+  const [quotaByFileName, setQuotaByFileName] = useState<Record<string, QuotaState>>({});
+  const quotaAutoRefreshedRef = useRef<Set<string>>(new Set());
+  const quotaInFlightRef = useRef<Set<string>>(new Set());
+
+  const translateQuotaText = useCallback(
+    (text: string) => {
+      if (!text) return text;
+      if (text.startsWith("m_quota.")) return t(text);
+      const known = new Set([
+        "missing_auth_index",
+        "no_model_quota",
+        "request_failed",
+        "missing_account_id",
+        "parse_codex_failed",
+        "missing_project_id",
+        "parse_kiro_failed",
+      ]);
+      if (known.has(text)) return t(`m_quota.${text}`);
+      return text;
+    },
+    [t],
+  );
+
+  const refreshQuota = useCallback(
+    async (file: AuthFileItem, provider: QuotaProvider) => {
+      const name = file.name;
+      if (quotaInFlightRef.current.has(name)) return;
+      quotaInFlightRef.current.add(name);
+
+      setQuotaByFileName((prev) => ({
+        ...prev,
+        [name]: {
+          status: "loading",
+          items: prev[name]?.items ?? [],
+          updatedAt: prev[name]?.updatedAt,
+        },
+      }));
+
+      try {
+        const items = await fetchQuota(provider, file);
+        const rawAuthIndex = (file as any)["auth_index"] ?? file.authIndex;
+        const authIndex = normalizeAuthIndexValue(rawAuthIndex);
+        if (authIndex) {
+          void quotaApi.reconcile(authIndex).catch(() => {});
+        }
+        setQuotaByFileName((prev) => ({
+          ...prev,
+          [name]: { status: "success", items, updatedAt: Date.now() },
+        }));
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : t("auth_files.unknown_error");
+        setQuotaByFileName((prev) => ({
+          ...prev,
+          [name]: {
+            status: "error",
+            items: prev[name]?.items ?? [],
+            error: message,
+            updatedAt: prev[name]?.updatedAt,
+          },
+        }));
+      } finally {
+        quotaInFlightRef.current.delete(name);
+      }
+    },
+    [t],
+  );
 
   const checkAuthFileConnectivity = useCallback(
     async (fileName: string) => {
@@ -490,8 +552,6 @@ export function AuthFilesPage() {
     if (typeof state.search === "string") setSearch(state.search);
     if (typeof state.page === "number" && Number.isFinite(state.page))
       setPage(Math.max(1, Math.round(state.page)));
-    if (typeof state.pageSize === "number" && Number.isFinite(state.pageSize))
-      setPageSize(clampPageSize(state.pageSize));
   }, []);
 
   useEffect(() => {
@@ -502,12 +562,8 @@ export function AuthFilesPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    writeAuthFilesUiState({ tab, filter, search, page, pageSize });
-  }, [filter, page, pageSize, search, tab]);
-
-  useEffect(() => {
-    setPageSizeInput(String(pageSize));
-  }, [pageSize]);
+    writeAuthFilesUiState({ tab, filter, search, page });
+  }, [filter, page, search, tab]);
 
   const providerOptions = useMemo(() => {
     const set = new Set<string>();
@@ -543,16 +599,52 @@ export function AuthFilesPage() {
     );
   }, [filter, searchFilteredFiles]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredFiles.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filteredFiles.length / AUTH_FILES_PAGE_SIZE));
   const safePage = Math.min(totalPages, Math.max(1, page));
   const pageItems = useMemo(() => {
-    const start = (safePage - 1) * pageSize;
-    return filteredFiles.slice(start, start + pageSize);
-  }, [filteredFiles, pageSize, safePage]);
+    const start = (safePage - 1) * AUTH_FILES_PAGE_SIZE;
+    return filteredFiles.slice(start, start + AUTH_FILES_PAGE_SIZE);
+  }, [filteredFiles, safePage]);
 
   useEffect(() => {
     if (safePage !== page) setPage(safePage);
   }, [page, safePage]);
+
+  useEffect(() => {
+    if (tab !== "files") return;
+    if (loading) return;
+
+    const candidates = pageItems
+      .map((file) => {
+        const provider = resolveQuotaProvider(file);
+        return provider ? { file, provider } : null;
+      })
+      .filter(Boolean) as { file: AuthFileItem; provider: QuotaProvider }[];
+
+    const toFetch = candidates.filter(({ file }) => !quotaAutoRefreshedRef.current.has(file.name));
+    if (!toFetch.length) return;
+
+    toFetch.forEach(({ file }) => quotaAutoRefreshedRef.current.add(file.name));
+
+    let cancelled = false;
+    const CONCURRENCY = 3;
+    let idx = 0;
+
+    const workers = Array.from({ length: Math.min(CONCURRENCY, toFetch.length) }).map(async () => {
+      while (!cancelled) {
+        const current = toFetch[idx];
+        idx += 1;
+        if (!current) return;
+        await refreshQuota(current.file, current.provider);
+      }
+    });
+
+    void Promise.allSettled(workers);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, pageItems, refreshQuota, tab]);
 
   const openDetail = useCallback(
     async (file: AuthFileItem) => {
@@ -1316,7 +1408,6 @@ export function AuthFilesPage() {
           const typeKey = resolveFileType(file);
           const badgeClass = TYPE_BADGE_CLASSES[typeKey] ?? TYPE_BADGE_CLASSES.unknown;
           const runtimeOnly = isRuntimeOnlyAuthFile(file);
-          const authIndexKey = normalizeAuthIndexValue(file.auth_index ?? file.authIndex);
 
           return (
             <div className="flex flex-col gap-1">
@@ -1326,11 +1417,6 @@ export function AuthFilesPage() {
                 >
                   {typeKey}
                 </span>
-                {authIndexKey ? (
-                  <span className="inline-flex rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700 dark:bg-white/10 dark:text-white/70">
-                    auth_index {authIndexKey}
-                  </span>
-                ) : null}
               </div>
               {runtimeOnly ? (
                 <span className="inline-flex w-fit rounded-lg bg-slate-900 px-2 py-1 text-xs font-semibold text-white dark:bg-white dark:text-neutral-950">
@@ -1448,6 +1534,129 @@ export function AuthFilesPage() {
         },
       },
       {
+        key: "quota",
+        label: t("auth_files.col_quota"),
+        width: "w-80",
+        render: (file) => {
+          const provider = resolveQuotaProvider(file);
+          if (!provider) {
+            return <span className="text-xs text-slate-400 dark:text-white/40">--</span>;
+          }
+
+          const state = quotaByFileName[file.name] ?? { status: "idle", items: [] };
+          const items = Array.isArray(state.items) ? (state.items as QuotaItem[]) : [];
+          const isLoading = state.status === "loading";
+          const hasError = state.status === "error";
+
+          const bar = (percent: number | null) => {
+            const normalized = percent === null ? null : clampPercent(percent);
+            const width = normalized ?? 0;
+            const color =
+              normalized === null
+                ? "bg-slate-300/40 dark:bg-white/8"
+                : normalized >= 60
+                  ? "bg-emerald-500"
+                  : normalized >= 20
+                    ? "bg-amber-500"
+                    : "bg-rose-500";
+            return (
+              <div className="h-1.5 w-full rounded-full bg-slate-200/70 dark:bg-neutral-800/80">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${color}`}
+                  style={{ width: `${width}%` }}
+                />
+              </div>
+            );
+          };
+
+          const tooltipContent = hasError ? (
+            <div className="max-w-80">
+              <p className="text-xs font-semibold">{t("common.error")}</p>
+              <p className="mt-1 text-xs">{translateQuotaText(state.error ?? "")}</p>
+            </div>
+          ) : items.length > 0 ? (
+            <div className="max-h-64 w-80 overflow-auto space-y-2">
+              {items.map((item) => (
+                <div key={item.label} className="space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-xs font-medium">
+                      {translateQuotaText(item.label)}
+                    </span>
+                    <span className="shrink-0 text-xs font-semibold tabular-nums">
+                      {item.percent === null ? "--" : `${Math.round(clampPercent(item.percent))}%`}
+                    </span>
+                  </div>
+                  {bar(item.percent)}
+                  {item.meta ? (
+                    <p className="text-[11px] text-slate-600 dark:text-white/65">{item.meta}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null;
+
+          const summaryItems = items.slice(0, 2);
+          const moreCount = Math.max(0, items.length - summaryItems.length);
+
+          return (
+            <div className="flex items-start justify-between gap-2">
+              <HoverTooltip content={tooltipContent} disabled={!tooltipContent}>
+                <div className="min-w-0 flex-1">
+                  {isLoading && items.length === 0 ? (
+                    <div className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-white/55">
+                      <Loader2 size={12} className="animate-spin" />
+                      {t("common.loading_ellipsis")}
+                    </div>
+                  ) : hasError && items.length === 0 ? (
+                    <p className="truncate text-xs font-semibold text-rose-700 dark:text-rose-200">
+                      {translateQuotaText(state.error ?? t("common.error"))}
+                    </p>
+                  ) : summaryItems.length === 0 ? (
+                    <span className="text-xs text-slate-400 dark:text-white/40">--</span>
+                  ) : (
+                    <div className="space-y-1">
+                      {summaryItems.map((item) => (
+                        <div key={item.label} className="space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate text-[11px] font-medium text-slate-700 dark:text-white/70">
+                              {translateQuotaText(item.label)}
+                            </span>
+                            <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-800 dark:text-white/80">
+                              {item.percent === null
+                                ? "--"
+                                : `${Math.round(clampPercent(item.percent))}%`}
+                            </span>
+                          </div>
+                          {bar(item.percent)}
+                        </div>
+                      ))}
+                      {moreCount ? (
+                        <p className="text-[11px] text-slate-400 dark:text-white/35">
+                          +{moreCount}
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              </HoverTooltip>
+
+              <HoverTooltip content={t("common.refresh")}>
+                <button
+                  type="button"
+                  onClick={() => void refreshQuota(file, provider)}
+                  disabled={isLoading}
+                  aria-label={`${t("common.refresh")} ${file.name}`}
+                  title={t("common.refresh")}
+                  className="shrink-0 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40 dark:text-white/35 dark:hover:bg-white/10 dark:hover:text-white"
+                >
+                  <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} />
+                </button>
+              </HoverTooltip>
+            </div>
+          );
+        },
+      },
+      {
         key: "enabled",
         label: t("auth_files.enable"),
         width: "w-28",
@@ -1496,73 +1705,85 @@ export function AuthFilesPage() {
           return (
             <div className="inline-flex flex-wrap items-center justify-end gap-1">
               {showModels ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={iconBtnCls}
-                  onClick={() => void openModels(file)}
-                  title={t("auth_files.models")}
-                  aria-label={t("auth_files.models")}
-                >
-                  <ShieldCheck size={16} />
-                </Button>
+                <HoverTooltip content={t("auth_files.models")}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={iconBtnCls}
+                    onClick={() => void openModels(file)}
+                    title={t("auth_files.models")}
+                    aria-label={t("auth_files.models")}
+                  >
+                    <ShieldCheck size={16} />
+                  </Button>
+                </HoverTooltip>
               ) : null}
 
               {runtimeOnly ? null : (
                 <>
                   {isOauthFile ? (
+                    <HoverTooltip content={t("auth_files.edit_channel_name")}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={iconBtnCls}
+                        onClick={() => openChannelEditor(file)}
+                        title={t("auth_files.edit_channel_name")}
+                        aria-label={t("auth_files.edit_channel_name")}
+                      >
+                        <Settings2 size={16} />
+                      </Button>
+                    </HoverTooltip>
+                  ) : null}
+
+                  <HoverTooltip content={t("auth_files.view")}>
                     <Button
                       variant="ghost"
                       size="sm"
                       className={iconBtnCls}
-                      onClick={() => openChannelEditor(file)}
-                      title={t("auth_files.edit_channel_name")}
-                      aria-label={t("auth_files.edit_channel_name")}
+                      onClick={() => void openDetail(file)}
+                      title={t("auth_files.view")}
+                      aria-label={t("auth_files.view")}
+                    >
+                      <Eye size={16} />
+                    </Button>
+                  </HoverTooltip>
+                  <HoverTooltip content={t("auth_files.prefix_proxy")}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={iconBtnCls}
+                      onClick={() => void openPrefixProxyEditor(file)}
+                      title={t("auth_files.prefix_proxy")}
+                      aria-label={t("auth_files.prefix_proxy")}
                     >
                       <Settings2 size={16} />
                     </Button>
-                  ) : null}
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={iconBtnCls}
-                    onClick={() => void openDetail(file)}
-                    title={t("auth_files.view")}
-                    aria-label={t("auth_files.view")}
-                  >
-                    <Eye size={16} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={iconBtnCls}
-                    onClick={() => void openPrefixProxyEditor(file)}
-                    title={t("auth_files.prefix_proxy")}
-                    aria-label={t("auth_files.prefix_proxy")}
-                  >
-                    <Settings2 size={16} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={iconBtnCls}
-                    onClick={() => void downloadAuthFile(file)}
-                    title={t("auth_files.download")}
-                    aria-label={t("auth_files.download")}
-                  >
-                    <Download size={16} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`${iconBtnCls} text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-500/10 dark:hover:text-rose-200`}
-                    onClick={() => setConfirm({ type: "deleteFile", name: file.name })}
-                    title={t("common.delete")}
-                    aria-label={t("common.delete")}
-                  >
-                    <Trash2 size={16} />
-                  </Button>
+                  </HoverTooltip>
+                  <HoverTooltip content={t("auth_files.download")}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={iconBtnCls}
+                      onClick={() => void downloadAuthFile(file)}
+                      title={t("auth_files.download")}
+                      aria-label={t("auth_files.download")}
+                    >
+                      <Download size={16} />
+                    </Button>
+                  </HoverTooltip>
+                  <HoverTooltip content={t("common.delete")}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`${iconBtnCls} text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-500/10 dark:hover:text-rose-200`}
+                      onClick={() => setConfirm({ type: "deleteFile", name: file.name })}
+                      title={t("common.delete")}
+                      aria-label={t("common.delete")}
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </HoverTooltip>
                 </>
               )}
             </div>
@@ -1578,9 +1799,12 @@ export function AuthFilesPage() {
     openDetail,
     openModels,
     openPrefixProxyEditor,
+    quotaByFileName,
+    refreshQuota,
     setFileEnabled,
     statusUpdating,
     t,
+    translateQuotaText,
     usageIndex,
   ]);
 
@@ -1755,39 +1979,6 @@ export function AuthFilesPage() {
                     endAdornment={<Search size={16} className="text-slate-400" />}
                   />
                 </div>
-
-                <div className="flex shrink-0 flex-col gap-1">
-                  <p className="text-[11px] font-semibold text-slate-600 dark:text-white/65">
-                    {t("auth_files.per_page")}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <TextInput
-                      value={pageSizeInput}
-                      onChange={(e) => setPageSizeInput(e.currentTarget.value)}
-                      onBlur={() => {
-                        const parsed = Number(pageSizeInput);
-                        if (Number.isFinite(parsed)) setPageSize(clampPageSize(parsed));
-                        else setPageSizeInput(String(pageSize));
-                      }}
-                      aria-label={t("auth_files_page.per_page")}
-                      placeholder={t("auth_files.count_placeholder")}
-                      inputMode="numeric"
-                      className="w-24"
-                    />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="min-w-16 whitespace-nowrap"
-                      onClick={() => {
-                        const parsed = Number(pageSizeInput);
-                        if (Number.isFinite(parsed)) setPageSize(clampPageSize(parsed));
-                        else setPageSizeInput(String(pageSize));
-                      }}
-                    >
-                      {t("auth_files.apply")}
-                    </Button>
-                  </div>
-                </div>
               </div>
 
               {pageItems.length === 0 ? (
@@ -1802,7 +1993,7 @@ export function AuthFilesPage() {
                     columns={fileColumns}
                     rowKey={(row) => row.name}
                     loading={false}
-                    rowHeight={68}
+                    rowHeight={84}
                     caption={t("auth_files.table_caption")}
                     emptyText={t("auth_files_page.no_files_desc")}
                     minWidth="min-w-[1800px]"

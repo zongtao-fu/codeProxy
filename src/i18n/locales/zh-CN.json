@@ -650,7 +650,8 @@
     "table_caption": "认证文件表格",
     "col_name": "名称",
     "col_type": "类型",
-    "col_connectivity": "连通性"
+    "col_connectivity": "连通性",
+    "col_quota": "配额"
   },
   "antigravity_quota": {
     "title": "Antigravity 额度",
