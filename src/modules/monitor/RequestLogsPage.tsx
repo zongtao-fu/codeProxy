@@ -34,6 +34,7 @@ interface LogRow {
   model: string;
   failed: boolean;
   latencyText: string;
+  firstTokenText: string;
   inputTokens: number;
   cachedTokens: number;
   outputTokens: number;
@@ -68,6 +69,11 @@ const formatLatencyMs = (value: number): string => {
   const fixed = seconds.toFixed(seconds < 10 ? 2 : 1);
   const trimmed = fixed.endsWith(".0") ? fixed.slice(0, -2) : fixed;
   return `${trimmed}s`;
+};
+
+const formatOptionalLatencyMs = (value: number): string => {
+  if (!Number.isFinite(value) || value <= 0) return "--";
+  return formatLatencyMs(value);
 };
 
 const TimeRangeSelector = ({
@@ -207,6 +213,18 @@ function buildLogColumns(
       ),
     },
     {
+      key: "firstToken",
+      label: t("request_logs.col_first_token"),
+      width: "w-24",
+      headerClassName: "text-right",
+      cellClassName: "text-right font-mono text-xs tabular-nums text-slate-700 dark:text-slate-200",
+      render: (row) => (
+        <OverflowTooltip content={row.firstTokenText} className="block min-w-0">
+          <span className="block min-w-0 truncate">{row.firstTokenText}</span>
+        </OverflowTooltip>
+      ),
+    },
+    {
       key: "inputTokens",
       label: t("request_logs.col_input"),
       width: "w-24",
@@ -311,6 +329,7 @@ function toLogRow(item: UsageLogItem): LogRow {
     model: item.model,
     failed: item.failed,
     latencyText: formatLatencyMs(item.latency_ms),
+    firstTokenText: formatOptionalLatencyMs(item.first_token_ms),
     inputTokens: item.input_tokens,
     cachedTokens: item.cached_tokens,
     outputTokens: item.output_tokens,

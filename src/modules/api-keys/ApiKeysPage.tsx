@@ -24,10 +24,11 @@ import { EmptyState } from "@/modules/ui/EmptyState";
 import { useToast } from "@/modules/ui/ToastProvider";
 import { Modal } from "@/modules/ui/Modal";
 import { HoverTooltip, OverflowTooltip } from "@/modules/ui/Tooltip";
-import { MultiSelect, type MultiSelectOption } from "@/modules/ui/MultiSelect";
+import type { MultiSelectOption } from "@/modules/ui/MultiSelect";
 import { VirtualTable, type VirtualTableColumn } from "@/modules/ui/VirtualTable";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { normalizeApiBase } from "@/lib/connection";
+import { RestrictionMultiSelect } from "@/modules/api-keys/RestrictionMultiSelect";
 
 // Vendor SVG icons
 import iconClaude from "@/assets/icons/claude.svg";
@@ -1008,13 +1009,17 @@ export function ApiKeysPage() {
         <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-white/80">
           {t("api_keys_page.form_allowed_channels")}
         </label>
-        <MultiSelect
+        <RestrictionMultiSelect
           options={availableChannels}
           value={form.allowedChannels}
           onChange={(selected) => setForm((p) => ({ ...p, allowedChannels: selected }))}
           placeholder={t("api_keys_page.select_channels")}
-          emptyLabel={t("api_keys_page.form_all_channels")}
-          selectAllLabel={t("api_keys_page.form_all_channels")}
+          unrestrictedLabel={t("api_keys_page.form_all_channels")}
+          selectedCountLabel={(count) => t("api_keys_page.selected_channels_count", { count })}
+          searchPlaceholder={t("api_keys_page.search_channels")}
+          selectFilteredLabel={t("api_keys_page.select_filtered")}
+          clearRestrictionLabel={t("api_keys_page.clear_restriction")}
+          noResultsLabel={t("api_keys_page.no_results")}
         />
       </div>
 
@@ -1022,13 +1027,17 @@ export function ApiKeysPage() {
         <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-white/80">
           {t("api_keys_page.form_allowed_models")}
         </label>
-        <MultiSelect
+        <RestrictionMultiSelect
           options={availableModels}
           value={form.allowedModels}
           onChange={(selected) => setForm((p) => ({ ...p, allowedModels: selected }))}
           placeholder={t("api_keys_page.select_models")}
-          emptyLabel={t("api_keys_page.form_all_models")}
-          selectAllLabel={t("api_keys_page.form_all_models")}
+          unrestrictedLabel={t("api_keys_page.form_all_models")}
+          selectedCountLabel={(count) => t("api_keys_page.selected_models_count", { count })}
+          searchPlaceholder={t("api_keys_page.search_models")}
+          selectFilteredLabel={t("api_keys_page.select_filtered")}
+          clearRestrictionLabel={t("api_keys_page.clear_restriction")}
+          noResultsLabel={t("api_keys_page.no_results")}
         />
       </div>
 

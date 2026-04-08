@@ -165,6 +165,7 @@ export interface UsageLogItem {
   auth_index: string;
   failed: boolean;
   latency_ms: number;
+  first_token_ms: number;
   input_tokens: number;
   output_tokens: number;
   reasoning_tokens: number;
