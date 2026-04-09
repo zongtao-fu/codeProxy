@@ -566,9 +566,19 @@ export function RequestLogsPage() {
         setRawItems(resp.items ?? []);
         setTotalCount(resp.total ?? 0);
         setCurrentPage(page);
-        setFilterOptions(
-          resp.filters ?? { api_keys: [], api_key_names: {}, models: [], channels: [] },
-        );
+        const filtersCandidate =
+          resp.filters && typeof resp.filters === "object" ? (resp.filters as any) : null;
+        setFilterOptions({
+          api_keys: Array.isArray(filtersCandidate?.api_keys) ? filtersCandidate.api_keys : [],
+          api_key_names:
+            filtersCandidate?.api_key_names &&
+            typeof filtersCandidate.api_key_names === "object" &&
+            !Array.isArray(filtersCandidate.api_key_names)
+              ? (filtersCandidate.api_key_names as Record<string, string>)
+              : {},
+          models: Array.isArray(filtersCandidate?.models) ? filtersCandidate.models : [],
+          channels: Array.isArray(filtersCandidate?.channels) ? filtersCandidate.channels : [],
+        });
         setStats(resp.stats ?? { total: 0, success_rate: 0, total_tokens: 0 });
         setLastUpdatedAt(Date.now());
       } catch (err) {

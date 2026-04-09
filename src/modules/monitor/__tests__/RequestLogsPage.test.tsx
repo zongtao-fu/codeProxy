@@ -77,4 +77,36 @@ describe("RequestLogsPage", () => {
     expect(await screen.findByText("First Token")).toBeInTheDocument();
     expect(await screen.findByText("183ms")).toBeInTheDocument();
   });
+
+  test("does not crash when backend returns null filter arrays", async () => {
+    await i18n.changeLanguage("en");
+
+    mocks.getUsageLogs.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      size: 50,
+      filters: {
+        api_keys: null,
+        api_key_names: null,
+        models: null,
+        channels: null,
+      },
+      stats: {
+        total: 0,
+        success_rate: 0,
+        total_tokens: 0,
+      },
+    });
+
+    render(
+      <ThemeProvider>
+        <ToastProvider>
+          <RequestLogsPage />
+        </ToastProvider>
+      </ThemeProvider>,
+    );
+
+    expect(await screen.findByText("No Data")).toBeInTheDocument();
+  });
 });
