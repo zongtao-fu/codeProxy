@@ -146,4 +146,24 @@ describe("AuthFilesPage files table", () => {
     expect(screen.getByRole("combobox", { name: "Quota" })).toBeInTheDocument();
     expect(screen.getByText("Week")).toBeInTheDocument();
   });
+
+  test("reads files view mode from localStorage", async () => {
+    window.localStorage.setItem("authFilesPage.filesViewMode.v1", JSON.stringify("cards"));
+
+    render(
+      <MemoryRouter initialEntries={["/auth-files"]}>
+        <ThemeProvider>
+          <ToastProvider>
+            <Routes>
+              <Route path="/auth-files" element={<AuthFilesPage />} />
+            </Routes>
+          </ToastProvider>
+        </ThemeProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("qwen.json")).toBeInTheDocument();
+    expect(screen.getByTestId("auth-files-cards")).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
 });

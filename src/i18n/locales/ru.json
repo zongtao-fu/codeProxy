@@ -704,6 +704,7 @@
     "view_mode": "Режим просмотра",
     "view_mode_diagram": "Диаграмма",
     "view_mode_list": "Список",
+    "view_mode_cards": "Карточки",
     "provider_required": "Сначала укажите провайдера",
     "upgrade_required": "Эта функция требует более новой версии CLI Proxy API (CPA). Обновите систему.",
     "upgrade_required_title": "Пожалуйста, обновите CLI Proxy API",
