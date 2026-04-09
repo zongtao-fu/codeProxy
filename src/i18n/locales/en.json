@@ -652,7 +652,10 @@
     "col_connectivity": "Connectivity",
     "col_quota": "Quota",
     "quota_preview_5h": "5h",
-    "quota_preview_week": "Week"
+    "quota_preview_week": "Week",
+    "quota_auto_refresh": "Auto refresh",
+    "quota_refresh_off": "Off",
+    "quota_updated_at": "Updated"
   },
   "antigravity_quota": {
     "title": "Antigravity Quota",

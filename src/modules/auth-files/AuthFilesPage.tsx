@@ -54,8 +54,10 @@ const MAX_AUTH_FILE_SIZE = 50 * 1024;
 
 const AUTH_FILES_UI_STATE_KEY = "authFilesPage.uiState.v3";
 const AUTH_FILES_QUOTA_PREVIEW_KEY = "authFilesPage.quotaPreview.v1";
+const AUTH_FILES_QUOTA_AUTO_REFRESH_KEY = "authFilesPage.quotaAutoRefreshMs.v1";
 
 type QuotaPreviewMode = "5h" | "week";
+type QuotaAutoRefreshMs = 0 | 5000 | 10000 | 30000 | 60000;
 
 type AuthFilesUiState = {
   tab?: "files" | "excluded" | "alias";
@@ -204,6 +206,18 @@ const pickQuotaPreviewItem = (items: QuotaItem[], mode: QuotaPreviewMode): Quota
   });
 
   return match ?? items[0] ?? null;
+};
+
+const normalizeQuotaAutoRefreshMs = (value: unknown): QuotaAutoRefreshMs => {
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsed)) return 10000;
+  const rounded = Math.max(0, Math.round(parsed));
+  if (rounded === 0) return 0;
+  if (rounded === 5000) return 5000;
+  if (rounded === 10000) return 10000;
+  if (rounded === 30000) return 30000;
+  if (rounded === 60000) return 60000;
+  return 10000;
 };
 
 type UsageIndex = {
@@ -446,12 +460,20 @@ export function AuthFilesPage() {
     AUTH_FILES_QUOTA_PREVIEW_KEY,
     "5h",
   );
+  const [quotaAutoRefreshMsRaw, setQuotaAutoRefreshMsRaw] = useLocalStorage<number>(
+    AUTH_FILES_QUOTA_AUTO_REFRESH_KEY,
+    10000,
+  );
+  const quotaAutoRefreshMs = useMemo(
+    () => normalizeQuotaAutoRefreshMs(quotaAutoRefreshMsRaw),
+    [quotaAutoRefreshMsRaw],
+  );
 
   useInterval(
     () => {
       setNowMs(Date.now());
     },
-    tab === "files" ? 30_000 : null,
+    tab === "files" ? Math.min(30_000, quotaAutoRefreshMs || 30_000) : null,
   );
 
   const translateQuotaText = useCallback(
@@ -569,7 +591,7 @@ export function AuthFilesPage() {
             status: "error",
             items: prev[name]?.items ?? [],
             error: message,
-            updatedAt: prev[name]?.updatedAt,
+            updatedAt: Date.now(),
           },
         }));
       } finally {
@@ -743,6 +765,59 @@ export function AuthFilesPage() {
       cancelled = true;
     };
   }, [loading, pageItems, refreshQuota, tab]);
+
+  const quotaLastUpdatedAtMs = useMemo(() => {
+    let latest = 0;
+    pageItems.forEach((file) => {
+      const updatedAt = quotaByFileName[file.name]?.updatedAt;
+      if (typeof updatedAt === "number" && Number.isFinite(updatedAt)) {
+        latest = Math.max(latest, updatedAt);
+      }
+    });
+    return latest || null;
+  }, [pageItems, quotaByFileName]);
+
+  const quotaLastUpdatedText = useMemo(() => {
+    if (!quotaLastUpdatedAtMs) return "--";
+    const date = new Date(quotaLastUpdatedAtMs);
+    return Number.isNaN(date.getTime()) ? "--" : date.toLocaleTimeString();
+  }, [quotaLastUpdatedAtMs]);
+
+  const refreshCurrentPageQuota = useCallback(async () => {
+    if (tab !== "files") return;
+    if (loading) return;
+    if (quotaInFlightRef.current.size > 0) return;
+
+    const candidates = pageItems
+      .map((file) => {
+        const provider = resolveQuotaProvider(file);
+        return provider ? { file, provider } : null;
+      })
+      .filter(Boolean) as { file: AuthFileItem; provider: QuotaProvider }[];
+    if (!candidates.length) return;
+
+    const CONCURRENCY = 3;
+    let idx = 0;
+    const workers = Array.from({
+      length: Math.min(CONCURRENCY, candidates.length),
+    }).map(async () => {
+      for (;;) {
+        const current = candidates[idx];
+        idx += 1;
+        if (!current) return;
+        await refreshQuota(current.file, current.provider);
+      }
+    });
+
+    await Promise.allSettled(workers);
+  }, [loading, pageItems, refreshQuota, tab]);
+
+  useInterval(
+    () => {
+      void refreshCurrentPageQuota();
+    },
+    tab === "files" && quotaAutoRefreshMs > 0 ? quotaAutoRefreshMs : null,
+  );
 
   const openDetail = useCallback(
     async (file: AuthFileItem) => {
@@ -1636,7 +1711,10 @@ export function AuthFilesPage() {
         width: "w-80",
         headerClassName: "text-center",
         headerRender: () => (
-          <div className="flex items-center justify-center normal-case">
+          <div className="flex items-center justify-center gap-2 normal-case">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-white/60">
+              {t("auth_files.col_quota")}
+            </span>
             <Select
               value={quotaPreviewMode}
               onChange={(value) => setQuotaPreviewMode(value === "week" ? "week" : "5h")}
@@ -1716,14 +1794,25 @@ export function AuthFilesPage() {
           const renderQuotaLinePreview = (item: QuotaItem) => {
             const percentText =
               item.percent === null ? "--" : `${Math.round(clampPercent(item.percent))}%`;
+            const resetText = formatQuotaResetText(item.resetAtMs) ?? "--";
+            const showRefreshing = isLoading && items.length > 0;
             return (
-              <div key={item.label} className="grid grid-cols-[2.5rem_1fr_3rem] items-center gap-1">
+              <div
+                key={item.label}
+                className="grid grid-cols-[2.75rem_1fr_3.25rem_6.5rem] items-center gap-1"
+              >
                 <span className="truncate text-[11px] font-medium text-slate-700 dark:text-white/75">
                   {translateQuotaText(item.label)}
                 </span>
                 <div className="min-w-0">{bar(item.percent)}</div>
-                <span className="text-right text-[11px] font-semibold tabular-nums text-slate-800 dark:text-white/85">
+                <span className="inline-flex items-center justify-end gap-1 text-right text-[11px] font-semibold tabular-nums text-slate-800 dark:text-white/85">
+                  {showRefreshing ? (
+                    <Loader2 size={12} className="animate-spin text-slate-400 dark:text-white/40" />
+                  ) : null}
                   {percentText}
+                </span>
+                <span className="truncate whitespace-nowrap text-right text-[10px] tabular-nums text-slate-400 dark:text-white/35">
+                  {resetText}
                 </span>
               </div>
             );
@@ -2066,31 +2155,62 @@ export function AuthFilesPage() {
                   description={t("auth_files_page.no_files_desc")}
                 />
               ) : (
-                <div className="relative">
-                  <VirtualTable<AuthFileItem>
-                    rows={pageItems}
-                    columns={fileColumns}
-                    rowKey={(row) => row.name}
-                    loading={false}
-                    virtualize={false}
-                    rowHeight={84}
-                    caption={t("auth_files.table_caption")}
-                    emptyText={t("auth_files_page.no_files_desc")}
-                    minWidth="min-w-[1800px]"
-                    height="h-[calc(100dvh-420px)]"
-                    rowClassName={(row) => {
-                      const runtimeOnly = isRuntimeOnlyAuthFile(row);
-                      const disabled = Boolean(row.disabled);
-                      return [
-                        runtimeOnly
-                          ? "bg-slate-50/80 dark:bg-neutral-950/55 hover:bg-slate-100/80 dark:hover:bg-neutral-900/60"
-                          : "",
-                        disabled ? "opacity-85" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ");
-                    }}
-                  />
+                <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white/70 shadow-sm backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/40">
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                    <div className="inline-flex items-center gap-2 text-xs text-slate-500 dark:text-white/45">
+                      <span className="font-medium">{t("auth_files.quota_updated_at")}</span>
+                      <span className="font-mono tabular-nums">{quotaLastUpdatedText}</span>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2">
+                      <span className="text-xs font-medium text-slate-500 dark:text-white/45">
+                        {t("auth_files.quota_auto_refresh")}
+                      </span>
+                      <Select
+                        value={String(quotaAutoRefreshMs)}
+                        onChange={(value) =>
+                          setQuotaAutoRefreshMsRaw(normalizeQuotaAutoRefreshMs(value))
+                        }
+                        options={[
+                          { value: "0", label: t("auth_files.quota_refresh_off") },
+                          { value: "5000", label: "5s" },
+                          { value: "10000", label: "10s" },
+                          { value: "30000", label: "30s" },
+                          { value: "60000", label: "60s" },
+                        ]}
+                        aria-label={t("auth_files.quota_auto_refresh")}
+                        variant="chip"
+                        className="w-[88px]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="px-5 pb-4">
+                    <VirtualTable<AuthFileItem>
+                      rows={pageItems}
+                      columns={fileColumns}
+                      rowKey={(row) => row.name}
+                      loading={false}
+                      virtualize={false}
+                      rowHeight={84}
+                      caption={t("auth_files.table_caption")}
+                      emptyText={t("auth_files_page.no_files_desc")}
+                      minWidth="min-w-[1800px]"
+                      height="h-[calc(100dvh-468px)]"
+                      rowClassName={(row) => {
+                        const runtimeOnly = isRuntimeOnlyAuthFile(row);
+                        const disabled = Boolean(row.disabled);
+                        return [
+                          runtimeOnly
+                            ? "bg-slate-50/80 dark:bg-neutral-950/55 hover:bg-slate-100/80 dark:hover:bg-neutral-900/60"
+                            : "",
+                          disabled ? "opacity-85" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ");
+                      }}
+                    />
+                  </div>
                 </div>
               )}
 

@@ -49,6 +49,7 @@ describe("AuthFilesPage files table", () => {
 
     expect(await screen.findByText("qwen.json")).toBeInTheDocument();
     expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByText("Quota")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Quota" })).toBeInTheDocument();
     expect(screen.getByText("5h")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add OAuth Login" })).toBeInTheDocument();

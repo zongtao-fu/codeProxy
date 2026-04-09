@@ -660,7 +660,10 @@
     "col_connectivity": "连通性",
     "col_quota": "配额",
     "quota_preview_5h": "5小时",
-    "quota_preview_week": "周"
+    "quota_preview_week": "周",
+    "quota_auto_refresh": "自动刷新",
+    "quota_refresh_off": "关闭",
+    "quota_updated_at": "更新于"
   },
   "antigravity_quota": {
     "title": "Antigravity 额度",
