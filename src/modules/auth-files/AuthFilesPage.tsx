@@ -455,6 +455,7 @@ export function AuthFilesPage() {
   const [quotaByFileName, setQuotaByFileName] = useState<Record<string, QuotaState>>({});
   const quotaAutoRefreshedRef = useRef<Set<string>>(new Set());
   const quotaInFlightRef = useRef<Set<string>>(new Set());
+  const quotaAutoRefreshingRef = useRef<Set<string>>(new Set());
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [quotaPreviewMode, setQuotaPreviewMode] = useLocalStorage<QuotaPreviewMode>(
     AUTH_FILES_QUOTA_PREVIEW_KEY,
@@ -803,7 +804,12 @@ export function AuthFilesPage() {
         const current = candidates[idx];
         idx += 1;
         if (!current) return;
-        await refreshQuota(current.file, current.provider);
+        quotaAutoRefreshingRef.current.add(current.file.name);
+        try {
+          await refreshQuota(current.file, current.provider);
+        } finally {
+          quotaAutoRefreshingRef.current.delete(current.file.name);
+        }
       }
     });
 
@@ -1788,24 +1794,22 @@ export function AuthFilesPage() {
             const resetText = formatQuotaResetTextCompact(item.resetAtMs);
             return (
               <div key={item.label} className="space-y-0.5">
-                <div className="flex min-w-0 items-center gap-1">
-                  <span className="shrink-0 truncate text-[10px] font-semibold text-slate-600 dark:text-white/70">
+                <div className="grid min-w-0 grid-cols-[auto_0.875rem_2.5rem_1fr] items-center gap-x-1">
+                  <span className="min-w-0 truncate text-[10px] font-semibold text-slate-600 dark:text-white/70">
                     {translateQuotaText(item.label)}
                   </span>
-                  {progressCircle(item.percent)}
-                  <span className="shrink-0 text-[10px] font-semibold tabular-nums text-slate-800 dark:text-white/85">
+                  <span className="flex items-center justify-center">
+                    {progressCircle(item.percent)}
+                  </span>
+                  <span className="text-[10px] font-semibold tabular-nums text-slate-800 dark:text-white/85">
                     {percentText}
                   </span>
-                  {resetText ? (
-                    <span className="min-w-0 flex-1 truncate whitespace-nowrap text-[10px] tabular-nums text-slate-500 dark:text-white/40">
-                      {resetText}
-                    </span>
-                  ) : (
-                    <span className="min-w-0 flex-1" />
-                  )}
+                  <span className="min-w-0 truncate whitespace-nowrap text-[10px] tabular-nums text-slate-500 dark:text-white/40">
+                    {resetText ?? "--"}
+                  </span>
                 </div>
                 {item.meta ? (
-                  <p className="pl-0 text-[10px] text-slate-500 dark:text-white/55">{item.meta}</p>
+                  <p className="text-[10px] text-slate-500 dark:text-white/55">{item.meta}</p>
                 ) : null}
               </div>
             );
@@ -1908,6 +1912,7 @@ export function AuthFilesPage() {
           const quotaRefreshing = quotaProvider
             ? quotaByFileName[file.name]?.status === "loading"
             : false;
+          const quotaAutoRefreshing = quotaAutoRefreshingRef.current.has(file.name);
 
           const iconBtnCls = "h-9 w-9 px-0";
           return (
@@ -1923,7 +1928,10 @@ export function AuthFilesPage() {
                     aria-label={t("common.refresh")}
                     disabled={quotaRefreshing}
                   >
-                    <RefreshCw size={16} className={quotaRefreshing ? "animate-spin" : ""} />
+                    <RefreshCw
+                      size={16}
+                      className={quotaRefreshing && !quotaAutoRefreshing ? "animate-spin" : ""}
+                    />
                   </Button>
                 </HoverTooltip>
               ) : null}
