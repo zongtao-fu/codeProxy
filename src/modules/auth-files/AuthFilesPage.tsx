@@ -1770,9 +1770,7 @@ export function AuthFilesPage() {
                   <span className="w-9 shrink-0 truncate text-[11px] font-medium text-slate-700 dark:text-white/75">
                     {translateQuotaText(item.label)}
                   </span>
-                  <div className="min-w-0 flex-1 overflow-hidden">
-                    <div className="w-full max-w-[160px]">{bar(item.percent)}</div>
-                  </div>
+                  <div className="w-[140px] shrink-0">{bar(item.percent)}</div>
                   <span className="w-10 shrink-0 text-right text-[11px] font-semibold tabular-nums text-slate-800 dark:text-white/85">
                     {percentText}
                   </span>
@@ -1801,9 +1799,7 @@ export function AuthFilesPage() {
                 <span className="w-9 shrink-0 truncate text-[11px] font-medium text-slate-700 dark:text-white/75">
                   {translateQuotaText(item.label)}
                 </span>
-                <div className="min-w-0 flex-1 overflow-hidden">
-                  <div className="w-full max-w-[160px]">{bar(item.percent)}</div>
-                </div>
+                <div className="w-[140px] shrink-0">{bar(item.percent)}</div>
                 <span className="inline-flex w-10 shrink-0 items-center justify-end gap-1 text-right text-[11px] font-semibold tabular-nums text-slate-800 dark:text-white/85">
                   {showRefreshing ? (
                     <Loader2 size={12} className="animate-spin text-slate-400 dark:text-white/40" />
