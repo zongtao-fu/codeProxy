@@ -33,7 +33,7 @@ jobs:
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            rm -rf /home/web/html/cliproxy-panel/*
+            rm -rf /home/web/html/relay-panel/*
 
       - name: Deploy static assets to server
         uses: appleboy/scp-action@v0.1.7
@@ -43,7 +43,7 @@ jobs:
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "dist/*"
-          target: "/home/web/html/cliproxy-panel/"
+          target: "/home/web/html/relay-panel/"
           strip_components: 1
           overwrite: true
 
@@ -55,5 +55,5 @@ jobs:
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            ls -la /home/web/html/cliproxy-panel/
+            ls -la /home/web/html/relay-panel/
             echo "Frontend deployed successfully"
