@@ -3,12 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
+  BarChart2,
   Bot,
   Check,
   Copy,
   Database,
   FileKey,
   Globe,
+  Loader2,
   Plus,
   RefreshCw,
   Save,
@@ -111,6 +113,36 @@ export function ProvidersPage() {
   const [editOpenAIIndex, setEditOpenAIIndex] = useState<number | null>(null);
   const [openaiDraft, setOpenaiDraft] = useState<OpenAIDraft>(() => buildOpenAIDraft(null));
   const [openaiDraftError, setOpenaiDraftError] = useState<string | null>(null);
+
+  // Provider usage modal
+  const [usageModalOpen, setUsageModalOpen] = useState(false);
+  const [usageModalProvider, setUsageModalProvider] = useState<string>("");
+  const [usageModalData, setUsageModalData] = useState<{
+    plan_name: string;
+    used: number;
+    remaining: number;
+    total: number;
+    unit: string;
+    expires_at?: string;
+  } | null>(null);
+  const [usageModalLoading, setUsageModalLoading] = useState(false);
+  const [usageModalError, setUsageModalError] = useState<string | null>(null);
+
+  const openUsageModal = useCallback(async (providerName: string) => {
+    setUsageModalProvider(providerName);
+    setUsageModalData(null);
+    setUsageModalError(null);
+    setUsageModalLoading(true);
+    setUsageModalOpen(true);
+    try {
+      const data = await providersApi.getOpenAIProviderUsage(providerName);
+      setUsageModalData(data);
+    } catch (e: unknown) {
+      setUsageModalError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setUsageModalLoading(false);
+    }
+  }, []);
   const [discoveredModels, setDiscoveredModels] = useState<{ id: string; owned_by?: string }[]>([]);
   const [discovering, setDiscovering] = useState(false);
   const [discoverSelected, setDiscoverSelected] = useState<Set<string>>(new Set());
@@ -1149,6 +1181,16 @@ export function ProvidersPage() {
                           <ProviderStatusBar data={statusData} />
                         </div>
                         <div className="flex items-center gap-2">
+                          {provider.usageConfig?.url ? (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => openUsageModal(provider.name)}
+                            >
+                              <BarChart2 size={14} />
+                              {t("providers.view_usage")}
+                            </Button>
+                          ) : null}
                           <Button
                             variant="secondary"
                             size="sm"
@@ -1969,6 +2011,80 @@ export function ProvidersPage() {
           void deleteKey(action.keyType, action.index);
         }}
       />
+
+      {/* Provider Usage Modal */}
+      <Modal
+        open={usageModalOpen}
+        onClose={() => setUsageModalOpen(false)}
+        title={t("providers.usage_modal_title", { name: usageModalProvider })}
+      >
+        <div className="min-w-[320px] space-y-4 p-1">
+          {usageModalLoading ? (
+            <div className="flex items-center justify-center gap-2 py-6 text-slate-500">
+              <Loader2 size={18} className="animate-spin" />
+              <span className="text-sm">{t("providers.usage_loading")}</span>
+            </div>
+          ) : usageModalError ? (
+            <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+              {usageModalError}
+            </div>
+          ) : usageModalData ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-neutral-900">
+                <span className="text-sm font-semibold text-slate-700 dark:text-white/80">
+                  {t("providers.usage_plan")}
+                </span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  {usageModalData.plan_name}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-emerald-50 px-3 py-3 text-center dark:bg-emerald-500/10">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                    {t("providers.usage_remaining")}
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-emerald-700 dark:text-emerald-300">
+                    {usageModalData.remaining.toFixed(4)}
+                  </p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                    {usageModalData.unit}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-amber-50 px-3 py-3 text-center dark:bg-amber-500/10">
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    {t("providers.usage_used")}
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-amber-700 dark:text-amber-300">
+                    {usageModalData.used.toFixed(4)}
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    {usageModalData.unit}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-slate-100 px-3 py-3 text-center dark:bg-neutral-800">
+                  <p className="text-xs text-slate-500 dark:text-white/50">
+                    {t("providers.usage_total")}
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-slate-700 dark:text-white">
+                    {usageModalData.total.toFixed(4)}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-white/50">{usageModalData.unit}</p>
+                </div>
+              </div>
+              {usageModalData.expires_at ? (
+                <p className="text-center text-xs text-slate-500 dark:text-white/40">
+                  {t("providers.usage_expires")}: {usageModalData.expires_at}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="flex justify-end pt-1">
+            <Button variant="secondary" size="sm" onClick={() => setUsageModalOpen(false)}>
+              {t("common.close")}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

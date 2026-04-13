@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/http/client";
-import type { OpenAIProvider, ProviderSimpleConfig } from "@/lib/http/types";
+import type { OpenAIProvider, ProviderSimpleConfig, ProviderUsageConfig } from "@/lib/http/types";
 import {
   extractArrayPayload,
   isRecord,
@@ -188,6 +188,18 @@ export const providersApi = {
         const priority =
           typeof priorityRaw === "number" && Number.isFinite(priorityRaw) ? priorityRaw : undefined;
         const testModel = normalizeString(item["test-model"] ?? item.testModel) ?? undefined;
+        const usageConfigRaw = item["usage-config"] ?? item.usageConfig;
+        let usageConfig: ProviderUsageConfig | undefined;
+        if (isRecord(usageConfigRaw)) {
+          const url = normalizeString(usageConfigRaw.url);
+          if (url) {
+            usageConfig = {
+              url,
+              method: normalizeString(usageConfigRaw.method) ?? undefined,
+              headers: normalizeHeaders(usageConfigRaw.headers) ?? undefined,
+            };
+          }
+        }
         return {
           name,
           ...(baseUrl ? { baseUrl } : {}),
@@ -197,6 +209,7 @@ export const providersApi = {
           ...(apiKeyEntries ? { apiKeyEntries } : {}),
           ...(priority !== undefined ? { priority } : {}),
           ...(testModel ? { testModel } : {}),
+          ...(usageConfig ? { usageConfig } : {}),
         };
       })
       .filter(Boolean) as OpenAIProvider[];
@@ -210,4 +223,15 @@ export const providersApi = {
 
   deleteOpenAIProvider: (name: string) =>
     apiClient.delete("/openai-compatibility", undefined, { params: { name } }),
+
+  async getOpenAIProviderUsage(name: string): Promise<{
+    plan_name: string;
+    used: number;
+    remaining: number;
+    total: number;
+    unit: string;
+    expires_at?: string;
+  }> {
+    return apiClient.get(`/openai-compat/subscription`, { params: { name } });
+  },
 };

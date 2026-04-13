@@ -131,6 +131,12 @@ export interface ProviderApiKeyEntry {
   headers?: Record<string, string>;
 }
 
+export interface ProviderUsageConfig {
+  url: string;
+  method?: string;
+  headers?: Record<string, string>;
+}
+
 export interface OpenAIProvider {
   name: string;
   baseUrl?: string;
@@ -140,6 +146,7 @@ export interface OpenAIProvider {
   apiKeyEntries?: ProviderApiKeyEntry[];
   priority?: number;
   testModel?: string;
+  usageConfig?: ProviderUsageConfig;
 }
 
 export interface ProviderSimpleConfig {

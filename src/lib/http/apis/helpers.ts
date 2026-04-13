@@ -160,6 +160,14 @@ export const serializeOpenAIProvider = (provider: OpenAIProvider) => {
   const testModel = normalizeString(provider.testModel);
   if (testModel) payload["test-model"] = testModel;
 
+  if (provider.usageConfig?.url) {
+    const usageCfg: Record<string, unknown> = { url: provider.usageConfig.url };
+    if (provider.usageConfig.method) usageCfg.method = provider.usageConfig.method;
+    const usageHeaders = serializeHeaders(provider.usageConfig.headers);
+    if (usageHeaders) usageCfg.headers = usageHeaders;
+    payload["usage-config"] = usageCfg;
+  }
+
   if (Array.isArray(provider.apiKeyEntries) && provider.apiKeyEntries.length) {
     const entries = provider.apiKeyEntries
       .map((entry): Record<string, unknown> | null => {
