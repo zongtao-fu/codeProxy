@@ -4,6 +4,8 @@ import type {
   ProviderApiKeyEntry,
   ProviderModel,
   ProviderSimpleConfig,
+  ProviderUsageConfig,
+  ProviderUsageExtractor,
 } from "@/lib/http/types";
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -36,6 +38,50 @@ export const normalizeHeaders = (value: unknown): Record<string, string> | undef
     }
   });
   return Object.keys(result).length ? result : undefined;
+};
+
+export const normalizeUsageExtractor = (value: unknown): ProviderUsageExtractor | undefined => {
+  if (!isRecord(value)) return undefined;
+  const extractor: ProviderUsageExtractor = {};
+  const planNamePath = normalizeString(value["plan-name-path"] ?? value.planNamePath);
+  const usedPath = normalizeString(value["used-path"] ?? value.usedPath);
+  const remainingPath = normalizeString(value["remaining-path"] ?? value.remainingPath);
+  const totalPath = normalizeString(value["total-path"] ?? value.totalPath);
+  const unitPath = normalizeString(value["unit-path"] ?? value.unitPath);
+  const expiresAtPath = normalizeString(value["expires-at-path"] ?? value.expiresAtPath);
+  if (planNamePath) extractor.planNamePath = planNamePath;
+  if (usedPath) extractor.usedPath = usedPath;
+  if (remainingPath) extractor.remainingPath = remainingPath;
+  if (totalPath) extractor.totalPath = totalPath;
+  if (unitPath) extractor.unitPath = unitPath;
+  if (expiresAtPath) extractor.expiresAtPath = expiresAtPath;
+  return Object.keys(extractor).length ? extractor : undefined;
+};
+
+export const normalizeUsageConfig = (value: unknown): ProviderUsageConfig | undefined => {
+  if (!isRecord(value)) return undefined;
+  const url = normalizeString(value.url);
+  if (!url) return undefined;
+  const refreshIntervalRaw =
+    value["refresh-interval-seconds"] ?? value.refreshIntervalSeconds ?? undefined;
+  const refreshIntervalSeconds =
+    typeof refreshIntervalRaw === "number" && Number.isFinite(refreshIntervalRaw)
+      ? refreshIntervalRaw
+      : typeof refreshIntervalRaw === "string" && refreshIntervalRaw.trim() !== ""
+        ? Number(refreshIntervalRaw)
+        : undefined;
+  const normalizedRefresh =
+    refreshIntervalSeconds !== undefined && Number.isFinite(refreshIntervalSeconds)
+      ? Math.max(0, refreshIntervalSeconds)
+      : undefined;
+  const extractor = normalizeUsageExtractor(value.extractor);
+  return {
+    url,
+    method: normalizeString(value.method) ?? undefined,
+    headers: normalizeHeaders(value.headers) ?? undefined,
+    ...(normalizedRefresh !== undefined ? { refreshIntervalSeconds: normalizedRefresh } : {}),
+    ...(extractor ? { extractor } : {}),
+  };
 };
 
 export const normalizeModels = (value: unknown): ProviderModel[] | undefined => {
@@ -123,6 +169,8 @@ export const serializeProviderKey = (config: ProviderSimpleConfig) => {
   if (config.skipAnthropicProcessing) {
     payload["skip-anthropic-processing"] = true;
   }
+  const usageConfig = serializeUsageConfig(config.usageConfig);
+  if (usageConfig) payload["usage-config"] = usageConfig;
   return payload;
 };
 
@@ -141,6 +189,8 @@ export const serializeGeminiKey = (config: ProviderSimpleConfig) => {
   if (config.excludedModels && config.excludedModels.length) {
     payload["excluded-models"] = config.excludedModels;
   }
+  const usageConfig = serializeUsageConfig(config.usageConfig);
+  if (usageConfig) payload["usage-config"] = usageConfig;
   return payload;
 };
 
@@ -160,13 +210,8 @@ export const serializeOpenAIProvider = (provider: OpenAIProvider) => {
   const testModel = normalizeString(provider.testModel);
   if (testModel) payload["test-model"] = testModel;
 
-  if (provider.usageConfig?.url) {
-    const usageCfg: Record<string, unknown> = { url: provider.usageConfig.url };
-    if (provider.usageConfig.method) usageCfg.method = provider.usageConfig.method;
-    const usageHeaders = serializeHeaders(provider.usageConfig.headers);
-    if (usageHeaders) usageCfg.headers = usageHeaders;
-    payload["usage-config"] = usageCfg;
-  }
+  const usageCfg = serializeUsageConfig(provider.usageConfig);
+  if (usageCfg) payload["usage-config"] = usageCfg;
 
   if (Array.isArray(provider.apiKeyEntries) && provider.apiKeyEntries.length) {
     const entries = provider.apiKeyEntries
@@ -186,6 +231,39 @@ export const serializeOpenAIProvider = (provider: OpenAIProvider) => {
     }
   }
 
+  return payload;
+};
+
+export const serializeUsageConfig = (usageConfig?: ProviderUsageConfig) => {
+  const url = normalizeString(usageConfig?.url);
+  if (!url) return undefined;
+  const payload: Record<string, unknown> = { url };
+  const method = normalizeString(usageConfig?.method);
+  if (method) payload.method = method;
+  const headers = serializeHeaders(usageConfig?.headers);
+  if (headers) payload.headers = headers;
+  if (
+    typeof usageConfig?.refreshIntervalSeconds === "number" &&
+    Number.isFinite(usageConfig.refreshIntervalSeconds) &&
+    usageConfig.refreshIntervalSeconds >= 0
+  ) {
+    payload["refresh-interval-seconds"] = usageConfig.refreshIntervalSeconds;
+  }
+  const extractorPayload: Record<string, unknown> = {};
+  const extractor = usageConfig?.extractor;
+  const planNamePath = normalizeString(extractor?.planNamePath);
+  const usedPath = normalizeString(extractor?.usedPath);
+  const remainingPath = normalizeString(extractor?.remainingPath);
+  const totalPath = normalizeString(extractor?.totalPath);
+  const unitPath = normalizeString(extractor?.unitPath);
+  const expiresAtPath = normalizeString(extractor?.expiresAtPath);
+  if (planNamePath) extractorPayload["plan-name-path"] = planNamePath;
+  if (usedPath) extractorPayload["used-path"] = usedPath;
+  if (remainingPath) extractorPayload["remaining-path"] = remainingPath;
+  if (totalPath) extractorPayload["total-path"] = totalPath;
+  if (unitPath) extractorPayload["unit-path"] = unitPath;
+  if (expiresAtPath) extractorPayload["expires-at-path"] = expiresAtPath;
+  if (Object.keys(extractorPayload).length) payload.extractor = extractorPayload;
   return payload;
 };
 

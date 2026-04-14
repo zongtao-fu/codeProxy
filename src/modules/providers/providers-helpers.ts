@@ -89,6 +89,16 @@ export type ProviderKeyDraft = {
   headersEntries: KeyValueEntry[];
   modelEntries: ModelEntryDraft[];
   skipAnthropicProcessing: boolean;
+  usageUrl: string;
+  usageMethod: string;
+  usageRefreshIntervalText: string;
+  usageHeadersEntries: KeyValueEntry[];
+  usagePlanNamePath: string;
+  usageUsedPath: string;
+  usageRemainingPath: string;
+  usageTotalPath: string;
+  usageUnitPath: string;
+  usageExpiresAtPath: string;
 };
 
 export const buildModelEntries = (models?: ProviderModel[]): ModelEntryDraft[] => {
@@ -145,6 +155,19 @@ export const buildProviderKeyDraft = (input?: ProviderSimpleConfig | null): Prov
   headersEntries: recordToKeyValueEntries(input?.headers),
   modelEntries: buildModelEntries(input?.models),
   skipAnthropicProcessing: input?.skipAnthropicProcessing ?? false,
+  usageUrl: input?.usageConfig?.url ?? "",
+  usageMethod: input?.usageConfig?.method ?? "GET",
+  usageRefreshIntervalText:
+    input?.usageConfig?.refreshIntervalSeconds !== undefined
+      ? String(input.usageConfig.refreshIntervalSeconds)
+      : "",
+  usageHeadersEntries: recordToKeyValueEntries(input?.usageConfig?.headers),
+  usagePlanNamePath: input?.usageConfig?.extractor?.planNamePath ?? "",
+  usageUsedPath: input?.usageConfig?.extractor?.usedPath ?? "",
+  usageRemainingPath: input?.usageConfig?.extractor?.remainingPath ?? "",
+  usageTotalPath: input?.usageConfig?.extractor?.totalPath ?? "",
+  usageUnitPath: input?.usageConfig?.extractor?.unitPath ?? "",
+  usageExpiresAtPath: input?.usageConfig?.extractor?.expiresAtPath ?? "",
 });
 
 export type OpenAIDraft = {
@@ -154,6 +177,16 @@ export type OpenAIDraft = {
   headersEntries: KeyValueEntry[];
   priorityText: string;
   testModel: string;
+  usageUrl: string;
+  usageMethod: string;
+  usageRefreshIntervalText: string;
+  usageHeadersEntries: KeyValueEntry[];
+  usagePlanNamePath: string;
+  usageUsedPath: string;
+  usageRemainingPath: string;
+  usageTotalPath: string;
+  usageUnitPath: string;
+  usageExpiresAtPath: string;
   apiKeyEntries: {
     apiKey: string;
     proxyUrl: string;
@@ -170,6 +203,19 @@ export const buildOpenAIDraft = (input?: OpenAIProvider | null): OpenAIDraft => 
   headersEntries: recordToKeyValueEntries(input?.headers),
   priorityText: input?.priority !== undefined ? String(input.priority) : "",
   testModel: input?.testModel ?? "",
+  usageUrl: input?.usageConfig?.url ?? "",
+  usageMethod: input?.usageConfig?.method ?? "GET",
+  usageRefreshIntervalText:
+    input?.usageConfig?.refreshIntervalSeconds !== undefined
+      ? String(input.usageConfig.refreshIntervalSeconds)
+      : "",
+  usageHeadersEntries: recordToKeyValueEntries(input?.usageConfig?.headers),
+  usagePlanNamePath: input?.usageConfig?.extractor?.planNamePath ?? "",
+  usageUsedPath: input?.usageConfig?.extractor?.usedPath ?? "",
+  usageRemainingPath: input?.usageConfig?.extractor?.remainingPath ?? "",
+  usageTotalPath: input?.usageConfig?.extractor?.totalPath ?? "",
+  usageUnitPath: input?.usageConfig?.extractor?.unitPath ?? "",
+  usageExpiresAtPath: input?.usageConfig?.extractor?.expiresAtPath ?? "",
   apiKeyEntries:
     Array.isArray(input?.apiKeyEntries) && input.apiKeyEntries.length
       ? input.apiKeyEntries.map((entry, idx) => ({

@@ -135,6 +135,17 @@ export interface ProviderUsageConfig {
   url: string;
   method?: string;
   headers?: Record<string, string>;
+  refreshIntervalSeconds?: number;
+  extractor?: ProviderUsageExtractor;
+}
+
+export interface ProviderUsageExtractor {
+  planNamePath?: string;
+  usedPath?: string;
+  remainingPath?: string;
+  totalPath?: string;
+  unitPath?: string;
+  expiresAtPath?: string;
 }
 
 export interface OpenAIProvider {
@@ -159,6 +170,7 @@ export interface ProviderSimpleConfig {
   models?: ProviderModel[];
   excludedModels?: string[];
   skipAnthropicProcessing?: boolean;
+  usageConfig?: ProviderUsageConfig;
 }
 
 export type OAuthProvider = "codex" | "anthropic" | "antigravity" | "gemini-cli" | "kimi" | "qwen";

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Loader2, Plus, Settings2, Trash2, Zap } from "lucide-react";
+import { BarChart2, Loader2, Plus, Settings2, Trash2, Zap } from "lucide-react";
 import type { ProviderSimpleConfig } from "@/lib/http/types";
 import { Button } from "@/modules/ui/Button";
 import { Card } from "@/modules/ui/Card";
@@ -16,6 +16,112 @@ import { formatLatency } from "@/modules/providers/hooks/useProviderLatency";
 
 import { useTranslation } from "react-i18next";
 
+export type ProviderUsageSummaryState = {
+  loading: boolean;
+  error?: boolean;
+  data?: {
+    plan_name: string;
+    used: number;
+    remaining: number;
+    total: number;
+    unit: string;
+    expires_at?: string;
+  };
+};
+
+export function ProviderUsageSummary({
+  summary,
+  className,
+}: {
+  summary?: ProviderUsageSummaryState;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  if (!summary) return null;
+
+  if (summary.loading) {
+    return (
+      <div
+        className={[
+          "mt-2 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:border-neutral-800 dark:bg-neutral-900/70 dark:text-white/55",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <Loader2 size={12} className="animate-spin" />
+        <span>{t("providers.usage_loading")}</span>
+      </div>
+    );
+  }
+
+  if (summary.error) {
+    return (
+      <div
+        className={[
+          "mt-2 inline-flex items-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-300",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        {t("providers.load_failed")}
+      </div>
+    );
+  }
+
+  if (!summary.data) return null;
+
+  return (
+    <div
+      className={[
+        "mt-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-900/60",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 dark:text-white/45">
+        <span className="font-semibold text-slate-700 dark:text-white/75">
+          {summary.data.plan_name}
+        </span>
+        {summary.data.expires_at ? (
+          <span>
+            {t("providers.usage_expires")}: {summary.data.expires_at}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-2 grid grid-cols-3 gap-2 text-xs tabular-nums">
+        <div className="rounded-lg bg-emerald-50 px-2.5 py-2 dark:bg-emerald-500/10">
+          <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+            {t("providers.usage_remaining")}
+          </p>
+          <p className="mt-0.5 font-semibold text-emerald-700 dark:text-emerald-300">
+            {summary.data.remaining.toFixed(4)}
+          </p>
+        </div>
+        <div className="rounded-lg bg-amber-50 px-2.5 py-2 dark:bg-amber-500/10">
+          <p className="text-[10px] text-amber-600 dark:text-amber-400">
+            {t("providers.usage_used")}
+          </p>
+          <p className="mt-0.5 font-semibold text-amber-700 dark:text-amber-300">
+            {summary.data.used.toFixed(4)}
+          </p>
+        </div>
+        <div className="rounded-lg bg-slate-100 px-2.5 py-2 dark:bg-neutral-800">
+          <p className="text-[10px] text-slate-500 dark:text-white/50">
+            {t("providers.usage_total")}
+          </p>
+          <p className="mt-0.5 font-semibold text-slate-700 dark:text-white">
+            {summary.data.total.toFixed(4)}
+          </p>
+        </div>
+      </div>
+      <p className="mt-1 text-[10px] text-slate-500 dark:text-white/40">{summary.data.unit}</p>
+    </div>
+  );
+}
+
 export function ProviderKeyListCard({
   icon: Icon,
   title,
@@ -24,10 +130,12 @@ export function ProviderKeyListCard({
   onAdd,
   onEdit,
   onDelete,
+  onViewUsage,
   onToggleEnabled,
 
   getStats,
   getStatusBar,
+  getUsageSummary,
   getLatencyEntry,
   checkLatency,
 }: {
@@ -38,9 +146,11 @@ export function ProviderKeyListCard({
   onAdd: () => void;
   onEdit: (index: number) => void;
   onDelete: (index: number) => void;
+  onViewUsage?: (index: number) => void;
   onToggleEnabled?: (index: number, enabled: boolean) => void;
   getStats: (item: ProviderSimpleConfig) => KeyStatBucket;
   getStatusBar: (item: ProviderSimpleConfig) => StatusBarData;
+  getUsageSummary?: (item: ProviderSimpleConfig) => ProviderUsageSummaryState | undefined;
   getLatencyEntry?: (key: string) => { latencyMs: number | null; loading: boolean; error: boolean };
   checkLatency?: (key: string, baseUrl: string) => void;
 }) {
@@ -67,6 +177,7 @@ export function ProviderKeyListCard({
             const models = item.models || [];
             const stats = getStats(item);
             const statusData = getStatusBar(item);
+            const usageSummary = getUsageSummary?.(item);
 
             return (
               <div
@@ -186,6 +297,8 @@ export function ProviderKeyListCard({
                       </div>
                     ) : null}
 
+                    <ProviderUsageSummary summary={usageSummary} />
+
                     <ProviderStatusBar data={statusData} />
                   </div>
 
@@ -201,6 +314,12 @@ export function ProviderKeyListCard({
                           onCheckedChange={(enabled) => onToggleEnabled(idx, enabled)}
                         />
                       </div>
+                    ) : null}
+                    {onViewUsage && item.usageConfig?.url ? (
+                      <Button variant="secondary" size="sm" onClick={() => onViewUsage(idx)}>
+                        <BarChart2 size={14} />
+                        {t("providers.view_usage")}
+                      </Button>
                     ) : null}
                     <Button variant="secondary" size="sm" onClick={() => onEdit(idx)}>
                       <Settings2 size={14} />

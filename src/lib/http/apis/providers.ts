@@ -8,6 +8,7 @@ import {
   normalizeHeaders,
   normalizeModels,
   normalizeString,
+  normalizeUsageConfig,
   serializeGeminiKey,
   serializeOpenAIProvider,
   serializeProviderKey,
@@ -30,6 +31,7 @@ export const providersApi = {
         const excludedModels = normalizeExcludedModels(
           item["excluded-models"] ?? item.excludedModels,
         );
+        const usageConfig = normalizeUsageConfig(item["usage-config"] ?? item.usageConfig);
         return {
           apiKey,
           ...(name ? { name } : {}),
@@ -38,6 +40,7 @@ export const providersApi = {
           ...(headers ? { headers } : {}),
           ...(models ? { models } : {}),
           ...(excludedModels ? { excludedModels } : {}),
+          ...(usageConfig ? { usageConfig } : {}),
         };
       })
       .filter(Boolean) as ProviderSimpleConfig[];
@@ -69,6 +72,7 @@ export const providersApi = {
         const excludedModels = normalizeExcludedModels(
           item["excluded-models"] ?? item.excludedModels,
         );
+        const usageConfig = normalizeUsageConfig(item["usage-config"] ?? item.usageConfig);
         return {
           apiKey,
           ...(name ? { name } : {}),
@@ -78,6 +82,7 @@ export const providersApi = {
           ...(headers ? { headers } : {}),
           ...(models ? { models } : {}),
           ...(excludedModels ? { excludedModels } : {}),
+          ...(usageConfig ? { usageConfig } : {}),
         };
       })
       .filter(Boolean) as ProviderSimpleConfig[];
@@ -111,6 +116,7 @@ export const providersApi = {
         );
         const skipAnthropicProcessing =
           item["skip-anthropic-processing"] === true || item.skipAnthropicProcessing === true;
+        const usageConfig = normalizeUsageConfig(item["usage-config"] ?? item.usageConfig);
         return {
           apiKey,
           ...(name ? { name } : {}),
@@ -121,6 +127,7 @@ export const providersApi = {
           ...(models ? { models } : {}),
           ...(excludedModels ? { excludedModels } : {}),
           ...(skipAnthropicProcessing ? { skipAnthropicProcessing } : {}),
+          ...(usageConfig ? { usageConfig } : {}),
         };
       })
       .filter(Boolean) as ProviderSimpleConfig[];
@@ -149,6 +156,7 @@ export const providersApi = {
         const proxyUrl = normalizeString(item["proxy-url"] ?? item.proxyUrl) ?? undefined;
         const headers = normalizeHeaders(item.headers);
         const models = normalizeModels(item.models);
+        const usageConfig = normalizeUsageConfig(item["usage-config"] ?? item.usageConfig);
         return {
           apiKey,
           ...(name ? { name } : {}),
@@ -157,6 +165,7 @@ export const providersApi = {
           ...(proxyUrl ? { proxyUrl } : {}),
           ...(headers ? { headers } : {}),
           ...(models ? { models } : {}),
+          ...(usageConfig ? { usageConfig } : {}),
         };
       })
       .filter(Boolean) as ProviderSimpleConfig[];
@@ -188,18 +197,7 @@ export const providersApi = {
         const priority =
           typeof priorityRaw === "number" && Number.isFinite(priorityRaw) ? priorityRaw : undefined;
         const testModel = normalizeString(item["test-model"] ?? item.testModel) ?? undefined;
-        const usageConfigRaw = item["usage-config"] ?? item.usageConfig;
-        let usageConfig: ProviderUsageConfig | undefined;
-        if (isRecord(usageConfigRaw)) {
-          const url = normalizeString(usageConfigRaw.url);
-          if (url) {
-            usageConfig = {
-              url,
-              method: normalizeString(usageConfigRaw.method) ?? undefined,
-              headers: normalizeHeaders(usageConfigRaw.headers) ?? undefined,
-            };
-          }
-        }
+        const usageConfig = normalizeUsageConfig(item["usage-config"] ?? item.usageConfig);
         return {
           name,
           ...(baseUrl ? { baseUrl } : {}),
@@ -224,7 +222,11 @@ export const providersApi = {
   deleteOpenAIProvider: (name: string) =>
     apiClient.delete("/openai-compatibility", undefined, { params: { name } }),
 
-  async getOpenAIProviderUsage(name: string): Promise<{
+  async getProviderUsage(input: {
+    type: "gemini" | "claude" | "codex" | "vertex" | "openai";
+    match?: string;
+    name?: string;
+  }): Promise<{
     plan_name: string;
     used: number;
     remaining: number;
@@ -232,6 +234,16 @@ export const providersApi = {
     unit: string;
     expires_at?: string;
   }> {
-    return apiClient.get(`/openai-compat/subscription`, { params: { name } });
+    return apiClient.get(`/provider/subscription`, {
+      params: {
+        type: input.type,
+        ...(input.match ? { match: input.match } : {}),
+        ...(input.name ? { name: input.name } : {}),
+      },
+    });
+  },
+
+  getOpenAIProviderUsage(name: string) {
+    return providersApi.getProviderUsage({ type: "openai", name });
   },
 };

@@ -45,7 +45,11 @@ import { useToast } from "@/modules/ui/ToastProvider";
 import { KeyValueInputList, keyValueEntriesToRecord } from "@/modules/providers/KeyValueInputList";
 import { ModelInputList, createEmptyModelEntry } from "@/modules/providers/ModelInputList";
 import { ProviderStatusBar } from "@/modules/providers/ProviderStatusBar";
-import { ProviderKeyListCard } from "@/modules/providers/ProviderKeyListCard";
+import {
+  ProviderKeyListCard,
+  ProviderUsageSummary,
+  type ProviderUsageSummaryState,
+} from "@/modules/providers/ProviderKeyListCard";
 import { useProviderLatency } from "@/modules/providers/hooks/useProviderLatency";
 import {
   buildCandidateUsageSourceIds,
@@ -94,6 +98,9 @@ export function ProvidersPage() {
   const [openaiProviders, setOpenaiProviders] = useState<OpenAIProvider[]>([]);
 
   const [usageStatsBySource, setUsageStatsBySource] = useState<Record<string, KeyStatBucket>>({});
+  const [listUsageByKey, setListUsageByKey] = useState<Record<string, ProviderUsageSummaryState>>(
+    {},
+  );
 
   const [ampcode, setAmpcode] = useState<Record<string, unknown> | null>(null);
   const [ampUpstreamUrl, setAmpUpstreamUrl] = useState("");
@@ -116,7 +123,13 @@ export function ProvidersPage() {
 
   // Provider usage modal
   const [usageModalOpen, setUsageModalOpen] = useState(false);
-  const [usageModalProvider, setUsageModalProvider] = useState<string>("");
+  const [usageModalTarget, setUsageModalTarget] = useState<{
+    type: "gemini" | "claude" | "codex" | "vertex" | "openai";
+    providerName: string;
+    match?: string;
+    name?: string;
+    refreshIntervalSeconds?: number;
+  } | null>(null);
   const [usageModalData, setUsageModalData] = useState<{
     plan_name: string;
     used: number;
@@ -128,21 +141,80 @@ export function ProvidersPage() {
   const [usageModalLoading, setUsageModalLoading] = useState(false);
   const [usageModalError, setUsageModalError] = useState<string | null>(null);
 
-  const openUsageModal = useCallback(async (providerName: string) => {
-    setUsageModalProvider(providerName);
+  const providerUsageStateKey = useCallback(
+    (input: { type: "gemini" | "claude" | "codex" | "vertex" | "openai"; match?: string; name?: string }) =>
+      `${input.type}:${input.type === "openai" ? input.name ?? "" : input.match ?? ""}`,
+    [],
+  );
+
+  const loadListUsage = useCallback(
+    async (target: NonNullable<typeof usageModalTarget>) => {
+      const stateKey = providerUsageStateKey(target);
+      setListUsageByKey((prev) => ({
+        ...prev,
+        [stateKey]: {
+          loading: true,
+          error: false,
+          data: prev[stateKey]?.data,
+        },
+      }));
+      try {
+        const data = await providersApi.getProviderUsage({
+          type: target.type,
+          ...(target.match ? { match: target.match } : {}),
+          ...(target.name ? { name: target.name } : {}),
+        });
+        setListUsageByKey((prev) => ({
+          ...prev,
+          [stateKey]: { loading: false, error: false, data },
+        }));
+      } catch {
+        setListUsageByKey((prev) => ({
+          ...prev,
+          [stateKey]: { loading: false, error: true, data: prev[stateKey]?.data },
+        }));
+      }
+    },
+    [providerUsageStateKey],
+  );
+
+  const loadUsageModal = useCallback(
+    async (target: NonNullable<typeof usageModalTarget>) => {
+      setUsageModalLoading(true);
+      setUsageModalError(null);
+      try {
+        const data = await providersApi.getProviderUsage({
+          type: target.type,
+          ...(target.match ? { match: target.match } : {}),
+          ...(target.name ? { name: target.name } : {}),
+        });
+        setUsageModalData(data);
+      } catch (e: unknown) {
+        setUsageModalError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setUsageModalLoading(false);
+      }
+    },
+    [],
+  );
+
+  const openUsageModal = useCallback((target: NonNullable<typeof usageModalTarget>) => {
+    setUsageModalTarget(target);
     setUsageModalData(null);
     setUsageModalError(null);
-    setUsageModalLoading(true);
     setUsageModalOpen(true);
-    try {
-      const data = await providersApi.getOpenAIProviderUsage(providerName);
-      setUsageModalData(data);
-    } catch (e: unknown) {
-      setUsageModalError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setUsageModalLoading(false);
-    }
   }, []);
+
+  useEffect(() => {
+    if (!usageModalOpen || !usageModalTarget) return;
+    void loadUsageModal(usageModalTarget);
+    const intervalSeconds = usageModalTarget.refreshIntervalSeconds ?? 0;
+    if (!intervalSeconds || intervalSeconds <= 0) return;
+    const timer = window.setInterval(() => {
+      void loadUsageModal(usageModalTarget);
+    }, intervalSeconds * 1000);
+    return () => window.clearInterval(timer);
+  }, [loadUsageModal, usageModalOpen, usageModalTarget]);
   const [discoveredModels, setDiscoveredModels] = useState<{ id: string; owned_by?: string }[]>([]);
   const [discovering, setDiscovering] = useState(false);
   const [discoverSelected, setDiscoverSelected] = useState<Set<string>>(new Set());
@@ -194,6 +266,77 @@ export function ProvidersPage() {
         : editKeyType === "codex"
           ? "Codex"
           : "Vertex";
+
+  const activeListUsageTargets = useMemo(() => {
+    switch (tab) {
+      case "gemini":
+        return geminiKeys
+          .filter((item) => item.usageConfig?.url)
+          .map((item) => ({
+            type: "gemini" as const,
+            providerName: item.name || maskApiKey(item.apiKey),
+            match: item.apiKey,
+            refreshIntervalSeconds: item.usageConfig?.refreshIntervalSeconds,
+          }));
+      case "claude":
+        return claudeKeys
+          .filter((item) => item.usageConfig?.url)
+          .map((item) => ({
+            type: "claude" as const,
+            providerName: item.name || maskApiKey(item.apiKey),
+            match: item.apiKey,
+            refreshIntervalSeconds: item.usageConfig?.refreshIntervalSeconds,
+          }));
+      case "codex":
+        return codexKeys
+          .filter((item) => item.usageConfig?.url)
+          .map((item) => ({
+            type: "codex" as const,
+            providerName: item.name || maskApiKey(item.apiKey),
+            match: item.apiKey,
+            refreshIntervalSeconds: item.usageConfig?.refreshIntervalSeconds,
+          }));
+      case "vertex":
+        return vertexKeys
+          .filter((item) => item.usageConfig?.url)
+          .map((item) => ({
+            type: "vertex" as const,
+            providerName: item.name || item.prefix || maskApiKey(item.apiKey),
+            match: item.apiKey,
+            refreshIntervalSeconds: item.usageConfig?.refreshIntervalSeconds,
+          }));
+      case "openai":
+        return openaiProviders
+          .filter((item) => item.usageConfig?.url)
+          .map((item) => ({
+            type: "openai" as const,
+            providerName: item.name,
+            name: item.name,
+            refreshIntervalSeconds: item.usageConfig?.refreshIntervalSeconds,
+          }));
+      default:
+        return [];
+    }
+  }, [claudeKeys, codexKeys, geminiKeys, openaiProviders, tab, vertexKeys]);
+
+  useEffect(() => {
+    if (activeListUsageTargets.length === 0) return;
+    activeListUsageTargets.forEach((target) => {
+      void loadListUsage(target);
+    });
+
+    const timers = activeListUsageTargets
+      .filter((target) => (target.refreshIntervalSeconds ?? 0) > 0)
+      .map((target) =>
+        window.setInterval(() => {
+          void loadListUsage(target);
+        }, (target.refreshIntervalSeconds ?? 0) * 1000),
+      );
+
+    return () => {
+      timers.forEach((timer) => window.clearInterval(timer));
+    };
+  }, [activeListUsageTargets, loadListUsage]);
 
   // 按 Tab 加载数据，切换 Tab 时只请求当前 Tab 的数据
   const refreshTab = useCallback(
@@ -338,6 +481,7 @@ export function ProvidersPage() {
     }
 
     const headers = keyValueEntriesToRecord(keyDraft.headersEntries);
+    const usageHeaders = keyValueEntriesToRecord(keyDraft.usageHeadersEntries);
 
     const excludedModels = keyDraft.excludedModelsText.trim()
       ? excludedModelsFromText(keyDraft.excludedModelsText)
@@ -349,6 +493,32 @@ export function ProvidersPage() {
       setKeyDraftError(requireAlias ? `Vertex: ${modelCommit.error}` : modelCommit.error);
       return null;
     }
+
+    const refreshIntervalText = keyDraft.usageRefreshIntervalText.trim();
+    const refreshIntervalSeconds =
+      refreshIntervalText !== "" ? Number(keyDraft.usageRefreshIntervalText) : undefined;
+    if (
+      refreshIntervalSeconds !== undefined &&
+      (!Number.isFinite(refreshIntervalSeconds) || refreshIntervalSeconds < 0)
+    ) {
+      setKeyDraftError(t("providers.usage_refresh_interval_error"));
+      return null;
+    }
+
+    const usageExtractor = {
+      ...(keyDraft.usagePlanNamePath.trim()
+        ? { planNamePath: keyDraft.usagePlanNamePath.trim() }
+        : {}),
+      ...(keyDraft.usageUsedPath.trim() ? { usedPath: keyDraft.usageUsedPath.trim() } : {}),
+      ...(keyDraft.usageRemainingPath.trim()
+        ? { remainingPath: keyDraft.usageRemainingPath.trim() }
+        : {}),
+      ...(keyDraft.usageTotalPath.trim() ? { totalPath: keyDraft.usageTotalPath.trim() } : {}),
+      ...(keyDraft.usageUnitPath.trim() ? { unitPath: keyDraft.usageUnitPath.trim() } : {}),
+      ...(keyDraft.usageExpiresAtPath.trim()
+        ? { expiresAtPath: keyDraft.usageExpiresAtPath.trim() }
+        : {}),
+    };
 
     const result: ProviderSimpleConfig = {
       apiKey,
@@ -362,11 +532,26 @@ export function ProvidersPage() {
       ...(editKeyType === "claude" && keyDraft.skipAnthropicProcessing
         ? { skipAnthropicProcessing: true }
         : {}),
+      ...(keyDraft.usageUrl.trim()
+        ? {
+            usageConfig: {
+              url: keyDraft.usageUrl.trim(),
+              ...(keyDraft.usageMethod.trim()
+                ? { method: keyDraft.usageMethod.trim().toUpperCase() }
+                : {}),
+              ...(usageHeaders ? { headers: usageHeaders } : {}),
+              ...(refreshIntervalSeconds !== undefined
+                ? { refreshIntervalSeconds }
+                : {}),
+              ...(Object.keys(usageExtractor).length ? { extractor: usageExtractor } : {}),
+            },
+          }
+        : {}),
     };
 
     setKeyDraftError(null);
     return result;
-  }, [editKeyType, keyDraft]);
+  }, [editKeyType, keyDraft, t]);
 
   const saveKeyDraft = useCallback(async () => {
     const value = commitKeyDraft();
@@ -572,11 +757,23 @@ export function ProvidersPage() {
     }
 
     const headers = keyValueEntriesToRecord(openaiDraft.headersEntries);
+    const usageHeaders = keyValueEntriesToRecord(openaiDraft.usageHeadersEntries);
 
     const priorityText = openaiDraft.priorityText.trim();
     const priority = priorityText !== "" ? Number(priorityText) : undefined;
     if (priority !== undefined && !Number.isFinite(priority)) {
       setOpenaiDraftError(t("providers.priority_error"));
+      return null;
+    }
+
+    const refreshIntervalText = openaiDraft.usageRefreshIntervalText.trim();
+    const refreshIntervalSeconds =
+      refreshIntervalText !== "" ? Number(openaiDraft.usageRefreshIntervalText) : undefined;
+    if (
+      refreshIntervalSeconds !== undefined &&
+      (!Number.isFinite(refreshIntervalSeconds) || refreshIntervalSeconds < 0)
+    ) {
+      setOpenaiDraftError(t("providers.usage_refresh_interval_error"));
       return null;
     }
 
@@ -605,6 +802,23 @@ export function ProvidersPage() {
       return null;
     }
 
+    const usageExtractor = {
+      ...(openaiDraft.usagePlanNamePath.trim()
+        ? { planNamePath: openaiDraft.usagePlanNamePath.trim() }
+        : {}),
+      ...(openaiDraft.usageUsedPath.trim() ? { usedPath: openaiDraft.usageUsedPath.trim() } : {}),
+      ...(openaiDraft.usageRemainingPath.trim()
+        ? { remainingPath: openaiDraft.usageRemainingPath.trim() }
+        : {}),
+      ...(openaiDraft.usageTotalPath.trim()
+        ? { totalPath: openaiDraft.usageTotalPath.trim() }
+        : {}),
+      ...(openaiDraft.usageUnitPath.trim() ? { unitPath: openaiDraft.usageUnitPath.trim() } : {}),
+      ...(openaiDraft.usageExpiresAtPath.trim()
+        ? { expiresAtPath: openaiDraft.usageExpiresAtPath.trim() }
+        : {}),
+    };
+
     setOpenaiDraftError(null);
 
     return {
@@ -614,10 +828,25 @@ export function ProvidersPage() {
       ...(headers ? { headers } : {}),
       ...(priority !== undefined ? { priority } : {}),
       ...(openaiDraft.testModel.trim() ? { testModel: openaiDraft.testModel.trim() } : {}),
+      ...(openaiDraft.usageUrl.trim()
+        ? {
+            usageConfig: {
+              url: openaiDraft.usageUrl.trim(),
+              ...(openaiDraft.usageMethod.trim()
+                ? { method: openaiDraft.usageMethod.trim().toUpperCase() }
+                : {}),
+              ...(usageHeaders ? { headers: usageHeaders } : {}),
+              ...(refreshIntervalSeconds !== undefined
+                ? { refreshIntervalSeconds }
+                : {}),
+              ...(Object.keys(usageExtractor).length ? { extractor: usageExtractor } : {}),
+            },
+          }
+        : {}),
       ...(modelCommit.models ? { models: modelCommit.models } : {}),
       apiKeyEntries,
     };
-  }, [openaiDraft]);
+  }, [openaiDraft, t]);
 
   const saveOpenAIDraft = useCallback(async () => {
     try {
@@ -980,9 +1209,20 @@ export function ProvidersPage() {
             onAdd={() => openKeyEditor("gemini", null)}
             onEdit={(idx) => openKeyEditor("gemini", idx)}
             onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "gemini", index: idx })}
+            onViewUsage={(idx) =>
+              openUsageModal({
+                type: "gemini",
+                providerName: geminiKeys[idx]?.name || maskApiKey(geminiKeys[idx]?.apiKey || ""),
+                match: geminiKeys[idx]?.apiKey,
+                refreshIntervalSeconds: geminiKeys[idx]?.usageConfig?.refreshIntervalSeconds,
+              })
+            }
             onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("gemini", idx, enabled)}
             getStats={getSimpleStats}
             getStatusBar={getSimpleStatusBar}
+            getUsageSummary={(item) =>
+              listUsageByKey[providerUsageStateKey({ type: "gemini", match: item.apiKey })]
+            }
             getLatencyEntry={getLatencyEntry}
             checkLatency={checkLatency}
           />
@@ -997,9 +1237,20 @@ export function ProvidersPage() {
             onAdd={() => openKeyEditor("claude", null)}
             onEdit={(idx) => openKeyEditor("claude", idx)}
             onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "claude", index: idx })}
+            onViewUsage={(idx) =>
+              openUsageModal({
+                type: "claude",
+                providerName: claudeKeys[idx]?.name || maskApiKey(claudeKeys[idx]?.apiKey || ""),
+                match: claudeKeys[idx]?.apiKey,
+                refreshIntervalSeconds: claudeKeys[idx]?.usageConfig?.refreshIntervalSeconds,
+              })
+            }
             onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("claude", idx, enabled)}
             getStats={getSimpleStats}
             getStatusBar={getSimpleStatusBar}
+            getUsageSummary={(item) =>
+              listUsageByKey[providerUsageStateKey({ type: "claude", match: item.apiKey })]
+            }
             getLatencyEntry={getLatencyEntry}
             checkLatency={checkLatency}
           />
@@ -1014,9 +1265,20 @@ export function ProvidersPage() {
             onAdd={() => openKeyEditor("codex", null)}
             onEdit={(idx) => openKeyEditor("codex", idx)}
             onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "codex", index: idx })}
+            onViewUsage={(idx) =>
+              openUsageModal({
+                type: "codex",
+                providerName: codexKeys[idx]?.name || maskApiKey(codexKeys[idx]?.apiKey || ""),
+                match: codexKeys[idx]?.apiKey,
+                refreshIntervalSeconds: codexKeys[idx]?.usageConfig?.refreshIntervalSeconds,
+              })
+            }
             onToggleEnabled={(idx, enabled) => void toggleKeyEnabled("codex", idx, enabled)}
             getStats={getSimpleStats}
             getStatusBar={getSimpleStatusBar}
+            getUsageSummary={(item) =>
+              listUsageByKey[providerUsageStateKey({ type: "codex", match: item.apiKey })]
+            }
             getLatencyEntry={getLatencyEntry}
             checkLatency={checkLatency}
           />
@@ -1031,8 +1293,22 @@ export function ProvidersPage() {
             onAdd={() => openKeyEditor("vertex", null)}
             onEdit={(idx) => openKeyEditor("vertex", idx)}
             onDelete={(idx) => setConfirm({ type: "deleteKey", keyType: "vertex", index: idx })}
+            onViewUsage={(idx) =>
+              openUsageModal({
+                type: "vertex",
+                providerName:
+                  vertexKeys[idx]?.name ||
+                  vertexKeys[idx]?.prefix ||
+                  maskApiKey(vertexKeys[idx]?.apiKey || ""),
+                match: vertexKeys[idx]?.apiKey,
+                refreshIntervalSeconds: vertexKeys[idx]?.usageConfig?.refreshIntervalSeconds,
+              })
+            }
             getStats={getSimpleStats}
             getStatusBar={getSimpleStatusBar}
+            getUsageSummary={(item) =>
+              listUsageByKey[providerUsageStateKey({ type: "vertex", match: item.apiKey })]
+            }
             getLatencyEntry={getLatencyEntry}
             checkLatency={checkLatency}
           />
@@ -1060,6 +1336,9 @@ export function ProvidersPage() {
                   const headerEntries = Object.entries(provider.headers || {});
                   const stats = getOpenAIProviderStats(provider);
                   const statusData = getOpenAIProviderStatusBar(provider);
+                  const usageSummary = listUsageByKey[
+                    providerUsageStateKey({ type: "openai", name: provider.name })
+                  ];
 
                   return (
                     <div
@@ -1178,6 +1457,8 @@ export function ProvidersPage() {
                             </div>
                           ) : null}
 
+                          <ProviderUsageSummary summary={usageSummary} />
+
                           <ProviderStatusBar data={statusData} />
                         </div>
                         <div className="flex items-center gap-2">
@@ -1185,7 +1466,15 @@ export function ProvidersPage() {
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => openUsageModal(provider.name)}
+                              onClick={() =>
+                                openUsageModal({
+                                  type: "openai",
+                                  providerName: provider.name,
+                                  name: provider.name,
+                                  refreshIntervalSeconds:
+                                    provider.usageConfig?.refreshIntervalSeconds,
+                                })
+                              }
                             >
                               <BarChart2 size={14} />
                               {t("providers.view_usage")}
@@ -1541,6 +1830,154 @@ export function ProvidersPage() {
             </p>
           </div>
 
+          <section className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                {t("providers.usage_config_title")}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-white/55">
+                {t("providers.usage_config_hint")}
+              </p>
+            </div>
+
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <div className="space-y-2 md:col-span-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_url_label")}
+                </p>
+                <TextInput
+                  value={keyDraft.usageUrl}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setKeyDraft((prev) => ({ ...prev, usageUrl: value }));
+                  }}
+                  placeholder={t("providers.usage_url_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_method_label")}
+                </p>
+                <TextInput
+                  value={keyDraft.usageMethod}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setKeyDraft((prev) => ({ ...prev, usageMethod: value }));
+                  }}
+                  placeholder={t("providers.usage_method_placeholder")}
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_refresh_interval_label")}
+                </p>
+                <TextInput
+                  value={keyDraft.usageRefreshIntervalText}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setKeyDraft((prev) => ({ ...prev, usageRefreshIntervalText: value }));
+                  }}
+                  placeholder={t("providers.usage_refresh_interval_placeholder")}
+                  inputMode="numeric"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <KeyValueInputList
+                title={t("providers.usage_headers")}
+                entries={keyDraft.usageHeadersEntries}
+                onChange={(next) =>
+                  setKeyDraft((prev) => ({ ...prev, usageHeadersEntries: next }))
+                }
+              />
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_plan_name_path_label")}
+                </p>
+                <TextInput
+                  value={keyDraft.usagePlanNamePath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setKeyDraft((prev) => ({ ...prev, usagePlanNamePath: value }));
+                  }}
+                  placeholder={t("providers.usage_plan_name_path_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_used_path_label")}
+                </p>
+                <TextInput
+                  value={keyDraft.usageUsedPath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setKeyDraft((prev) => ({ ...prev, usageUsedPath: value }));
+                  }}
+                  placeholder={t("providers.usage_used_path_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_remaining_path_label")}
+                </p>
+                <TextInput
+                  value={keyDraft.usageRemainingPath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setKeyDraft((prev) => ({ ...prev, usageRemainingPath: value }));
+                  }}
+                  placeholder={t("providers.usage_remaining_path_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_total_path_label")}
+                </p>
+                <TextInput
+                  value={keyDraft.usageTotalPath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setKeyDraft((prev) => ({ ...prev, usageTotalPath: value }));
+                  }}
+                  placeholder={t("providers.usage_total_path_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_unit_path_label")}
+                </p>
+                <TextInput
+                  value={keyDraft.usageUnitPath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setKeyDraft((prev) => ({ ...prev, usageUnitPath: value }));
+                  }}
+                  placeholder={t("providers.usage_unit_path_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_expires_path_label")}
+                </p>
+                <TextInput
+                  value={keyDraft.usageExpiresAtPath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setKeyDraft((prev) => ({ ...prev, usageExpiresAtPath: value }));
+                  }}
+                  placeholder={t("providers.usage_expires_path_placeholder")}
+                />
+              </div>
+            </div>
+          </section>
+
           <div className="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950/60">
             <ModelInputList
               title={
@@ -1741,6 +2178,152 @@ export function ProvidersPage() {
               onChange={(next) => setOpenaiDraft((prev) => ({ ...prev, headersEntries: next }))}
             />
           </div>
+
+          <section className="space-y-3 border-t border-slate-200/60 dark:border-neutral-800/60 pt-5">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                {t("providers.usage_config_title")}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-white/55">
+                {t("providers.usage_config_hint")}
+              </p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_url_label")}
+                </p>
+                <TextInput
+                  value={openaiDraft.usageUrl}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setOpenaiDraft((prev) => ({ ...prev, usageUrl: value }));
+                  }}
+                  placeholder={t("providers.usage_url_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_method_label")}
+                </p>
+                <TextInput
+                  value={openaiDraft.usageMethod}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setOpenaiDraft((prev) => ({ ...prev, usageMethod: value }));
+                  }}
+                  placeholder={t("providers.usage_method_placeholder")}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_refresh_interval_label")}
+                </p>
+                <TextInput
+                  value={openaiDraft.usageRefreshIntervalText}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setOpenaiDraft((prev) => ({ ...prev, usageRefreshIntervalText: value }));
+                  }}
+                  placeholder={t("providers.usage_refresh_interval_placeholder")}
+                  inputMode="numeric"
+                />
+              </div>
+            </div>
+
+            <KeyValueInputList
+              title={t("providers.usage_headers")}
+              entries={openaiDraft.usageHeadersEntries}
+              onChange={(next) =>
+                setOpenaiDraft((prev) => ({ ...prev, usageHeadersEntries: next }))
+              }
+            />
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_plan_name_path_label")}
+                </p>
+                <TextInput
+                  value={openaiDraft.usagePlanNamePath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setOpenaiDraft((prev) => ({ ...prev, usagePlanNamePath: value }));
+                  }}
+                  placeholder={t("providers.usage_plan_name_path_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_used_path_label")}
+                </p>
+                <TextInput
+                  value={openaiDraft.usageUsedPath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setOpenaiDraft((prev) => ({ ...prev, usageUsedPath: value }));
+                  }}
+                  placeholder={t("providers.usage_used_path_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_remaining_path_label")}
+                </p>
+                <TextInput
+                  value={openaiDraft.usageRemainingPath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setOpenaiDraft((prev) => ({ ...prev, usageRemainingPath: value }));
+                  }}
+                  placeholder={t("providers.usage_remaining_path_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_total_path_label")}
+                </p>
+                <TextInput
+                  value={openaiDraft.usageTotalPath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setOpenaiDraft((prev) => ({ ...prev, usageTotalPath: value }));
+                  }}
+                  placeholder={t("providers.usage_total_path_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_unit_path_label")}
+                </p>
+                <TextInput
+                  value={openaiDraft.usageUnitPath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setOpenaiDraft((prev) => ({ ...prev, usageUnitPath: value }));
+                  }}
+                  placeholder={t("providers.usage_unit_path_placeholder")}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {t("providers.usage_expires_path_label")}
+                </p>
+                <TextInput
+                  value={openaiDraft.usageExpiresAtPath}
+                  onChange={(e) => {
+                    const value = e.currentTarget.value;
+                    setOpenaiDraft((prev) => ({ ...prev, usageExpiresAtPath: value }));
+                  }}
+                  placeholder={t("providers.usage_expires_path_placeholder")}
+                />
+              </div>
+            </div>
+          </section>
 
           <section className="space-y-2 border-t border-slate-200/60 dark:border-neutral-800/60 pt-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2015,8 +2598,11 @@ export function ProvidersPage() {
       {/* Provider Usage Modal */}
       <Modal
         open={usageModalOpen}
-        onClose={() => setUsageModalOpen(false)}
-        title={t("providers.usage_modal_title", { name: usageModalProvider })}
+        onClose={() => {
+          setUsageModalOpen(false);
+          setUsageModalTarget(null);
+        }}
+        title={t("providers.usage_modal_title", { name: usageModalTarget?.providerName ?? "" })}
       >
         <div className="min-w-[320px] space-y-4 p-1">
           {usageModalLoading ? (
@@ -2079,7 +2665,14 @@ export function ProvidersPage() {
             </div>
           ) : null}
           <div className="flex justify-end pt-1">
-            <Button variant="secondary" size="sm" onClick={() => setUsageModalOpen(false)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setUsageModalOpen(false);
+                setUsageModalTarget(null);
+              }}
+            >
               {t("common.close")}
             </Button>
           </div>
