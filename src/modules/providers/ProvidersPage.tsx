@@ -48,6 +48,7 @@ import { ProviderStatusBar } from "@/modules/providers/ProviderStatusBar";
 import {
   ProviderKeyListCard,
   ProviderUsageSummary,
+  formatUsageExpiresAt,
   type ProviderUsageSummaryState,
 } from "@/modules/providers/ProviderKeyListCard";
 import { useProviderLatency } from "@/modules/providers/hooks/useProviderLatency";
@@ -2659,7 +2660,8 @@ export function ProvidersPage() {
               </div>
               {usageModalData.expires_at ? (
                 <p className="text-center text-xs text-slate-500 dark:text-white/40">
-                  {t("providers.usage_expires")}: {usageModalData.expires_at}
+                  {t("providers.usage_expires")}:{" "}
+                  {formatUsageExpiresAt(usageModalData.expires_at)}
                 </p>
               ) : null}
             </div>

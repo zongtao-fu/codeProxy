@@ -29,6 +29,30 @@ export type ProviderUsageSummaryState = {
   };
 };
 
+export function formatUsageExpiresAt(value?: string) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+
+  const parts = new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  return `${read("year")}-${read("month")}-${read("day")} ${read("hour")}:${read("minute")}:${read("second")} UTC+8`;
+}
+
 export function ProviderUsageSummary({
   summary,
   className,
@@ -87,7 +111,7 @@ export function ProviderUsageSummary({
         </span>
         {summary.data.expires_at ? (
           <span>
-            {t("providers.usage_expires")}: {summary.data.expires_at}
+            {t("providers.usage_expires")}: {formatUsageExpiresAt(summary.data.expires_at)}
           </span>
         ) : null}
       </div>
